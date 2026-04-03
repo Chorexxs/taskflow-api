@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 from typing import Annotated
 
@@ -16,7 +17,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 class Settings(BaseSettings):
-    model_config = ConfigDict(env_file=".env", extra="allow")
+    model_config = ConfigDict(env_file=".env", extra="allow", case_sensitive=False)
 
     SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
@@ -24,6 +25,10 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+SECRET_KEY = settings.SECRET_KEY or os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY is not set")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -41,7 +46,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
 
@@ -57,7 +62,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
