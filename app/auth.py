@@ -3,12 +3,15 @@ from datetime import datetime, timedelta
 from typing import Annotated
 
 import bcrypt
+from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 from sqlalchemy.orm import Session
+
+load_dotenv()
 
 from app.database import get_db
 
