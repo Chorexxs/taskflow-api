@@ -1,4 +1,5 @@
 import os
+import warnings
 from datetime import datetime, timedelta
 from typing import Annotated
 
@@ -31,7 +32,8 @@ settings = Settings()
 
 SECRET_KEY = settings.SECRET_KEY or os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
-    raise ValueError("SECRET_KEY is not set")
+    warnings.warn("SECRET_KEY is not set, using a temporary key for development")
+    SECRET_KEY = "temp-dev-key-do-not-use-in-production"
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

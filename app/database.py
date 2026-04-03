@@ -1,4 +1,5 @@
 import os
+import warnings
 from typing import Generator
 
 from dotenv import load_dotenv
@@ -20,6 +21,9 @@ class Settings(BaseSettings):
 settings = Settings()
 
 DATABASE_URL = settings.DATABASE_URL or os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    warnings.warn("DATABASE_URL is not set, database functionality will be unavailable")
+
 
 Base = declarative_base()
 
@@ -31,7 +35,8 @@ def get_engine():
     global _engine
     if _engine is None:
         if not DATABASE_URL:
-            raise ValueError("DATABASE_URL is not set")
+            warnings.warn("DATABASE_URL is not set, returning None engine")
+            return None
         _engine = create_engine(DATABASE_URL, pool_pre_ping=True)
     return _engine
 
@@ -40,7 +45,8 @@ def get_session_local():
     global _SessionLocal
     if _SessionLocal is None:
         if not DATABASE_URL:
-            raise ValueError("DATABASE_URL is not set")
+            warnings.warn("DATABASE_URL is not set, returning None session")
+            return None
         _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=get_engine())
     return _SessionLocal
 
