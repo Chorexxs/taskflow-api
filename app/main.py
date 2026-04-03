@@ -1,0 +1,32 @@
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from app.database import Base
+from app.routers import auth, users
+
+_test_engine = None
+
+
+def set_test_engine(engine):
+    global _test_engine
+    global _test_app
+    _test_engine = engine
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from app.database import get_engine
+    
+    engine = _test_engine if _test_engine else get_engine()
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(title="TaskFlow API", description="API REST con FastAPI y JWT", lifespan=lifespan)
+
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(users.router, prefix="/users", tags=["users"])
+
+
+@app.get("/")
+def root():
+    return {"message": "TaskFlow API"}
