@@ -44,7 +44,7 @@ Accede a `/docs` para ver la documentación Swagger interactiva.
 
 ## Despliegue
 
-Desplegado en Railway: [URL aquí]
+Desplegado en Railway: https://web-production-053e1.up.railway.app/
 
 ## Tests
 
