@@ -13,3 +13,5 @@ pytest-asyncio
 python-multipart
 email-validator
 slowapi
+redis
+aiofiles

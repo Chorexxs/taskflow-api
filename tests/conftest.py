@@ -1,5 +1,6 @@
 import os
 os.environ["TESTING"] = "1"
+os.environ["REDIS_URL"] = "redis://localhost:6379/0"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,9 +23,9 @@ TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_eng
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_database():
+    Base.metadata.drop_all(bind=test_engine)
     Base.metadata.create_all(bind=test_engine)
     main.set_test_engine(test_engine)
-    main.app.state.limiter.enabled = False
     yield
     Base.metadata.drop_all(bind=test_engine)
     main.set_test_engine(None)

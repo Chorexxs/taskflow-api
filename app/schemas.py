@@ -245,6 +245,14 @@ class PaginatedTaskResponse(BaseModel):
     total: int
     page: int
     pages: int
+    has_next: bool | None = None
+    next_cursor: str | None = None
+
+
+class CursorPaginatedResponse(BaseModel):
+    items: list
+    next_cursor: str | None = None
+    has_more: bool = False
 
 
 class SearchResult(BaseModel):

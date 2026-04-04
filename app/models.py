@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -36,7 +36,7 @@ class TeamMember(Base):
 
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
-    role = Column(String(20), default="member")
+    role = Column(String(20), default="member", index=True)
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
 
     team = relationship("Team", back_populates="members")
@@ -45,12 +45,15 @@ class TeamMember(Base):
 
 class Project(Base):
     __tablename__ = "projects"
+    __table_args__ = (
+        Index("ix_projects_team_status", "team_id", "status"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
-    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     description = Column(String(500), nullable=True)
-    status = Column(String(20), default="active")
+    status = Column(String(20), default="active", index=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -60,6 +63,13 @@ class Project(Base):
 
 class Task(Base):
     __tablename__ = "tasks"
+    __table_args__ = (
+        Index("ix_tasks_project_status", "project_id", "status"),
+        Index("ix_tasks_project_priority", "project_id", "priority"),
+        Index("ix_tasks_assigned_to", "assigned_to"),
+        Index("ix_tasks_due_date", "due_date"),
+        Index("ix_tasks_created_at", "created_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)

@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
 from app.auth import get_password_hash, verify_password, get_current_user
@@ -75,11 +75,13 @@ def create_team(db: Session, team: schemas.TeamCreate, user_id: int):
 
 
 def get_team_by_id(db: Session, team_id: int):
-    return db.query(models.Team).filter(models.Team.id == team_id).first()
+    team = db.query(models.Team).filter(models.Team.id == team_id).first()
+    return team
 
 
 def get_team_by_slug(db: Session, slug: str):
-    return db.query(models.Team).filter(models.Team.slug == slug).first()
+    team = db.query(models.Team).filter(models.Team.slug == slug).first()
+    return team
 
 
 def get_teams_by_user(db: Session, user_id: int):
@@ -115,6 +117,8 @@ def remove_member(db: Session, team_id: int, user_id: int):
     if member:
         db.delete(member)
         db.commit()
+        from app.cache import cache_service
+        cache_service.invalidate_team(team_id)
     return member
 
 
@@ -156,7 +160,8 @@ def create_project(db: Session, project: schemas.ProjectCreate, team_id: int, us
 
 
 def get_project_by_id(db: Session, project_id: int):
-    return db.query(models.Project).filter(models.Project.id == project_id).first()
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    return project
 
 
 def get_projects_by_team(db: Session, team_id: int, include_archived: bool = False):
@@ -178,6 +183,8 @@ def update_project(db: Session, project_id: int, project_update: schemas.Project
         db_project.status = project_update.status.value
     db.commit()
     db.refresh(db_project)
+    from app.cache import cache_service
+    cache_service.invalidate_project(project_id)
     return db_project
 
 
@@ -187,6 +194,8 @@ def archive_project(db: Session, project_id: int):
         db_project.status = "archived"
         db.commit()
         db.refresh(db_project)
+        from app.cache import cache_service
+        cache_service.invalidate_project(project_id)
     return db_project
 
 
