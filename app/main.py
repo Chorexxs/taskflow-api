@@ -65,12 +65,29 @@ app = FastAPI(title="TaskFlow API", description="API REST con FastAPI y JWT", li
 
 app.state.limiter = limiter
 
+
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(
         status_code=429,
         content={"detail": "Too many requests"}
     )
+
+
+@app.exception_handler(Exception)
+async def domain_exception_handler(request: Request, exc: Exception):
+    from app.exceptions import DomainException
+    if isinstance(exc, DomainException):
+        return JSONResponse(
+            status_code=400,
+            content={"error": exc.code, "detail": exc.message}
+        )
+    logger.error("unhandled_exception", error=str(exc), exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"}
+    )
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -85,14 +102,14 @@ app.add_middleware(LoggingMiddleware)
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(users.router, prefix="/users", tags=["users"])
-app.include_router(teams.router, prefix="/teams", tags=["teams"])
-app.include_router(projects.router, prefix="/teams/{team_id_or_slug}/projects", tags=["projects"])
-app.include_router(tasks.router, prefix="/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks", tags=["tasks"])
-app.include_router(comments.router, prefix="/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/comments", tags=["comments"])
-app.include_router(attachments.router, prefix="/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/attachments", tags=["attachments"])
-app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
+app.include_router(teams.router, prefix="/api/v1/teams", tags=["teams"])
+app.include_router(projects.router, prefix="/api/v1/teams/{team_id_or_slug}/projects", tags=["projects"])
+app.include_router(tasks.router, prefix="/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks", tags=["tasks"])
+app.include_router(comments.router, prefix="/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/comments", tags=["comments"])
+app.include_router(attachments.router, prefix="/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/attachments", tags=["attachments"])
+app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
 
 
 @app.get("/")
@@ -111,10 +128,11 @@ def health_check():
     
     try:
         from app.database import get_engine
+        from sqlalchemy import text
         engine = get_engine()
         if engine:
             with engine.connect() as conn:
-                conn.execute("SELECT 1")
+                conn.execute(text("SELECT 1"))
             health_status["database"] = "connected"
     except Exception as e:
         health_status["database"] = f"error: {str(e)}"
