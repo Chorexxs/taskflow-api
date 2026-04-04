@@ -19,7 +19,8 @@ async def lifespan(app: FastAPI):
     from app.database import get_engine
     
     engine = _test_engine if _test_engine else get_engine()
-    Base.metadata.create_all(bind=engine)
+    if engine is not None:
+        Base.metadata.create_all(bind=engine)
     yield
 
 
