@@ -238,3 +238,40 @@ def delete_task(db: Session, task_id: int):
         db.delete(db_task)
         db.commit()
     return db_task
+
+
+def create_comment(db: Session, comment: schemas.CommentCreate, task_id: int, user_id: int):
+    db_comment = models.Comment(
+        task_id=task_id,
+        author_id=user_id,
+        content=comment.content,
+    )
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+
+def get_comment_by_id(db: Session, comment_id: int):
+    return db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+
+
+def get_comments_by_task(db: Session, task_id: int):
+    return db.query(models.Comment).filter(models.Comment.task_id == task_id).order_by(models.Comment.created_at.desc()).all()
+
+
+def update_comment(db: Session, comment_id: int, content: str):
+    db_comment = get_comment_by_id(db, comment_id)
+    if db_comment:
+        db_comment.content = content
+        db.commit()
+        db.refresh(db_comment)
+    return db_comment
+
+
+def delete_comment(db: Session, comment_id: int):
+    db_comment = get_comment_by_id(db, comment_id)
+    if db_comment:
+        db.delete(db_comment)
+        db.commit()
+    return db_comment

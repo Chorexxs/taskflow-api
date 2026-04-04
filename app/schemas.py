@@ -147,3 +147,23 @@ class TaskOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CommentCreate(BaseModel):
+    content: str
+
+
+class CommentUpdate(BaseModel):
+    content: str
+
+
+class CommentOut(BaseModel):
+    id: int
+    task_id: int
+    author_id: int
+    content: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
