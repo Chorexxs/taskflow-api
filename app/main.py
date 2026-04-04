@@ -10,6 +10,10 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.database import Base
 from app.routers import auth, users, teams, projects, tasks, comments, attachments, notifications
+from app.logging_config import configure_logging, get_logger
+
+configure_logging()
+logger = get_logger(__name__)
 
 _test_engine = None
 
@@ -36,10 +40,25 @@ def set_test_engine(engine):
 async def lifespan(app: FastAPI):
     from app.database import get_engine
     
+    sentry_dsn = os.environ.get("SENTRY_DSN")
+    if sentry_dsn:
+        import sentry_sdk
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            integrations=[
+                sentry_sdk.fastapi.FastApiIntegration(),
+            ],
+            environment=os.environ.get("ENVIRONMENT", "production"),
+        )
+        logger.info("sentry_initialized")
+    
     engine = _test_engine if _test_engine else get_engine()
     if engine is not None:
         Base.metadata.create_all(bind=engine)
+    
+    logger.info("application_started")
     yield
+    logger.info("application_shutdown")
 
 
 app = FastAPI(title="TaskFlow API", description="API REST con FastAPI y JWT", lifespan=lifespan)
@@ -61,6 +80,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.middleware import LoggingMiddleware
+app.add_middleware(LoggingMiddleware)
+
 app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -80,7 +102,43 @@ def root():
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy"}
+    health_status = {
+        "status": "healthy",
+        "database": "unknown",
+        "redis": "unknown",
+        "disk": "unknown",
+    }
+    
+    try:
+        from app.database import get_engine
+        engine = get_engine()
+        if engine:
+            with engine.connect() as conn:
+                conn.execute("SELECT 1")
+            health_status["database"] = "connected"
+    except Exception as e:
+        health_status["database"] = f"error: {str(e)}"
+        health_status["status"] = "degraded"
+    
+    try:
+        import redis
+        r = redis.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379/0"))
+        r.ping()
+        health_status["redis"] = "connected"
+    except Exception as e:
+        health_status["redis"] = "not_available"
+    
+    try:
+        import shutil
+        total, used, free = shutil.disk_usage("/")
+        health_status["disk"] = f"{free // (2**30)}GB free"
+    except Exception:
+        health_status["disk"] = "unknown"
+    
+    if health_status["status"] == "degraded":
+        return JSONResponse(status_code=503, content=health_status)
+    
+    return health_status
 
 
 if __name__ == "__main__":
