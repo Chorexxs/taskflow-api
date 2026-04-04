@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -200,8 +201,53 @@ def get_task_by_id(db: Session, task_id: int):
     return db.query(models.Task).filter(models.Task.id == task_id).first()
 
 
-def get_tasks_by_project(db: Session, project_id: int):
-    return db.query(models.Task).filter(models.Task.project_id == project_id).all()
+def get_tasks_by_project(
+    db: Session,
+    project_id: int,
+    status: str = None,
+    priority: str = None,
+    assigned_to: int = None,
+    due_before: datetime = None,
+    due_after: datetime = None,
+    sort_by: str = "created_at",
+    order: str = "desc",
+    page: int = 1,
+    page_size: int = 20,
+):
+    query = db.query(models.Task).filter(models.Task.project_id == project_id)
+    
+    if status:
+        query = query.filter(models.Task.status == status)
+    if priority:
+        query = query.filter(models.Task.priority == priority)
+    if assigned_to is not None:
+        query = query.filter(models.Task.assigned_to == assigned_to)
+    if due_before:
+        query = query.filter(models.Task.due_date <= due_before)
+    if due_after:
+        query = query.filter(models.Task.due_date >= due_after)
+    
+    if sort_by == "title":
+        order_col = models.Task.title
+    elif sort_by == "due_date":
+        order_col = models.Task.due_date
+    elif sort_by == "priority":
+        order_col = models.Task.priority
+    elif sort_by == "status":
+        order_col = models.Task.status
+    else:
+        order_col = models.Task.created_at
+    
+    if order == "asc":
+        query = query.order_by(order_col.asc())
+    else:
+        query = query.order_by(order_col.desc())
+    
+    total = query.count()
+    offset = (page - 1) * page_size
+    items = query.offset(offset).limit(page_size).all()
+    
+    return {"items": items, "total": total, "page": page, "pages": (total + page_size - 1) // page_size}
 
 
 def update_task(db: Session, task_id: int, task_update: schemas.TaskUpdate):
@@ -304,3 +350,22 @@ def get_activity_by_project(db: Session, project_id: int):
         models.ActivityLog.entity_type == "project",
         models.ActivityLog.entity_id == project_id
     ).order_by(models.ActivityLog.created_at.desc()).all()
+
+
+def search_in_team(db: Session, team_id: int, query: str):
+    projects = db.query(models.Project).filter(
+        models.Project.team_id == team_id,
+        models.Project.status == "active",
+        models.Project.name.ilike(f"%{query}%")
+    ).all()
+    
+    project_ids = [p.id for p in projects]
+    
+    tasks = []
+    if project_ids:
+        tasks = db.query(models.Task).filter(
+            models.Task.project_id.in_(project_ids),
+            models.Task.title.ilike(f"%{query}%")
+        ).all()
+    
+    return {"projects": projects, "tasks": tasks}

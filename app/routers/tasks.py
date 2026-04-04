@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -52,10 +53,19 @@ def create_task(
     return new_task
 
 
-@router.get("/", response_model=list[schemas.TaskOut])
+@router.get("/", response_model=schemas.PaginatedTaskResponse)
 def list_tasks(
     team_id_or_slug: str,
     project_id_or_name: str,
+    status: str = None,
+    priority: str = None,
+    assigned_to: int = None,
+    due_before: datetime = None,
+    due_after: datetime = None,
+    sort_by: str = "created_at",
+    order: str = "desc",
+    page: int = 1,
+    page_size: int = 20,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
@@ -63,7 +73,11 @@ def list_tasks(
     from app.dependencies import get_team_from_id_or_slug
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
-    return crud.get_tasks_by_project(db, project.id)
+    if page_size > 100:
+        page_size = 100
+    return crud.get_tasks_by_project(
+        db, project.id, status, priority, assigned_to, due_before, due_after, sort_by, order, page, page_size
+    )
 
 
 @router.get("/{task_id_or_title}", response_model=schemas.TaskOut)

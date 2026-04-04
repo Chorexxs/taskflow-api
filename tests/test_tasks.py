@@ -44,7 +44,9 @@ def test_list_tasks(client: TestClient):
         headers={"Authorization": f"Bearer {owner_token}"}
     )
     assert response.status_code == 200
-    assert len(response.json()) == 2
+    data = response.json()
+    assert data["total"] == 2
+    assert len(data["items"]) == 2
 
 
 def test_get_task(client: TestClient):

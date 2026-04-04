@@ -181,3 +181,15 @@ class ActivityLogOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PaginatedTaskResponse(BaseModel):
+    items: list[TaskOut]
+    total: int
+    page: int
+    pages: int
+
+
+class SearchResult(BaseModel):
+    projects: list[ProjectOut]
+    tasks: list[TaskOut]

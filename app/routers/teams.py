@@ -39,6 +39,18 @@ def get_teams(
     return crud.get_teams_by_user(db, current_user.id)
 
 
+@router.get("/{team_id_or_slug}/search")
+def search_in_team(
+    team_id_or_slug: str,
+    q: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    member: models.TeamMember = Depends(get_current_team_member),
+):
+    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    return crud.search_in_team(db, team.id, q)
+
+
 @router.get("/{team_id_or_slug}", response_model=schemas.TeamOut)
 def get_team(
     team_id_or_slug: str,
