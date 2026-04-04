@@ -87,3 +87,18 @@ class Comment(Base):
 
     task = relationship("Task")
     author = relationship("User")
+
+
+class ActivityLog(Base):
+    __tablename__ = "activity_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    entity_type = Column(String(50), nullable=False)
+    entity_id = Column(Integer, nullable=False)
+    action = Column(String(50), nullable=False)
+    changed_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    old_value = Column(String(1000), nullable=True)
+    new_value = Column(String(1000), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")

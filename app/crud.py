@@ -275,3 +275,32 @@ def delete_comment(db: Session, comment_id: int):
         db.delete(db_comment)
         db.commit()
     return db_comment
+
+
+def log_activity(db: Session, entity_type: str, entity_id: int, action: str, user_id: int, old_value: str = None, new_value: str = None):
+    db_activity = models.ActivityLog(
+        entity_type=entity_type,
+        entity_id=entity_id,
+        action=action,
+        changed_by=user_id,
+        old_value=old_value,
+        new_value=new_value,
+    )
+    db.add(db_activity)
+    db.commit()
+    db.refresh(db_activity)
+    return db_activity
+
+
+def get_activity_by_task(db: Session, task_id: int):
+    return db.query(models.ActivityLog).filter(
+        models.ActivityLog.entity_type == "task",
+        models.ActivityLog.entity_id == task_id
+    ).order_by(models.ActivityLog.created_at.desc()).all()
+
+
+def get_activity_by_project(db: Session, project_id: int):
+    return db.query(models.ActivityLog).filter(
+        models.ActivityLog.entity_type == "project",
+        models.ActivityLog.entity_id == project_id
+    ).order_by(models.ActivityLog.created_at.desc()).all()

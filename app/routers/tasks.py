@@ -47,7 +47,9 @@ def create_task(
     from app.dependencies import get_team_from_id_or_slug
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
-    return crud.create_task(db, task, project.id, current_user.id)
+    new_task = crud.create_task(db, task, project.id, current_user.id)
+    crud.log_activity(db, "task", new_task.id, "created", current_user.id, None, new_task.title)
+    return new_task
 
 
 @router.get("/", response_model=list[schemas.TaskOut])
@@ -93,7 +95,22 @@ def update_task(
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
-    return crud.update_task(db, task.id, task_update)
+    
+    old_values = {}
+    if task_update.title is not None and task_update.title != task.title:
+        old_values["title"] = task.title
+    if task_update.status is not None and task_update.status.value != task.status:
+        old_values["status"] = task.status
+    if task_update.priority is not None and task_update.priority.value != task.priority:
+        old_values["priority"] = task.priority
+    
+    updated_task = crud.update_task(db, task.id, task_update)
+    
+    for field, old_val in old_values.items():
+        new_val = getattr(updated_task, field)
+        crud.log_activity(db, "task", updated_task.id, f"updated_{field}", current_user.id, old_val, new_val)
+    
+    return updated_task
 
 
 @router.delete("/{task_id_or_title}", status_code=status.HTTP_204_NO_CONTENT)
@@ -136,4 +153,28 @@ def assign_task(
         if not team_member:
             raise HTTPException(status_code=400, detail="User is not a member of this team")
     
-    return crud.assign_task(db, task.id, assignment.user_id)
+    old_assignee = task.assigned_to
+    updated_task = crud.assign_task(db, task.id, assignment.user_id)
+    
+    if old_assignee != assignment.user_id:
+        old_val = str(old_assignee) if old_assignee else None
+        new_val = str(assignment.user_id) if assignment.user_id else None
+        crud.log_activity(db, "task", updated_task.id, "assigned", current_user.id, old_val, new_val)
+    
+    return updated_task
+
+
+@router.get("/{task_id_or_title}/activity", response_model=list[schemas.ActivityLogOut])
+def get_task_activity(
+    team_id_or_slug: str,
+    project_id_or_name: str,
+    task_id_or_title: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    member: models.TeamMember = Depends(get_current_team_member),
+):
+    from app.dependencies import get_team_from_id_or_slug
+    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    project = get_project_from_id_or_name(db, project_id_or_name, team.id)
+    task = get_task_from_id_or_title(db, task_id_or_title, project.id)
+    return crud.get_activity_by_task(db, task.id)

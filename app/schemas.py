@@ -167,3 +167,17 @@ class CommentOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ActivityLogOut(BaseModel):
+    id: int
+    entity_type: str
+    entity_id: int
+    action: str
+    changed_by: int
+    old_value: str | None
+    new_value: str | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

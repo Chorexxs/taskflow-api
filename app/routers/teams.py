@@ -117,4 +117,7 @@ def update_member_role(
     if member.user_id == admin.user_id and role_update.role.value == "member":
         raise HTTPException(status_code=400, detail="Cannot change own admin role")
 
-    return crud.update_member_role(db, team.id, user_id, role_update.role.value)
+    old_role = member.role
+    updated_member = crud.update_member_role(db, team.id, user_id, role_update.role.value)
+    crud.log_activity(db, "team_member", user_id, "role_changed", current_user.id, old_role, role_update.role.value)
+    return updated_member

@@ -32,7 +32,9 @@ def create_project(
 ):
     from app.dependencies import get_team_from_id_or_slug
     team = get_team_from_id_or_slug(db, team_id_or_slug)
-    return crud.create_project(db, project, team.id, current_user.id)
+    new_project = crud.create_project(db, project, team.id, current_user.id)
+    crud.log_activity(db, "project", new_project.id, "created", current_user.id, None, new_project.name)
+    return new_project
 
 
 @router.get("/", response_model=list[schemas.ProjectOut])
@@ -86,4 +88,20 @@ def archive_project(
     from app.dependencies import get_team_from_id_or_slug
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_slug(db, project_id_or_slug, team.id)
+    old_status = project.status
     crud.archive_project(db, project.id)
+    crud.log_activity(db, "project", project.id, "archived", current_user.id, old_status, "archived")
+
+
+@router.get("/{project_id_or_slug}/activity", response_model=list[schemas.ActivityLogOut])
+def get_project_activity(
+    team_id_or_slug: str,
+    project_id_or_slug: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    member: models.TeamMember = Depends(get_current_team_member),
+):
+    from app.dependencies import get_team_from_id_or_slug
+    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    project = get_project_from_id_or_slug(db, project_id_or_slug, team.id)
+    return crud.get_activity_by_project(db, project.id)
