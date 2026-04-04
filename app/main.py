@@ -1,11 +1,18 @@
 import os
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from app.database import Base
-from app.routers import auth, users, teams, projects, tasks, comments, attachments
+from app.routers import auth, users, teams, projects, tasks, comments, attachments, notifications
 
 _test_engine = None
+
+limiter = Limiter(key_func=get_remote_address)
 
 
 def set_test_engine(engine):
@@ -26,6 +33,23 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="TaskFlow API", description="API REST con FastAPI y JWT", lifespan=lifespan)
 
+app.state.limiter = limiter
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests"}
+    )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(teams.router, prefix="/teams", tags=["teams"])
@@ -33,11 +57,17 @@ app.include_router(projects.router, prefix="/teams/{team_id_or_slug}/projects", 
 app.include_router(tasks.router, prefix="/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks", tags=["tasks"])
 app.include_router(comments.router, prefix="/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/comments", tags=["comments"])
 app.include_router(attachments.router, prefix="/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/attachments", tags=["attachments"])
+app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 
 
 @app.get("/")
 def root():
     return {"message": "TaskFlow API"}
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
 
 
 if __name__ == "__main__":

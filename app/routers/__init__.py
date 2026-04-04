@@ -1,1 +1,1 @@
-from app.routers import auth, users, teams, projects, tasks, comments, attachments
+from app.routers import auth, users, teams, projects, tasks, comments, attachments, notifications

@@ -400,3 +400,45 @@ def delete_attachment(db: Session, attachment_id: int):
         db.delete(db_attachment)
         db.commit()
     return db_attachment
+
+
+def create_notification(db: Session, user_id: int, notification_type: str, entity_type: str, entity_id: int, message: str):
+    db_notification = models.Notification(
+        user_id=user_id,
+        type=notification_type,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        message=message,
+    )
+    db.add(db_notification)
+    db.commit()
+    db.refresh(db_notification)
+    return db_notification
+
+
+def get_notifications_by_user(db: Session, user_id: int, is_read: bool = None):
+    query = db.query(models.Notification).filter(models.Notification.user_id == user_id)
+    if is_read is not None:
+        query = query.filter(models.Notification.is_read == is_read)
+    return query.order_by(models.Notification.created_at.desc()).all()
+
+
+def get_notification_by_id(db: Session, notification_id: int):
+    return db.query(models.Notification).filter(models.Notification.id == notification_id).first()
+
+
+def mark_notification_read(db: Session, notification_id: int):
+    db_notification = get_notification_by_id(db, notification_id)
+    if db_notification:
+        db_notification.is_read = True
+        db.commit()
+        db.refresh(db_notification)
+    return db_notification
+
+
+def mark_all_notifications_read(db: Session, user_id: int):
+    db.query(models.Notification).filter(
+        models.Notification.user_id == user_id,
+        models.Notification.is_read == False
+    ).update({"is_read": True})
+    db.commit()

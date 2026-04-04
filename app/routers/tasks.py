@@ -174,6 +174,18 @@ def assign_task(
         old_val = str(old_assignee) if old_assignee else None
         new_val = str(assignment.user_id) if assignment.user_id else None
         crud.log_activity(db, "task", updated_task.id, "assigned", current_user.id, old_val, new_val)
+        
+        if assignment.user_id:
+            assignee = crud.get_user_by_id(db, assignment.user_id)
+            if assignee:
+                crud.create_notification(
+                    db,
+                    user_id=assignment.user_id,
+                    notification_type="assigned",
+                    entity_type="task",
+                    entity_id=updated_task.id,
+                    message=f"You have been assigned to task: {updated_task.title}"
+                )
     
     return updated_task
 

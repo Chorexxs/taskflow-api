@@ -30,7 +30,19 @@ def create_comment(
     member: models.TeamMember = Depends(get_current_team_member),
 ):
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
-    return crud.create_comment(db, comment, task.id, current_user.id)
+    new_comment = crud.create_comment(db, comment, task.id, current_user.id)
+    
+    if task.assigned_to and task.assigned_to != current_user.id:
+        crud.create_notification(
+            db,
+            user_id=task.assigned_to,
+            notification_type="commented",
+            entity_type="task",
+            entity_id=task.id,
+            message=f"New comment on task: {task.title}"
+        )
+    
+    return new_comment
 
 
 @router.get("/", response_model=list[schemas.CommentOut])
