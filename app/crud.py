@@ -179,3 +179,62 @@ def archive_project(db: Session, project_id: int):
         db.commit()
         db.refresh(db_project)
     return db_project
+
+
+def create_task(db: Session, task: schemas.TaskCreate, project_id: int, user_id: int):
+    db_task = models.Task(
+        project_id=project_id,
+        title=task.title,
+        description=task.description,
+        priority=task.priority.value,
+        due_date=task.due_date,
+        created_by=user_id,
+    )
+    db.add(db_task)
+    db.commit()
+    db.refresh(db_task)
+    return db_task
+
+
+def get_task_by_id(db: Session, task_id: int):
+    return db.query(models.Task).filter(models.Task.id == task_id).first()
+
+
+def get_tasks_by_project(db: Session, project_id: int):
+    return db.query(models.Task).filter(models.Task.project_id == project_id).all()
+
+
+def update_task(db: Session, task_id: int, task_update: schemas.TaskUpdate):
+    db_task = get_task_by_id(db, task_id)
+    if not db_task:
+        return None
+    if task_update.title is not None:
+        db_task.title = task_update.title
+    if task_update.description is not None:
+        db_task.description = task_update.description
+    if task_update.status is not None:
+        db_task.status = task_update.status.value
+    if task_update.priority is not None:
+        db_task.priority = task_update.priority.value
+    if task_update.due_date is not None:
+        db_task.due_date = task_update.due_date
+    db.commit()
+    db.refresh(db_task)
+    return db_task
+
+
+def assign_task(db: Session, task_id: int, user_id: int | None):
+    db_task = get_task_by_id(db, task_id)
+    if db_task:
+        db_task.assigned_to = user_id
+        db.commit()
+        db.refresh(db_task)
+    return db_task
+
+
+def delete_task(db: Session, task_id: int):
+    db_task = get_task_by_id(db, task_id)
+    if db_task:
+        db.delete(db_task)
+        db.commit()
+    return db_task

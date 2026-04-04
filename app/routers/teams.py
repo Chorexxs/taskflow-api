@@ -46,7 +46,7 @@ def get_team(
     current_user: models.User = Depends(get_current_user),
 ):
     team = get_team_from_id_or_slug(db, team_id_or_slug)
-    get_current_team_member(team.id, db, current_user)
+    get_current_team_member(team_id_or_slug, db, current_user)
     return team
 
 
@@ -78,7 +78,7 @@ def list_members(
     current_user: models.User = Depends(get_current_user),
 ):
     team = get_team_from_id_or_slug(db, team_id_or_slug)
-    get_current_team_member(team.id, db, current_user)
+    get_current_team_member(team_id_or_slug, db, current_user)
     return crud.get_team_members(db, team.id)
 
 
