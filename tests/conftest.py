@@ -1,3 +1,6 @@
+import os
+os.environ["TESTING"] = "1"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -21,9 +24,11 @@ TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_eng
 def setup_database():
     Base.metadata.create_all(bind=test_engine)
     main.set_test_engine(test_engine)
+    main.app.state.limiter.enabled = False
     yield
     Base.metadata.drop_all(bind=test_engine)
     main.set_test_engine(None)
+    main.app.state.limiter.enabled = True
 
 
 @pytest.fixture(scope="function")

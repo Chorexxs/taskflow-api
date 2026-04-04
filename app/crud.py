@@ -2,7 +2,15 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app import models, schemas
-from app.auth import get_password_hash, verify_password
+from app.auth import get_password_hash, verify_password, get_current_user
+from app.database import get_db
+from fastapi import Depends
+
+
+def get_current_user_from_token(
+    current_user: models.User = Depends(get_current_user),
+) -> models.User:
+    return current_user
 
 
 def get_user_by_email(db: Session, email: str):

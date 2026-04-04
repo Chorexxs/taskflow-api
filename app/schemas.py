@@ -1,6 +1,13 @@
+import re
 from enum import Enum
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime
+
+CONTROL_CHARS_PATTERN = re.compile(r'[\x00-\x1f\x7f-\x9f]')
+
+
+def sanitize_text(text: str) -> str:
+    return CONTROL_CHARS_PATTERN.sub('', text).strip()
 
 
 class TeamRole(str, Enum):
@@ -27,6 +34,7 @@ class UserOut(UserBase):
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: str | None = None
     token_type: str
 
 
@@ -38,6 +46,13 @@ class TeamCreate(BaseModel):
     name: str
     slug: str
     description: str | None = None
+
+    @field_validator('name', 'slug', 'description', mode='before')
+    @classmethod
+    def sanitize_input(cls, v):
+        if isinstance(v, str):
+            return sanitize_text(v)
+        return v
 
 
 class TeamOut(BaseModel):
@@ -81,11 +96,25 @@ class ProjectCreate(BaseModel):
     name: str
     description: str | None = None
 
+    @field_validator('name', 'description', mode='before')
+    @classmethod
+    def sanitize_input(cls, v):
+        if isinstance(v, str):
+            return sanitize_text(v)
+        return v
+
 
 class ProjectUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     status: ProjectStatus | None = None
+
+    @field_validator('name', 'description', mode='before')
+    @classmethod
+    def sanitize_input(cls, v):
+        if isinstance(v, str):
+            return sanitize_text(v)
+        return v
 
 
 class ProjectOut(BaseModel):
@@ -119,6 +148,13 @@ class TaskCreate(BaseModel):
     priority: TaskPriority = TaskPriority.medium
     due_date: datetime | None = None
 
+    @field_validator('title', 'description', mode='before')
+    @classmethod
+    def sanitize_input(cls, v):
+        if isinstance(v, str):
+            return sanitize_text(v)
+        return v
+
 
 class TaskUpdate(BaseModel):
     title: str | None = None
@@ -126,6 +162,13 @@ class TaskUpdate(BaseModel):
     status: TaskStatus | None = None
     priority: TaskPriority | None = None
     due_date: datetime | None = None
+
+    @field_validator('title', 'description', mode='before')
+    @classmethod
+    def sanitize_input(cls, v):
+        if isinstance(v, str):
+            return sanitize_text(v)
+        return v
 
 
 class TaskAssign(BaseModel):
@@ -152,9 +195,23 @@ class TaskOut(BaseModel):
 class CommentCreate(BaseModel):
     content: str
 
+    @field_validator('content', mode='before')
+    @classmethod
+    def sanitize_input(cls, v):
+        if isinstance(v, str):
+            return sanitize_text(v)
+        return v
+
 
 class CommentUpdate(BaseModel):
     content: str
+
+    @field_validator('content', mode='before')
+    @classmethod
+    def sanitize_input(cls, v):
+        if isinstance(v, str):
+            return sanitize_text(v)
+        return v
 
 
 class CommentOut(BaseModel):
