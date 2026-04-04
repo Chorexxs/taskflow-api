@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.database import Base
-from app.routers import auth, users, teams
+from app.routers import auth, users, teams, projects
 
 _test_engine = None
 
@@ -29,6 +29,7 @@ app = FastAPI(title="TaskFlow API", description="API REST con FastAPI y JWT", li
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(teams.router, prefix="/teams", tags=["teams"])
+app.include_router(projects.router, prefix="/teams/{team_id_or_slug}/projects", tags=["projects"])
 
 
 @app.get("/")

@@ -38,3 +38,18 @@ class TeamMember(Base):
 
     team = relationship("Team", back_populates="members")
     user = relationship("User")
+
+
+class Project(Base):
+    __tablename__ = "projects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(255), nullable=False)
+    description = Column(String(500), nullable=True)
+    status = Column(String(20), default="active")
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    team = relationship("Team")
+    creator = relationship("User")

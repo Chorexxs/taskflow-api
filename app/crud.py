@@ -131,3 +131,51 @@ def update_member_role(db: Session, team_id: int, user_id: int, role: str):
         db.commit()
         db.refresh(member)
     return member
+
+
+def create_project(db: Session, project: schemas.ProjectCreate, team_id: int, user_id: int):
+    db_project = models.Project(
+        team_id=team_id,
+        name=project.name,
+        description=project.description,
+        created_by=user_id,
+    )
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    return db_project
+
+
+def get_project_by_id(db: Session, project_id: int):
+    return db.query(models.Project).filter(models.Project.id == project_id).first()
+
+
+def get_projects_by_team(db: Session, team_id: int, include_archived: bool = False):
+    query = db.query(models.Project).filter(models.Project.team_id == team_id)
+    if not include_archived:
+        query = query.filter(models.Project.status == "active")
+    return query.all()
+
+
+def update_project(db: Session, project_id: int, project_update: schemas.ProjectUpdate):
+    db_project = get_project_by_id(db, project_id)
+    if not db_project:
+        return None
+    if project_update.name is not None:
+        db_project.name = project_update.name
+    if project_update.description is not None:
+        db_project.description = project_update.description
+    if project_update.status is not None:
+        db_project.status = project_update.status.value
+    db.commit()
+    db.refresh(db_project)
+    return db_project
+
+
+def archive_project(db: Session, project_id: int):
+    db_project = get_project_by_id(db, project_id)
+    if db_project:
+        db_project.status = "archived"
+        db.commit()
+        db.refresh(db_project)
+    return db_project

@@ -70,3 +70,32 @@ class TeamMemberUpdate(BaseModel):
 class TeamMemberAdd(BaseModel):
     email: EmailStr
     role: TeamRole = TeamRole.member
+
+
+class ProjectStatus(str, Enum):
+    active = "active"
+    archived = "archived"
+
+
+class ProjectCreate(BaseModel):
+    name: str
+    description: str | None = None
+
+
+class ProjectUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    status: ProjectStatus | None = None
+
+
+class ProjectOut(BaseModel):
+    id: int
+    team_id: int
+    name: str
+    description: str | None
+    status: ProjectStatus
+    created_by: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
