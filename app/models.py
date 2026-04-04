@@ -89,6 +89,22 @@ class Comment(Base):
     author = relationship("User")
 
 
+class Attachment(Base):
+    __tablename__ = "attachments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
+    uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    filename = Column(String(255), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    file_size = Column(Integer, nullable=False)
+    mime_type = Column(String(100), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    task = relationship("Task")
+    uploader = relationship("User")
+
+
 class ActivityLog(Base):
     __tablename__ = "activity_logs"
 

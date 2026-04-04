@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.database import Base
-from app.routers import auth, users, teams, projects, tasks, comments
+from app.routers import auth, users, teams, projects, tasks, comments, attachments
 
 _test_engine = None
 
@@ -32,6 +32,7 @@ app.include_router(teams.router, prefix="/teams", tags=["teams"])
 app.include_router(projects.router, prefix="/teams/{team_id_or_slug}/projects", tags=["projects"])
 app.include_router(tasks.router, prefix="/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks", tags=["tasks"])
 app.include_router(comments.router, prefix="/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/comments", tags=["comments"])
+app.include_router(attachments.router, prefix="/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/attachments", tags=["attachments"])
 
 
 @app.get("/")

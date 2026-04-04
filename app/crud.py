@@ -369,3 +369,34 @@ def search_in_team(db: Session, team_id: int, query: str):
         ).all()
     
     return {"projects": projects, "tasks": tasks}
+
+
+def create_attachment(db: Session, task_id: int, user_id: int, filename: str, file_path: str, file_size: int, mime_type: str):
+    db_attachment = models.Attachment(
+        task_id=task_id,
+        uploaded_by=user_id,
+        filename=filename,
+        file_path=file_path,
+        file_size=file_size,
+        mime_type=mime_type,
+    )
+    db.add(db_attachment)
+    db.commit()
+    db.refresh(db_attachment)
+    return db_attachment
+
+
+def get_attachment_by_id(db: Session, attachment_id: int):
+    return db.query(models.Attachment).filter(models.Attachment.id == attachment_id).first()
+
+
+def get_attachments_by_task(db: Session, task_id: int):
+    return db.query(models.Attachment).filter(models.Attachment.task_id == task_id).all()
+
+
+def delete_attachment(db: Session, attachment_id: int):
+    db_attachment = get_attachment_by_id(db, attachment_id)
+    if db_attachment:
+        db.delete(db_attachment)
+        db.commit()
+    return db_attachment

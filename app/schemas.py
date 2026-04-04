@@ -193,3 +193,17 @@ class PaginatedTaskResponse(BaseModel):
 class SearchResult(BaseModel):
     projects: list[ProjectOut]
     tasks: list[TaskOut]
+
+
+class AttachmentOut(BaseModel):
+    id: int
+    task_id: int
+    uploaded_by: int
+    filename: str
+    file_path: str
+    file_size: int
+    mime_type: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
