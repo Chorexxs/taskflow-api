@@ -150,7 +150,13 @@ export const api = {
         'Authorization': `Bearer ${token}` 
       },
       body: JSON.stringify(data),
-    }).then(r => r.json()),
+    }).then(async (r) => {
+      if (!r.ok) {
+        const error = await r.json()
+        throw new Error(error.detail || 'Failed to create task')
+      }
+      return r.json()
+    }),
     
     update: (token, teamId, projectId, taskId, data) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}`, {
       method: 'PATCH',

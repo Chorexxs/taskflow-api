@@ -45,14 +45,22 @@ export default function ProjectBoard() {
   })
 
   const createTaskMutation = useMutation({
-    mutationFn: (data) => api.tasks.create(token, teamId, projectId, data),
+    mutationFn: async (data) => {
+      const response = await api.tasks.create(token, teamId, projectId, data)
+      if (response.detail) {
+        throw new Error(response.detail)
+      }
+      return response
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['tasks', teamId, projectId])
       setShowCreateTask(false)
       setNewTask({ title: '', description: '', priority: 'medium', assigned_to: null, due_date: null })
       toast.success('Task created!')
     },
-    onError: () => toast.error('Failed to create task'),
+    onError: (error) => {
+      toast.error(error.message || 'Failed to create task')
+    },
   })
 
   const updateTaskMutation = useMutation({
