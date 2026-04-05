@@ -32,14 +32,16 @@ export default function ProjectBoard() {
     assigned_to: searchParams.get('assigned_to') || '',
   }
 
-  const { data: tasks, isLoading } = useQuery({
+  const { data: tasks, isLoading, error: tasksError } = useQuery({
     queryKey: ['tasks', teamId, projectId, filters],
     queryFn: () => api.tasks.list(token, teamId, projectId, filters),
+    retry: false,
   })
 
   const { data: teamMembers } = useQuery({
     queryKey: ['team-members', teamId],
     queryFn: () => api.teams.get(token, teamId).then(t => t.members || []),
+    retry: false,
   })
 
   const createTaskMutation = useMutation({
@@ -69,7 +71,8 @@ export default function ProjectBoard() {
     const taskId = active.id
     const newStatus = over.id
 
-    const task = tasks?.find(t => t.id === taskId || t.title === taskId)
+    const taskList = tasks?.items || []
+    const task = taskList.find(t => t.id === taskId || t.title === taskId)
     if (task && task.status !== newStatus) {
       updateTaskMutation.mutate({ taskId: task.id, data: { status: newStatus } })
     }
@@ -95,7 +98,9 @@ export default function ProjectBoard() {
   }
 
   const getTasksByStatus = (status) => {
-    let filtered = tasks?.filter(t => t.status === status) || []
+    const taskList = tasks?.items || []
+    if (!Array.isArray(taskList)) return []
+    let filtered = taskList.filter(t => t.status === status)
     if (search) {
       const s = search.toLowerCase()
       filtered = filtered.filter(t => 
@@ -111,10 +116,14 @@ export default function ProjectBoard() {
       <header className="bg-white dark:bg-gray-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
-            <button onClick={() => navigate(`/teams/${teamId}`)} className="text-gray-500 hover:text-gray-700">
+            <button onClick={() => navigate(`/teams/${teamId}`)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Project Board</h1>
+            
+            {tasksError && (
+              <span className="text-red-500 text-sm">Error loading tasks</span>
+            )}
             
             <div className="flex-1 max-w-md mx-4">
               <div className="relative">
@@ -131,7 +140,7 @@ export default function ProjectBoard() {
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`p-2 rounded-md ${showFilters ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
+              className={`p-2 rounded-md ${showFilters ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'}`}
             >
               <Filter className="w-5 h-5" />
             </button>
