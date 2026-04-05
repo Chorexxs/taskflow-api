@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
 import { Plus, Users, FolderKanban, LogOut, Moon, Sun } from 'lucide-react'
@@ -9,27 +10,11 @@ import NotificationsBell from '../components/NotificationsBell'
 
 export default function Dashboard() {
   const { user, logout } = useAuth()
+  const { darkMode, toggleDarkMode } = useTheme()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark' || 
-        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)
-    }
-    return false
-  })
   const [showCreateTeam, setShowCreateTeam] = useState(false)
   const [newTeam, setNewTeam] = useState({ name: '', slug: '', description: '' })
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark')
-      localStorage.setItem('theme', 'dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-      localStorage.setItem('theme', 'light')
-    }
-  }, [darkMode])
 
   const { data: teams, isLoading } = useQuery({
     queryKey: ['teams'],
@@ -70,7 +55,7 @@ export default function Dashboard() {
               <NotificationsBell />
               
               <button
-                onClick={() => setDarkMode(!darkMode)}
+                onClick={toggleDarkMode}
                 className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               >
                 {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}

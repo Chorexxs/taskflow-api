@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -29,42 +30,44 @@ function ProtectedRoute({ children }) {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/teams/:teamId" element={
-        <ProtectedRoute>
-          <TeamDetail />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/teams/:teamId/projects/:projectId" element={
-        <ProtectedRoute>
-          <ProjectBoard />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/teams/:teamId/projects/:projectId/tasks/:taskId" element={
-        <ProtectedRoute>
-          <TaskDetail />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/profile" element={
-        <ProtectedRoute>
-          <Profile />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <ThemeProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        
+        <Route path="/" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/teams/:teamId" element={
+          <ProtectedRoute>
+            <TeamDetail />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/teams/:teamId/projects/:projectId" element={
+          <ProtectedRoute>
+            <ProjectBoard />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/teams/:teamId/projects/:projectId/tasks/:taskId" element={
+          <ProtectedRoute>
+            <TaskDetail />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </ThemeProvider>
   )
 }
 
