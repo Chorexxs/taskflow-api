@@ -42,9 +42,9 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
           TESTING: 1
         run: |
-          pytest -v --cov=app --cov-report=xml
+          pytest -v --cov=app --cov-report=xml --cov-report=term
           
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml

@@ -8,6 +8,8 @@ python-jose[cryptography]
 bcrypt
 python-dotenv
 pytest
+pytest-cov
+coverage
 httpx
 pytest-asyncio
 python-multipart
