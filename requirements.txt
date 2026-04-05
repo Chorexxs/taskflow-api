@@ -11,6 +11,7 @@ pytest
 pytest-cov
 coverage
 httpx
+alembic
 pytest-asyncio
 python-multipart
 email-validator
