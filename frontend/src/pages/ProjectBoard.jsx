@@ -50,6 +50,18 @@ export default function ProjectBoard() {
     done: []
   })
 
+  const filters = {
+    status: searchParams.get('status') || '',
+    priority: searchParams.get('priority') || '',
+    assigned_to: searchParams.get('assigned_to') || '',
+  }
+
+  const { data: tasks, isLoading, error: tasksError } = useQuery({
+    queryKey: ['tasks', teamId, projectId, filters],
+    queryFn: () => api.tasks.list(token, teamId, projectId, filters),
+    retry: false,
+  })
+
   useEffect(() => {
     if (tasks?.items) {
       const newColumns = {
@@ -68,18 +80,6 @@ export default function ProjectBoard() {
       },
     })
   )
-
-  const filters = {
-    status: searchParams.get('status') || '',
-    priority: searchParams.get('priority') || '',
-    assigned_to: searchParams.get('assigned_to') || '',
-  }
-
-  const { data: tasks, isLoading, error: tasksError } = useQuery({
-    queryKey: ['tasks', teamId, projectId, filters],
-    queryFn: () => api.tasks.list(token, teamId, projectId, filters),
-    retry: false,
-  })
 
   const { data: teamMembers } = useQuery({
     queryKey: ['team-members', teamId],
