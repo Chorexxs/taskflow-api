@@ -3,6 +3,7 @@ import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { DndContext, closestCorners, DragOverlay, useDroppable, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
@@ -44,6 +45,22 @@ export default function ProjectBoard() {
   const [showFilters, setShowFilters] = useState(false)
   const [search, setSearch] = useState('')
   const [activeTask, setActiveTask] = useState(null)
+  const [taskColumns, setTaskColumns] = useState({
+    todo: [],
+    in_progress: [],
+    done: []
+  })
+
+  useEffect(() => {
+    if (tasks?.items) {
+      const newColumns = {
+        todo: tasks.items.filter(t => t.status === 'todo'),
+        in_progress: tasks.items.filter(t => t.status === 'in_progress'),
+        done: tasks.items.filter(t => t.status === 'done')
+      }
+      setTaskColumns(newColumns)
+    }
+  }, [tasks])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -79,7 +96,11 @@ export default function ProjectBoard() {
       }
       return response
     },
-    onSuccess: () => {
+    onSuccess: (newTask) => {
+      setTaskColumns(prev => ({
+        ...prev,
+        todo: [...prev.todo, newTask]
+      }))
       queryClient.invalidateQueries(['tasks', teamId, projectId])
       setShowCreateTask(false)
       setNewTask({ title: '', description: '', priority: 'medium', assigned_to: null, due_date: null })
@@ -103,7 +124,7 @@ export default function ProjectBoard() {
 
   const handleDragStart = (event) => {
     const { active } = event
-    const taskList = tasks?.items || []
+    const taskList = [...taskColumns.todo, ...taskColumns.in_progress, ...taskColumns.done]
     const task = taskList.find(t => String(t.id) === String(active.id))
     if (task) {
       setActiveTask(task)
@@ -121,7 +142,7 @@ export default function ProjectBoard() {
     if (COLUMNS.some(col => col.id === over.id)) {
       newStatus = over.id
     } else {
-      const taskList = tasks?.items || []
+      const taskList = [...taskColumns.todo, ...taskColumns.in_progress, ...taskColumns.done]
       const overTask = taskList.find(t => String(t.id) === String(over.id))
       
       if (overTask) {
@@ -133,12 +154,27 @@ export default function ProjectBoard() {
 
     if (!newStatus) return
 
-    const taskList = tasks?.items || []
-    const task = taskList.find(t => String(t.id) === String(taskId))
+    const task = taskColumns.todo.find(t => String(t.id) === String(taskId))
+      || taskColumns.in_progress.find(t => String(t.id) === String(taskId))
+      || taskColumns.done.find(t => String(t.id) === String(taskId))
     
     if (!task) return
     
     if (task.status !== newStatus) {
+      setTaskColumns(prev => {
+        const newColumns = { ...prev }
+        const oldStatus = task.status
+        
+        const taskIndex = newColumns[oldStatus].findIndex(t => String(t.id) === String(taskId))
+        if (taskIndex > -1) {
+          const [movedTask] = newColumns[oldStatus].splice(taskIndex, 1)
+          movedTask.status = newStatus
+          newColumns[newStatus] = [...newColumns[newStatus], movedTask]
+        }
+        
+        return newColumns
+      })
+      
       updateTaskMutation.mutate({ taskId: task.id, data: { status: newStatus } })
     }
     
@@ -165,9 +201,9 @@ export default function ProjectBoard() {
   }
 
   const getTasksByStatus = (status) => {
-    const taskList = tasks?.items || []
+    const taskList = taskColumns[status] || []
     if (!Array.isArray(taskList)) return []
-    let filtered = taskList.filter(t => t.status === status)
+    let filtered = taskList
     if (search) {
       const s = search.toLowerCase()
       filtered = filtered.filter(t => 
@@ -177,6 +213,8 @@ export default function ProjectBoard() {
     }
     return filtered
   }
+
+  const getColumnTaskCount = (status) => getTasksByStatus(status).length
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -296,9 +334,20 @@ export default function ProjectBoard() {
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="space-y-3">
-                      {getTasksByStatus(column.id).map(task => (
-                        <TaskCard key={task.id} task={task} />
-                      ))}
+                      <AnimatePresence>
+                        {getTasksByStatus(column.id).map(task => (
+                          <motion.div
+                            key={task.id}
+                            layout
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <TaskCard task={task} />
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
                       {getTasksByStatus(column.id).length === 0 && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                           No tasks
