@@ -70,7 +70,6 @@ export default function ProjectBoard() {
       toast.success('Task updated!')
     },
     onError: (error) => {
-      console.error('Error al actualizar tarea:', error)
       toast.error('Failed to update task')
     },
   })
@@ -78,47 +77,33 @@ export default function ProjectBoard() {
   const handleDragEnd = (event) => {
     const { active, over } = event
     
-    if (!over) {
-      console.log('No hay destino (over es null)')
-      return
-    }
+    if (!over) return
 
     const taskId = active.id
-    console.log('Arrastrando:', taskId, 'Sobre:', over.id)
-    
     let newStatus
 
     if (COLUMNS.some(col => col.id === over.id)) {
       newStatus = over.id
-      console.log('Soltar sobre columna:', newStatus)
-    } else {
+    }
+    else if (over.dataset.colId && COLUMNS.some(col => col.id === over.dataset.colId)) {
+      newStatus = over.dataset.colId
+    }
+    else {
       const taskList = tasks?.items || []
       const overTask = taskList.find(t => String(t.id) === String(over.id))
       
-      if (!overTask) {
-        console.log('No se encontró la tarea destino')
-        return
-      }
+      if (!overTask) return
       
       newStatus = overTask.status
-      console.log('Soltar sobre tarea con estado:', newStatus)
     }
 
     const taskList = tasks?.items || []
     const task = taskList.find(t => String(t.id) === String(taskId))
     
-    if (!task) {
-      console.log('No se encontró la tarea origen')
-      return
-    }
-    
-    console.log('Estado actual:', task.status, 'Nuevo estado:', newStatus)
+    if (!task) return
     
     if (task.status !== newStatus) {
-      console.log('Ejecutando mutación de actualización')
       updateTaskMutation.mutate({ taskId: task.id, data: { status: newStatus } })
-    } else {
-      console.log('El estado ya es igual, no se actualiza')
     }
   }
 
@@ -258,7 +243,7 @@ export default function ProjectBoard() {
           <DndContext collisionDetectionAlgorithm={closestCorners} onDragEnd={handleDragEnd}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {COLUMNS.map(column => (
-                <div key={column.id} className={`rounded-lg p-4 ${column.color}`}>
+                <div key={column.id} id={column.id} data-col-id={column.id} className={`rounded-lg p-4 ${column.color}`}>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     {column.title}
                     <span className="text-sm text-gray-500 dark:text-gray-400">
