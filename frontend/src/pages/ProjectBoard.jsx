@@ -84,7 +84,7 @@ export default function ProjectBoard() {
   const updateTaskMutation = useMutation({
     mutationFn: ({ taskId, data }) => api.tasks.update(token, teamId, projectId, taskId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['tasks', teamId, projectId])
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
       toast.success('Task updated!')
     },
     onError: (error) => {
@@ -102,18 +102,18 @@ export default function ProjectBoard() {
 
     if (COLUMNS.some(col => col.id === over.id)) {
       newStatus = over.id
-    }
-    else if (over.dataset.colId && COLUMNS.some(col => col.id === over.dataset.colId)) {
-      newStatus = over.dataset.colId
-    }
-    else {
+    } else {
       const taskList = tasks?.items || []
       const overTask = taskList.find(t => String(t.id) === String(over.id))
       
-      if (!overTask) return
-      
-      newStatus = overTask.status
+      if (overTask) {
+        newStatus = overTask.status
+      } else {
+        newStatus = over?.dataset?.colId || null
+      }
     }
+
+    if (!newStatus) return
 
     const taskList = tasks?.items || []
     const task = taskList.find(t => String(t.id) === String(taskId))
