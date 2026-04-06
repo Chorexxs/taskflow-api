@@ -77,10 +77,19 @@ export default function ProjectBoard() {
     if (!over) return
 
     const taskId = active.id
-    const newStatus = over.id
+    let newStatus
+
+    if (COLUMNS.some(col => col.id === over.id)) {
+      newStatus = over.id
+    } else {
+      const taskList = tasks?.items || []
+      const overTask = taskList.find(t => t.id === over.id)
+      if (!overTask) return
+      newStatus = overTask.status
+    }
 
     const taskList = tasks?.items || []
-    const task = taskList.find(t => t.id === taskId || t.title === taskId)
+    const task = taskList.find(t => t.id === taskId)
     if (task && task.status !== newStatus) {
       updateTaskMutation.mutate({ taskId: task.id, data: { status: newStatus } })
     }
