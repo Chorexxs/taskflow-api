@@ -2,18 +2,20 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Calendar, User, AlertCircle } from 'lucide-react'
 
-export default function TaskCard({ task, onClick }) {
+export default function TaskCard({ task, onClick, isOverlay }) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
+    isDragging,
   } = useSortable({ id: task.id })
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+    transform: CSS.Translate.toString(transform),
+    transition: transition || 'transform 200ms ease',
+    opacity: isDragging ? 0.3 : 1,
   }
 
   const priorityColors = {

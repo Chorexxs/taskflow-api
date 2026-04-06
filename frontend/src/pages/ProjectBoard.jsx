@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { DndContext, closestCorners, DragOverlay, useDroppable } from '@dnd-kit/core'
+import { DndContext, closestCorners, DragOverlay, useDroppable, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
@@ -43,6 +43,15 @@ export default function ProjectBoard() {
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium', assigned_to: null, due_date: null })
   const [showFilters, setShowFilters] = useState(false)
   const [search, setSearch] = useState('')
+  const [activeTask, setActiveTask] = useState(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  )
 
   const filters = {
     status: searchParams.get('status') || '',
@@ -92,6 +101,15 @@ export default function ProjectBoard() {
     },
   })
 
+  const handleDragStart = (event) => {
+    const { active } = event
+    const taskList = tasks?.items || []
+    const task = taskList.find(t => String(t.id) === String(active.id))
+    if (task) {
+      setActiveTask(task)
+    }
+  }
+
   const handleDragEnd = (event) => {
     const { active, over } = event
     
@@ -123,6 +141,8 @@ export default function ProjectBoard() {
     if (task.status !== newStatus) {
       updateTaskMutation.mutate({ taskId: task.id, data: { status: newStatus } })
     }
+    
+    setActiveTask(null)
   }
 
   const handleCreateTask = (e) => {
@@ -258,7 +278,12 @@ export default function ProjectBoard() {
             ))}
           </div>
         ) : (
-          <DndContext collisionDetectionAlgorithm={closestCorners} onDragEnd={handleDragEnd}>
+          <DndContext 
+            sensors={sensors}
+            collisionDetectionAlgorithm={closestCorners} 
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {COLUMNS.map(column => (
                 <DroppableColumn 
@@ -284,6 +309,9 @@ export default function ProjectBoard() {
                 </DroppableColumn>
               ))}
             </div>
+            <DragOverlay>
+              {activeTask ? <TaskCard task={activeTask} isOverlay /> : null}
+            </DragOverlay>
           </DndContext>
         )}
       </main>
