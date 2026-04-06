@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Send, Clock, MessageSquare, Paperclip, User } from 'lucide-react'
+import { ArrowLeft, Send, Clock, MessageSquare, User, Calendar } from 'lucide-react'
 
 export default function TaskDetail() {
   const { teamId, projectId, taskId } = useParams()
@@ -42,40 +41,45 @@ export default function TaskDetail() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="w-8 h-8 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
   }
 
-  const priorityColors = {
-    high: 'text-red-600 bg-red-100 dark:bg-red-900',
-    medium: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900',
-    low: 'text-gray-600 bg-gray-100 dark:bg-gray-700',
+  const priorityClasses = {
+    high: 'badge badge-high',
+    medium: 'badge badge-medium',
+    low: 'badge badge-low',
   }
 
+  const isOverdue = task?.due_date && new Date(task.due_date) < new Date()
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--color-bg-primary)]">
+      <header className="border-b border-subtle bg-[var(--color-bg-secondary)]/50 backdrop-blur-sm sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
-            <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-gray-700">
+            <button 
+              onClick={() => navigate(-1)} 
+              className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
+            >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Task Details</h1>
+            <h1 className="text-lg font-medium text-[var(--color-text-primary)]">Task Details</h1>
           </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="card p-6 md:p-8">
           <div className="flex items-start justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{task?.title}</h2>
-              <div className="flex items-center gap-3">
-                <span className={`px-3 py-1 text-sm rounded ${priorityColors[task?.priority]}`}>
+            <div className="flex-1">
+              <h2 className="text-2xl font-medium text-[var(--color-text-primary)] mb-4">{task?.title}</h2>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className={priorityClasses[task?.priority]}>
                   {task?.priority}
                 </span>
-                <span className="px-3 py-1 text-sm rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                <span className="badge badge-accent">
                   {task?.status}
                 </span>
               </div>
@@ -83,62 +87,69 @@ export default function TaskDetail() {
           </div>
 
           {task?.description && (
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Description</h3>
-              <p className="text-gray-900 dark:text-white">{task.description}</p>
+            <div className="mb-8">
+              <h3 className="text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-3">Description</h3>
+              <p className="text-[var(--color-text-primary)] leading-relaxed whitespace-pre-wrap">{task.description}</p>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 p-4 bg-[var(--color-bg-tertiary)] rounded-xl">
             <div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Assigned to</h3>
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-900 dark:text-white">
+              <h3 className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Assigned to</h3>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-[var(--color-accent-muted)] flex items-center justify-center">
+                  <User className="w-4 h-4 text-[var(--color-accent)]" />
+                </div>
+                <span className="text-[var(--color-text-primary)]">
                   {task?.assignee?.email || 'Unassigned'}
                 </span>
               </div>
             </div>
             {task?.due_date && (
               <div>
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Due date</h3>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-900 dark:text-white">
-                    {new Date(task.due_date).toLocaleDateString()}
+                <h3 className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Due date</h3>
+                <div className="flex items-center gap-3">
+                  <Calendar className={`w-4 h-4 ${isOverdue ? 'text-[var(--color-priority-high)]' : 'text-[var(--color-text-muted)]'}`} />
+                  <span className={`${isOverdue ? 'text-[var(--color-priority-high)]' : 'text-[var(--color-text-primary)]'}`}>
+                    {new Date(task.due_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
+          <div className="border-t border-subtle pt-6">
+            <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-5 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
               Comments ({comments?.length || 0})
             </h3>
 
             <div className="space-y-4 mb-6">
               {comments?.map(comment => (
-                <div key={comment.id} className="flex gap-3">
-                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-sm font-medium text-blue-600 dark:text-blue-300 flex-shrink-0">
-                    {comment.author_id?.[0]?.toUpperCase()}
+                <div key={comment.id} className="flex gap-4 p-4 bg-[var(--color-bg-tertiary)] rounded-xl">
+                  <div className="w-9 h-9 rounded-full bg-[var(--color-accent-muted)] flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-[var(--color-accent)]">
+                      {comment.author_id?.[0]?.toUpperCase() || '?'}
+                    </span>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
                         User {comment.author_id}
                       </span>
-                      <span className="text-xs text-gray-500">
-                        {new Date(comment.created_at).toLocaleDateString()}
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        {new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300 mt-1">{comment.content}</p>
+                    <p className="text-[var(--color-text-secondary)] leading-relaxed">{comment.content}</p>
                   </div>
                 </div>
               ))}
               {(!comments || comments.length === 0) && (
-                <p className="text-gray-500 dark:text-gray-400">No comments yet</p>
+                <div className="text-center py-8">
+                  <MessageSquare className="w-8 h-8 text-[var(--color-text-muted)] mx-auto mb-2" />
+                  <p className="text-sm text-[var(--color-text-muted)]">No comments yet</p>
+                </div>
               )}
             </div>
 
@@ -148,12 +159,12 @@ export default function TaskDetail() {
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Add a comment..."
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                className="input-field flex-1"
               />
               <button
                 type="submit"
                 disabled={addCommentMutation.isPending || !newComment.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                className="btn-primary px-4"
               >
                 <Send className="w-4 h-4" />
               </button>

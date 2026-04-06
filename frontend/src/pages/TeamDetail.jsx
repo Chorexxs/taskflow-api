@@ -4,11 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Plus, Users, Crown, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, Users, Crown, X, FolderOpen, ChevronRight } from 'lucide-react'
 
 export default function TeamDetail() {
   const { teamId } = useParams()
-  const { getAuthHeader } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showInvite, setShowInvite] = useState(false)
@@ -31,9 +30,7 @@ export default function TeamDetail() {
 
   const { data: members } = useQuery({
     queryKey: ['team-members', teamId],
-    queryFn: () => {
-      return []
-    },
+    queryFn: () => api.teams.get(token, teamId).then(t => t.members || []),
   })
 
   const inviteMutation = useMutation({
@@ -71,20 +68,30 @@ export default function TeamDetail() {
   if (teamLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="w-8 h-8 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow-sm">
+    <div className="min-h-screen bg-[var(--color-bg-primary)]">
+      <header className="border-b border-subtle bg-[var(--color-bg-secondary)]/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
-            <button onClick={() => navigate('/')} className="text-gray-500 hover:text-gray-700">
+            <button 
+              onClick={() => navigate('/')} 
+              className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
+            >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">{team?.name}</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[var(--color-accent)] flex items-center justify-center">
+                <span className="text-sm font-bold text-[var(--color-bg-primary)]">
+                  {team?.name?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <h1 className="text-xl font-medium text-[var(--color-text-primary)]">{team?.name}</h1>
+            </div>
           </div>
         </div>
       </header>
@@ -93,10 +100,13 @@ export default function TeamDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Projects</h2>
+              <div>
+                <h2 className="text-xl font-medium text-[var(--color-text-primary)] mb-1">Projects</h2>
+                <p className="text-sm text-[var(--color-text-muted)]">{projects?.length || 0} projects</p>
+              </div>
               <button
                 onClick={() => setShowCreateProject(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="btn-primary flex items-center gap-2 text-sm"
               >
                 <Plus className="w-4 h-4" />
                 New Project
@@ -106,32 +116,44 @@ export default function TeamDetail() {
             {projectsLoading ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {[1, 2].map(i => (
-                  <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                  <div key={i} className="h-32 rounded-xl bg-[var(--color-bg-secondary)] skeleton"></div>
                 ))}
               </div>
             ) : projects?.length === 0 ? (
-              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
-                <p className="text-gray-500 dark:text-gray-400">No projects yet. Create one to get started!</p>
+              <div className="flex flex-col items-center justify-center py-16 text-center card p-8">
+                <div className="w-14 h-14 rounded-2xl bg-[var(--color-bg-tertiary)] flex items-center justify-center mb-4">
+                  <FolderOpen className="w-7 h-7 text-[var(--color-text-muted)]" />
+                </div>
+                <h3 className="text-base font-medium text-[var(--color-text-primary)] mb-2">No projects yet</h3>
+                <p className="text-sm text-[var(--color-text-muted)] mb-6">Create your first project to start organizing tasks.</p>
+                <button
+                  onClick={() => setShowCreateProject(true)}
+                  className="btn-primary text-sm"
+                >
+                  Create Project
+                </button>
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
-                {projects?.map(project => (
+                {projects?.map((project, index) => (
                   <Link
                     key={project.id}
                     to={`/teams/${teamId}/projects/${project.id}`}
-                    className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow"
+                    className={`card p-5 group fade-in stagger-${index + 1}`}
                   >
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-emerald-400 flex items-center justify-center">
+                        <FolderOpen className="w-5 h-5 text-[var(--color-bg-primary)]" />
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] group-hover:translate-x-1 transition-all" />
+                    </div>
+                    <h3 className="text-base font-medium text-[var(--color-text-primary)] mb-2">
                       {project.name}
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-[var(--color-text-muted)] line-clamp-2 mb-4">
                       {project.description || 'No description'}
                     </p>
-                    <span className={`inline-block mt-3 px-2 py-1 text-xs rounded ${
-                      project.status === 'active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`badge ${project.status === 'active' ? 'badge-accent' : 'badge-low'}`}>
                       {project.status}
                     </span>
                   </Link>
@@ -141,30 +163,34 @@ export default function TeamDetail() {
           </div>
 
           <div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Members</h3>
+            <div className="card p-5">
+              <div className="flex justify-between items-center mb-5">
+                <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Members</h3>
                 <button
                   onClick={() => setShowInvite(true)}
-                  className="text-blue-600 hover:text-blue-700 text-sm"
+                  className="text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-medium transition-colors"
                 >
-                  Invite
+                  + Invite
                 </button>
               </div>
               <div className="space-y-3">
                 {members?.map(member => (
-                  <div key={member.user_id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center text-sm font-medium text-blue-600 dark:text-blue-300">
-                        {member.user?.email?.[0]?.toUpperCase()}
+                  <div key={member.user_id} className="flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[var(--color-accent-muted)] flex items-center justify-center">
+                        <span className="text-xs font-semibold text-[var(--color-accent)]">
+                          {member.user?.email?.[0]?.toUpperCase()}
+                        </span>
                       </div>
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{member.user?.email}</span>
+                      <span className="text-sm text-[var(--color-text-primary)]">{member.user?.email}</span>
                     </div>
-                    {member.role === 'admin' && <Crown className="w-4 h-4 text-yellow-500" />}
+                    {member.role === 'admin' && (
+                      <Crown className="w-4 h-4 text-[var(--color-priority-medium)]" />
+                    )}
                   </div>
                 ))}
                 {(!members || members.length === 0) && (
-                  <p className="text-sm text-gray-500">No members yet</p>
+                  <p className="text-sm text-[var(--color-text-muted)] text-center py-4">No members yet</p>
                 )}
               </div>
             </div>
@@ -173,44 +199,52 @@ export default function TeamDetail() {
       </main>
 
       {showInvite && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Invite Member</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Invite Member</h3>
+              <button 
+                onClick={() => setShowInvite(false)}
+                className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             <form onSubmit={handleInvite} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Email</label>
                 <input
                   type="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                  className="input-field"
+                  placeholder="colleague@example.com"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Role</label>
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                  className="input-field"
                 >
                   <option value="member">Member</option>
                   <option value="admin">Admin</option>
-                  <option value="viewer">Viewer</option>
                 </select>
               </div>
-              <div className="flex gap-3 justify-end">
+              <div className="flex gap-3 justify-end pt-2">
                 <button
                   type="button"
                   onClick={() => setShowInvite(false)}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                  className="btn-secondary text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={inviteMutation.isPending}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  className="btn-primary text-sm"
                 >
                   {inviteMutation.isPending ? 'Sending...' : 'Send Invite'}
                 </button>
@@ -221,42 +255,52 @@ export default function TeamDetail() {
       )}
 
       {showCreateProject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Create Project</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Create Project</h3>
+              <button 
+                onClick={() => setShowCreateProject(false)}
+                className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             <form onSubmit={handleCreateProject} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Name</label>
                 <input
                   type="text"
                   value={newProject.name}
                   onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                  className="input-field"
+                  placeholder="My Project"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
                 <textarea
                   value={newProject.description}
                   onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                  className="input-field min-h-[80px] resize-none"
+                  placeholder="Optional description..."
                 />
               </div>
-              <div className="flex gap-3 justify-end">
+              <div className="flex gap-3 justify-end pt-2">
                 <button
                   type="button"
                   onClick={() => setShowCreateProject(false)}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                  className="btn-secondary text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createProjectMutation.isPending}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  className="btn-primary text-sm"
                 >
-                  {createProjectMutation.isPending ? 'Creating...' : 'Create'}
+                  {createProjectMutation.isPending ? 'Creating...' : 'Create Project'}
                 </button>
               </div>
             </form>

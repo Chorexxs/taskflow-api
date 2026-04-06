@@ -6,13 +6,13 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Plus, Calendar, User, AlertCircle, Clock, Search, Filter, Bell, X } from 'lucide-react'
+import { ArrowLeft, Plus, Search, Filter, X } from 'lucide-react'
 import TaskCard from '../components/TaskCard'
 
 const COLUMNS = [
-  { id: 'todo', title: 'To Do', color: 'bg-gray-100 dark:bg-gray-700' },
-  { id: 'in_progress', title: 'In Progress', color: 'bg-blue-100 dark:bg-blue-900' },
-  { id: 'done', title: 'Done', color: 'bg-green-100 dark:bg-green-900' },
+  { id: 'todo', title: 'To Do', color: '' },
+  { id: 'in_progress', title: 'In Progress', color: '' },
+  { id: 'done', title: 'Done', color: '' },
 ]
 
 function DroppableColumn({ column, children, taskCount }) {
@@ -21,13 +21,15 @@ function DroppableColumn({ column, children, taskCount }) {
   })
   
   return (
-    <div ref={setNodeRef} className={`rounded-lg p-4 ${column.color}`}>
-      <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-        {column.title}
-        <span className="text-sm text-gray-500 dark:text-gray-400">
-          ({taskCount})
+    <div ref={setNodeRef} className="column-bg rounded-xl p-4 h-full min-h-[500px] border border-subtle">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-widest">
+          {column.title}
+        </h3>
+        <span className="badge badge-accent text-[10px]">
+          {taskCount}
         </span>
-      </h3>
+      </div>
       {children}
     </div>
   )
@@ -216,42 +218,49 @@ export default function ProjectBoard() {
   const getColumnTaskCount = (status) => getTasksByStatus(status).length
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow-sm">
+    <div className="min-h-screen bg-[var(--color-bg-primary)]">
+      <header className="border-b border-subtle bg-[var(--color-bg-secondary)]/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
-            <button onClick={() => navigate(`/teams/${teamId}`)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400">
+            <button 
+              onClick={() => navigate(`/teams/${teamId}`)} 
+              className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
+            >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Project Board</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-medium text-[var(--color-text-primary)]">Project Board</h1>
+              <span className="text-[var(--color-text-muted)]">/</span>
+              <span className="text-[var(--color-text-secondary)]">{projectId}</span>
+            </div>
             
             {tasksError && (
-              <span className="text-red-500 text-sm">Error loading tasks</span>
+              <span className="text-[var(--color-priority-high)] text-sm">Error loading tasks</span>
             )}
             
             <div className="flex-1 max-w-md mx-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                 <input
                   type="text"
                   placeholder="Search tasks..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white text-sm"
+                  className="input-field pl-10"
                 />
               </div>
             </div>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`p-2 rounded-md ${showFilters ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'}`}
+              className={`p-2 rounded-lg transition-all ${showFilters ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]'}`}
             >
               <Filter className="w-5 h-5" />
             </button>
             
             <button
               onClick={() => setShowCreateTask(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="btn-primary flex items-center gap-2 text-sm"
             >
               <Plus className="w-4 h-4" />
               New Task
@@ -261,12 +270,12 @@ export default function ProjectBoard() {
       </header>
 
       {showFilters && (
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-          <div className="max-w-7xl mx-auto flex flex-wrap gap-4 items-center">
+        <div className="border-b border-subtle bg-[var(--color-bg-secondary)]/30 px-4 py-3">
+          <div className="max-w-7xl mx-auto flex flex-wrap gap-3 items-center">
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white text-sm"
+              className="input-field w-auto py-1.5 text-sm"
             >
               <option value="">All Status</option>
               <option value="todo">To Do</option>
@@ -277,7 +286,7 @@ export default function ProjectBoard() {
             <select
               value={filters.priority}
               onChange={(e) => handleFilterChange('priority', e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white text-sm"
+              className="input-field w-auto py-1.5 text-sm"
             >
               <option value="">All Priorities</option>
               <option value="high">High</option>
@@ -288,7 +297,7 @@ export default function ProjectBoard() {
             <select
               value={filters.assigned_to}
               onChange={(e) => handleFilterChange('assigned_to', e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white text-sm"
+              className="input-field w-auto py-1.5 text-sm"
             >
               <option value="">All Assignees</option>
               {teamMembers?.map(m => (
@@ -298,20 +307,20 @@ export default function ProjectBoard() {
 
             <button
               onClick={clearFilters}
-              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] flex items-center gap-1 transition-colors"
             >
               <X className="w-4 h-4" />
-              Clear filters
+              Clear
             </button>
           </div>
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {COLUMNS.map(col => (
-              <div key={col.id} className="h-96 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+              <div key={col.id} className="h-[500px] rounded-xl bg-[var(--color-bg-secondary)] skeleton"></div>
             ))}
           </div>
         ) : (
@@ -339,9 +348,14 @@ export default function ProjectBoard() {
                         </div>
                       ))}
                       {getTasksByStatus(column.id).length === 0 && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                          No tasks
-                        </p>
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                          <div className="w-12 h-12 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center mb-3">
+                            <Plus className="w-5 h-5 text-[var(--color-text-muted)]" />
+                          </div>
+                          <p className="text-sm text-[var(--color-text-muted)]">
+                            No tasks
+                          </p>
+                        </div>
                       )}
                     </div>
                   </SortableContext>
@@ -356,57 +370,67 @@ export default function ProjectBoard() {
       </main>
 
       {showCreateTask && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Create Task</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Create Task</h3>
+              <button 
+                onClick={() => setShowCreateTask(false)}
+                className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             <form onSubmit={handleCreateTask} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Title</label>
                 <input
                   type="text"
                   value={newTask.title}
                   onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                  className="input-field"
+                  placeholder="Task title"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
                 <textarea
                   value={newTask.description}
                   onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                  className="input-field min-h-[80px] resize-none"
+                  placeholder="Optional description..."
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
+                <div className="space-y-2">
+                  <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Priority</label>
                   <select
                     value={newTask.priority}
                     onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                    className="input-field"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Due Date</label>
+                <div className="space-y-2">
+                  <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Due Date</label>
                   <input
                     type="date"
                     value={newTask.due_date || ''}
                     onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value || null })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                    className="input-field"
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Assign to</label>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Assign to</label>
                 <select
                   value={newTask.assigned_to || ''}
                   onChange={(e) => setNewTask({ ...newTask, assigned_to: e.target.value ? parseInt(e.target.value) : null })}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                  className="input-field"
                 >
                   <option value="">Unassigned</option>
                   {teamMembers?.map(m => (
@@ -414,20 +438,20 @@ export default function ProjectBoard() {
                   ))}
                 </select>
               </div>
-              <div className="flex gap-3 justify-end">
+              <div className="flex gap-3 justify-end pt-2">
                 <button
                   type="button"
                   onClick={() => setShowCreateTask(false)}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                  className="btn-secondary text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createTaskMutation.isPending}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  className="btn-primary text-sm"
                 >
-                  {createTaskMutation.isPending ? 'Creating...' : 'Create'}
+                  {createTaskMutation.isPending ? 'Creating...' : 'Create Task'}
                 </button>
               </div>
             </form>

@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Calendar, User, AlertCircle } from 'lucide-react'
+import { Calendar, User } from 'lucide-react'
 
 export default function TaskCard({ task, onClick, isOverlay }) {
   const {
@@ -18,10 +18,10 @@ export default function TaskCard({ task, onClick, isOverlay }) {
     opacity: isDragging ? 0.3 : 1,
   }
 
-  const priorityColors = {
-    high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-    medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    low: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+  const priorityClasses = {
+    high: 'badge badge-high',
+    medium: 'badge badge-medium',
+    low: 'badge badge-low',
   }
 
   const isOverdue = task.due_date && new Date(task.due_date) < new Date()
@@ -34,32 +34,40 @@ export default function TaskCard({ task, onClick, isOverlay }) {
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition-shadow"
+      className={`card p-4 cursor-pointer ${isOverlay ? 'shadow-glow border-[var(--color-accent)]' : ''}`}
     >
-      <div className="flex items-start justify-between mb-2">
-        <h4 className="text-sm font-medium text-gray-900 dark:text-white">{task.title}</h4>
-        <span className={`px-2 py-0.5 text-xs rounded ${priorityColors[task.priority]}`}>
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <h4 className="text-sm font-medium text-[var(--color-text-primary)] leading-snug">
+          {task.title}
+        </h4>
+        <span className={priorityClasses[task.priority]}>
           {task.priority}
         </span>
       </div>
       
       {task.description && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">
+        <p className="text-xs text-[var(--color-text-muted)] mb-3 line-clamp-2 leading-relaxed">
           {task.description}
         </p>
       )}
       
-      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-4 text-[10px] text-[var(--color-text-muted)]">
         {task.due_date && (
-          <div className={`flex items-center gap-1 ${isOverdue ? 'text-red-500' : isDueToday ? 'text-yellow-500' : ''}`}>
-            <Calendar className="w-3 h-3" />
-            {new Date(task.due_date).toLocaleDateString()}
+          <div className={`flex items-center gap-1.5 ${isOverdue ? 'text-[var(--color-priority-high)]' : isDueToday ? 'text-[var(--color-priority-medium)]' : ''}`}>
+            <Calendar className="w-3.5 h-3.5" />
+            <span className="font-medium">
+              {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
           </div>
         )}
         {task.assignee && (
-          <div className="flex items-center gap-1">
-            <User className="w-3 h-3" />
-            {task.assignee.email?.[0]?.toUpperCase()}
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded-full bg-[var(--color-accent-muted)] flex items-center justify-center">
+              <User className="w-3 h-3 text-[var(--color-accent)]" />
+            </div>
+            <span className="truncate max-w-[100px]">
+              {task.assignee.email?.[0]?.toUpperCase()}
+            </span>
           </div>
         )}
       </div>
