@@ -3,7 +3,6 @@ import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { DndContext, closestCorners, DragOverlay, useDroppable, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
@@ -334,20 +333,11 @@ export default function ProjectBoard() {
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="space-y-3">
-                      <AnimatePresence>
-                        {getTasksByStatus(column.id).map(task => (
-                          <motion.div
-                            key={task.id}
-                            layout
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <TaskCard task={task} />
-                          </motion.div>
-                        ))}
-                      </AnimatePresence>
+                      {getTasksByStatus(column.id).map(task => (
+                        <div key={task.id} className="task-card-transition">
+                          <TaskCard task={task} />
+                        </div>
+                      ))}
                       {getTasksByStatus(column.id).length === 0 && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                           No tasks
