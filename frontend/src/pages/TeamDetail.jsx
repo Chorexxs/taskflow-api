@@ -30,7 +30,7 @@ export default function TeamDetail() {
 
   const { data: members } = useQuery({
     queryKey: ['team-members', teamId],
-    queryFn: () => api.teams.get(token, teamId).then(t => t.members || []),
+    queryFn: () => api.teams.listMembers(token, teamId),
   })
 
   const inviteMutation = useMutation({

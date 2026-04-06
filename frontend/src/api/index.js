@@ -60,6 +60,10 @@ export const api = {
       headers: { 'Authorization': `Bearer ${token}` },
     }).then(r => r.json()),
     
+    listMembers: (token, teamId) => fetch(`${API_URL}/api/v1/teams/${teamId}/members`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    }).then(r => r.json()),
+    
     create: (token, data) => fetch(`${API_URL}/api/v1/teams/`, {
       method: 'POST',
       headers: { 
