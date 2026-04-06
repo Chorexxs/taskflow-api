@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { DndContext, closestCorners, DragOverlay } from '@dnd-kit/core'
+import { DndContext, closestCorners, DragOverlay, useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
@@ -14,6 +14,24 @@ const COLUMNS = [
   { id: 'in_progress', title: 'In Progress', color: 'bg-blue-100 dark:bg-blue-900' },
   { id: 'done', title: 'Done', color: 'bg-green-100 dark:bg-green-900' },
 ]
+
+function DroppableColumn({ column, children, taskCount }) {
+  const { setNodeRef } = useDroppable({
+    id: column.id,
+  })
+  
+  return (
+    <div ref={setNodeRef} className={`rounded-lg p-4 ${column.color}`}>
+      <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        {column.title}
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          ({taskCount})
+        </span>
+      </h3>
+      {children}
+    </div>
+  )
+}
 
 export default function ProjectBoard() {
   const { teamId, projectId } = useParams()
@@ -243,13 +261,11 @@ export default function ProjectBoard() {
           <DndContext collisionDetectionAlgorithm={closestCorners} onDragEnd={handleDragEnd}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {COLUMNS.map(column => (
-                <div key={column.id} id={column.id} data-col-id={column.id} className={`rounded-lg p-4 ${column.color}`}>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    {column.title}
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      ({getTasksByStatus(column.id).length})
-                    </span>
-                  </h3>
+                <DroppableColumn 
+                  key={column.id} 
+                  column={column}
+                  taskCount={getTasksByStatus(column.id).length}
+                >
                   <SortableContext 
                     items={getTasksByStatus(column.id).map(t => t.id)} 
                     strategy={verticalListSortingStrategy}
@@ -265,7 +281,7 @@ export default function ProjectBoard() {
                       )}
                     </div>
                   </SortableContext>
-                </div>
+                </DroppableColumn>
               ))}
             </div>
           </DndContext>
