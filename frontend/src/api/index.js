@@ -133,7 +133,10 @@ export const api = {
   
   tasks: {
     list: (token, teamId, projectId, params = {}) => {
-      const query = new URLSearchParams(params).toString();
+      const filteredParams = Object.fromEntries(
+        Object.entries(params).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+      );
+      const query = new URLSearchParams(filteredParams).toString();
       return fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/?${query}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       }).then(r => r.json());
