@@ -31,12 +31,15 @@ export default function TeamDetail() {
   const { data: members } = useQuery({
     queryKey: ['team-members', teamId],
     queryFn: () => api.teams.listMembers(token, teamId),
+    refetchOnMount: true,
+    staleTime: 0,
   })
 
   const inviteMutation = useMutation({
     mutationFn: ({ email, role }) => api.teams.addMember(token, teamId, email, role),
     onSuccess: () => {
       queryClient.invalidateQueries(['team', teamId])
+      queryClient.invalidateQueries(['team-members', teamId])
       setShowInvite(false)
       setInviteEmail('')
       toast.success('Invitation sent!')
