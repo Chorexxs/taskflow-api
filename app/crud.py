@@ -216,7 +216,7 @@ def create_task(db: Session, task: schemas.TaskCreate, project_id: int, user_id:
 
 
 def get_task_by_id(db: Session, task_id: int):
-    return db.query(models.Task).filter(models.Task.id == task_id).first()
+    return db.query(models.Task).options(joinedload(models.Task.assignee)).filter(models.Task.id == task_id).first()
 
 
 def get_tasks_by_project(
@@ -232,7 +232,7 @@ def get_tasks_by_project(
     page: int = 1,
     page_size: int = 20,
 ):
-    query = db.query(models.Task).filter(models.Task.project_id == project_id)
+    query = db.query(models.Task).options(joinedload(models.Task.assignee)).filter(models.Task.project_id == project_id)
     
     if status:
         query = query.filter(models.Task.status == status)

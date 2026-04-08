@@ -19,6 +19,14 @@ class UserBase(BaseModel):
     email: EmailStr
 
 
+class UserMini(BaseModel):
+    id: int
+    email: EmailStr
+    
+    class Config:
+        from_attributes = True
+
+
 class UserCreate(UserBase):
     password: str
 
@@ -184,6 +192,7 @@ class TaskOut(BaseModel):
     status: TaskStatus
     priority: TaskPriority
     assigned_to: int | None
+    assignee: UserMini | None
     due_date: datetime | None
     created_by: int
     created_at: datetime
