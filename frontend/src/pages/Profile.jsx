@@ -1,14 +1,55 @@
+/**
+ * Profile.jsx - User Profile / Account Settings Page Component
+ * 
+ * Displays user account information and provides functionality for managing account settings.
+ * Allows users to view their email and change their password.
+ * Provides logout functionality.
+ * 
+ * Features:
+ * - Display current user email (read-only)
+ * - Password change form with confirmation
+ * - Logout button to end session
+ * - Glassmorphism UI design
+ * 
+ * @requires react-router-dom - For navigation
+ * @requires react-hot-toast - For notification toasts
+ * @requires lucide-react - For icons
+ */
+
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import { ArrowLeft, LogOut, User, Shield } from 'lucide-react'
 
+/**
+ * Profile Component - User account settings page
+ * 
+ * Displays user information and provides account management features.
+ * Uses AuthContext for user data and logout function.
+ * 
+ * @returns {JSX.Element} Rendered profile page with account settings
+ * 
+ * @state {Object} user - Current user from AuthContext
+ * @state {string} password - New password input
+ * @state {string} confirmPassword - Password confirmation input
+ * 
+ * @example
+ * // Accessed via /profile route when authenticated
+ */
+
 export default function Profile() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+
+  /**
+   * Handles user logout by calling the logout function from AuthContext
+   * and navigating to the login page
+   * 
+   * @returns {void}
+   */
 
   const handleLogout = () => {
     logout()

@@ -1,5 +1,34 @@
+/**
+ * NotFound.jsx - 404 Error Page Component
+ * 
+ * Displayed when users navigate to a non-existent route in the application.
+ * Provides a friendly error message and a link back to the dashboard.
+ * 
+ * Features:
+ * - Centralized 404 error display
+ * - Warning icon for visual feedback
+ * - Link to navigate back to dashboard
+ * - Responsive centered layout
+ * 
+ * @requires react-router-dom - For navigation link
+ * @requires lucide-react - For icons
+ */
+
 import { Link } from 'react-router-dom'
 import { Home, AlertTriangle } from 'lucide-react'
+
+/**
+ * NotFound Component - 404 error page
+ * 
+ * Displays when a user visits a non-existent route.
+ * Provides a link back to the main dashboard.
+ * 
+ * @returns {JSX.Element} Rendered 404 error page
+ * 
+ * @example
+ * // Automatically rendered by React Router for unknown routes
+ * <Route path="*" element={<NotFound />} />
+ */
 
 export default function NotFound() {
   return (

@@ -1,3 +1,22 @@
+/**
+ * TeamDetail.jsx - Team Detail Page Component
+ * 
+ * Displays detailed information about a team including its projects and members.
+ * Provides functionality for managing team members (inviting) and creating new projects.
+ * 
+ * Features:
+ * - View team name and details
+ * - List all projects within the team with navigation to project boards
+ * - List team members with their roles (admin/member)
+ * - Invite new members via email with role assignment
+ * - Create new projects with name and description
+ * 
+ * @requires react-router-dom - For navigation and URL params
+ * @requires @tanstack/react-query - For data fetching and mutations
+ * @requires react-hot-toast - For notification toasts
+ * @requires lucide-react - For icons
+ */
+
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -5,6 +24,32 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Plus, Users, Crown, X, FolderOpen, ChevronRight } from 'lucide-react'
+
+/**
+ * TeamDetail Component - Main page for viewing and managing a single team
+ * 
+ * Fetches and displays team information, projects, and members.
+ * Provides modals for inviting members and creating new projects.
+ * 
+ * @returns {JSX.Element} Rendered team detail page with projects list, members list, and action modals
+ * 
+ * @state {string} teamId - Team ID from URL params for fetching team data
+ * @state {boolean} showInvite - Controls visibility of invite member modal
+ * @state {string} inviteEmail - Email input for inviting new member
+ * @state {string} inviteRole - Role selection for invited member (member/admin)
+ * @state {boolean} showCreateProject - Controls visibility of create project modal
+ * @state {Object} newProject - Form state for new project name and description
+ * @state {string} token - Authentication token from localStorage
+ * 
+ * @queries
+ * - team: Fetches team details by teamId
+ * - projects: Fetches all projects belonging to the team
+ * - members: Fetches all team members with their user info and roles
+ * 
+ * @mutations
+ * - inviteMutation: Invites a new member to the team via email
+ * - createProjectMutation: Creates a new project in the team
+ */
 
 export default function TeamDetail() {
   const { teamId } = useParams()
@@ -58,16 +103,33 @@ export default function TeamDetail() {
     onError: () => toast.error('Failed to create project'),
   })
 
+  /**
+   * Handles the invite member form submission
+   * Prevents default form behavior and triggers the invite mutation
+   * 
+   * @param {Event} e - Form submit event
+   * @returns {void}
+   */
+
   const handleInvite = (e) => {
     e.preventDefault()
     inviteMutation.mutate({ email: inviteEmail, role: inviteRole })
   }
+
+  /**
+   * Handles the create project form submission
+   * Prevents default form behavior and triggers the create project mutation
+   * 
+   * @param {Event} e - Form submit event
+   * @returns {void}
+   */
 
   const handleCreateProject = (e) => {
     e.preventDefault()
     createProjectMutation.mutate(newProject)
   }
 
+  // Loading state - shown while team data is being fetched
   if (teamLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

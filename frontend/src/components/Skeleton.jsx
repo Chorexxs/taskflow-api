@@ -1,3 +1,30 @@
+/**
+ * Skeleton.jsx - Loading Skeleton Components
+ *
+ * Provides placeholder loading states for various UI elements.
+ * Used during data fetching to show loading animations.
+ * Each skeleton mimics the shape and layout of the actual content.
+ *
+ * Features:
+ * - TeamSkeleton for team cards
+ * - ProjectSkeleton for project cards
+ * - TaskCardSkeleton for task cards
+ * - ColumnSkeleton for Kanban columns
+ * - MemberSkeleton for team member lists
+ * - CommentSkeleton for comment sections
+ * - EmptyState for zero-data displays
+ *
+ * @requires lucide-react - For icons in EmptyState
+ */
+
+/**
+ * TeamSkeleton - Loading placeholder for team cards
+ *
+ * Displays a pulsing skeleton that mimics the team card layout.
+ * Shows placeholder for team name, description, and member count.
+ *
+ * @returns {JSX.Element} Rendered team skeleton placeholder
+ */
 export function TeamSkeleton() {
   return (
     <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -10,6 +37,14 @@ export function TeamSkeleton() {
   )
 }
 
+/**
+ * ProjectSkeleton - Loading placeholder for project cards
+ *
+ * Displays a pulsing skeleton that mimics the project card layout.
+ * Shows placeholder for project name, description, and status.
+ *
+ * @returns {JSX.Element} Rendered project skeleton placeholder
+ */
 export function ProjectSkeleton() {
   return (
     <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -20,6 +55,14 @@ export function ProjectSkeleton() {
   )
 }
 
+/**
+ * TaskCardSkeleton - Loading placeholder for task cards
+ *
+ * Displays a pulsing skeleton that mimics the task card layout.
+ * Shows placeholder for title, description, and metadata.
+ *
+ * @returns {JSX.Element} Rendered task card skeleton placeholder
+ */
 export function TaskCardSkeleton() {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
@@ -35,6 +78,14 @@ export function TaskCardSkeleton() {
   )
 }
 
+/**
+ * ColumnSkeleton - Loading placeholder for Kanban columns
+ *
+ * Displays a pulsing skeleton that mimics a column layout.
+ * Shows placeholder for column header and sample task cards.
+ *
+ * @returns {JSX.Element} Rendered column skeleton placeholder
+ */
 export function ColumnSkeleton() {
   return (
     <div className="rounded-lg p-4 bg-gray-100 dark:bg-gray-700">
@@ -47,6 +98,14 @@ export function ColumnSkeleton() {
   )
 }
 
+/**
+ * MemberSkeleton - Loading placeholder for team member items
+ *
+ * Displays a pulsing skeleton that mimics the member item layout.
+ * Shows placeholder for avatar and name.
+ *
+ * @returns {JSX.Element} Rendered member skeleton placeholder
+ */
 export function MemberSkeleton() {
   return (
     <div className="flex items-center justify-between py-2">
@@ -58,6 +117,14 @@ export function MemberSkeleton() {
   )
 }
 
+/**
+ * CommentSkeleton - Loading placeholder for comment items
+ *
+ * Displays a pulsing skeleton that mimics the comment layout.
+ * Shows placeholder for avatar, author, timestamp, and content.
+ *
+ * @returns {JSX.Element} Rendered comment skeleton placeholder
+ */
 export function CommentSkeleton() {
   return (
     <div className="flex gap-3">
@@ -72,6 +139,26 @@ export function CommentSkeleton() {
     </div>
   )
 }
+
+/**
+ * EmptyState - Component for displaying empty/zero-data states
+ * 
+ * Displayed when lists have no data to show.
+ * Accepts icon, title, and description for custom messaging.
+ * 
+ * @param {Object} props - Component props
+ * @param {React.ComponentType} props.icon - Optional icon component to display
+ * @param {string} props.title - Title text for empty state
+ * @param {string} props.description - Description text for empty state
+ * @returns {JSX.Element} Rendered empty state component
+ * 
+ * @example
+ * <EmptyState 
+ *   icon={FolderOpen} 
+ *   title="No projects yet" 
+ *   description="Create your first project to get started" 
+ * />
+ */
 
 export function EmptyState({ icon: Icon, title, description }) {
   return (

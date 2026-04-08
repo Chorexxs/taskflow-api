@@ -1,3 +1,25 @@
+/**
+ * ProjectBoard.jsx - Project Board / Kanban Page Component
+ * 
+ * Displays a Kanban-style task board for a project with drag-and-drop functionality.
+ * Supports filtering tasks by status, priority, and assignee.
+ * Real-time task updates through optimistic UI updates.
+ * 
+ * Features:
+ * - Kanban board with three columns: To Do, In Progress, Done
+ * - Drag and drop tasks between columns (@dnd-kit)
+ * - Filter tasks by status, priority, and assignee
+ * - Search tasks by title or description
+ * - Create new tasks with title, description, priority, due date, and assignee
+ * - Real-time task status updates via drag and drop
+ * - Optimistic UI updates for smooth user experience
+ * 
+ * @requires @dnd-kit/core - For drag and drop functionality
+ * @requires @dnd-kit/sortable - For sortable list items
+ * @requires react-hot-toast - For notification toasts
+ * @requires lucide-react - For icons
+ */
+
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -9,11 +31,38 @@ import toast from 'react-hot-toast'
 import { ArrowLeft, Plus, Search, Filter, X } from 'lucide-react'
 import TaskCard from '../components/TaskCard'
 
+/**
+ * Kanban board column definitions
+ * Each column represents a task status with its display title
+ * 
+ * @constant {Array<Object>} COLUMNS
+ * @property {string} id - Unique column identifier (used as status value)
+ * @property {string} title - Display title shown in column header
+ */
+
 const COLUMNS = [
   { id: 'todo', title: 'To Do', color: '' },
   { id: 'in_progress', title: 'In Progress', color: '' },
   { id: 'done', title: 'Done', color: '' },
 ]
+
+/**
+ * DroppableColumn Component - A single column in the Kanban board
+ * 
+ * Wraps task cards in a droppable area that accepts dragged tasks.
+ * Displays column title and task count.
+ * 
+ * @param {Object} props - Component props
+ * @param {Object} props.column - Column configuration with id and title
+ * @param {JSX.Element} props.children - Task cards to render in column
+ * @param {number} props.taskCount - Number of tasks in column
+ * @returns {JSX.Element} Rendered droppable column
+ * 
+ * @example
+ * <DroppableColumn column={{ id: 'todo', title: 'To Do' }} taskCount={5}>
+ *   {taskCards}
+ * </DroppableColumn>
+ */
 
 function DroppableColumn({ column, children, taskCount }) {
   const { setNodeRef } = useDroppable({
@@ -34,6 +83,49 @@ function DroppableColumn({ column, children, taskCount }) {
     </div>
   )
 }
+
+}
+
+/**
+ * ProjectBoard Component - Main Kanban board page for project task management
+ * 
+ * Displays a drag-and-drop Kanban board organized into three columns (To Do, In Progress, Done).
+ * Fetches tasks from API and organizes them by status.
+ * Provides filtering, searching, and task creation functionality.
+ * 
+ * Features:
+ * - Three-column Kanban board layout
+ * - Drag and drop task movement between columns
+ * - Filter panel for status, priority, and assignee
+ * - Search input for filtering tasks by title/description
+ * - Create task modal with full form
+ * - Optimistic UI updates for smooth drag operations
+ * - Real-time task count badges per column
+ * 
+ * @returns {JSX.Element} Rendered Kanban board with tasks and modals
+ * 
+ * @state {string} teamId - Team ID from URL params
+ * @state {string} projectId - Project ID from URL params
+ * @state {Object} searchParams - URL search parameters for filters
+ * @state {boolean} showCreateTask - Controls visibility of create task modal
+ * @state {Object} newTask - Form state for new task creation
+ * @state {boolean} showFilters - Controls visibility of filter panel
+ * @state {string} search - Search query for filtering tasks
+ * @state {Object|null} activeTask - Currently dragged task for overlay
+ * @state {Object} taskColumns - Tasks organized by status columns
+ * 
+ * @queries
+ * - tasks: Fetches all tasks for the project with filters
+ * - teamMembers: Fetches team members for assignee dropdown
+ * 
+ * @mutations
+ * - createTaskMutation: Creates a new task in the project
+ * - updateTaskMutation: Updates task status/fields after drag
+ * 
+ * @example
+ * // URL structure
+ * /teams/:teamId/projects/:projectId
+ */
 
 export default function ProjectBoard() {
   const { teamId, projectId } = useParams()
@@ -211,9 +303,24 @@ export default function ProjectBoard() {
     setSearchParams(newParams)
   }
 
+  /**
+   * Clears all active filters by resetting URL search parameters
+   * Removes status, priority, and assignee filters
+   * 
+   * @returns {void}
+   */
+
   const clearFilters = () => {
     setSearchParams(new URLSearchParams())
   }
+
+  /**
+   * Gets tasks for a specific column with search filtering and priority sorting
+   * Searches task title and description, sorts by priority (high > medium > low)
+   * 
+   * @param {string} status - Column status to get tasks for (todo/in_progress/done)
+   * @returns {Array<Object>} Filtered and sorted tasks for the column
+   */
 
   const getTasksByStatus = (status) => {
     const taskList = taskColumns[status] || []

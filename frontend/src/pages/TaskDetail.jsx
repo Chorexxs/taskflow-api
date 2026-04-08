@@ -1,9 +1,50 @@
+/**
+ * TaskDetail.jsx - Task Detail Page Component
+ * 
+ * Displays detailed information about a single task including title, description,
+ * priority, status, assignee, due date, and comments.
+ * Provides functionality for adding comments to tasks.
+ * 
+ * Features:
+ * - View full task details (title, description, priority, status)
+ * - Display assignee information with avatar
+ * - Show due date with overdue highlighting
+ * - View and add comments on the task
+ * - Navigate back to previous page
+ * 
+ * @requires react-router-dom - For navigation and URL params
+ * @requires @tanstack/react-query - For data fetching and mutations
+ * @requires react-hot-toast - For notification toasts
+ * @requires lucide-react - For icons
+ */
+
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Send, Clock, MessageSquare, User, Calendar } from 'lucide-react'
+
+/**
+ * TaskDetail Component - Page for viewing and interacting with a single task
+ * 
+ * Fetches task details and comments from API.
+ * Displays task information in a card layout with comment section.
+ * 
+ * @returns {JSX.Element} Rendered task detail page with comments
+ * 
+ * @state {string} teamId - Team ID from URL params
+ * @state {string} projectId - Project ID from URL params  
+ * @state {string} taskId - Task ID from URL params
+ * @state {string} newComment - Comment text input
+ * 
+ * @queries
+ * - task: Fetches full task details by IDs
+ * - comments: Fetches all comments for the task
+ * 
+ * @mutations
+ * - addCommentMutation: Creates a new comment on the task
+ */
 
 export default function TaskDetail() {
   const { teamId, projectId, taskId } = useParams()
