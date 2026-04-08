@@ -29,3 +29,4 @@ htmlcov/
 AGENTS.md
 skills-lock.json
 /.vscode
+.mcp.json
