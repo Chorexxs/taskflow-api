@@ -66,12 +66,11 @@ export default function ProjectBoard() {
 
   useEffect(() => {
     if (tasks?.items) {
-      const newColumns = {
+      setTaskColumns({
         todo: tasks.items.filter(t => t.status === 'todo'),
         in_progress: tasks.items.filter(t => t.status === 'in_progress'),
         done: tasks.items.filter(t => t.status === 'done')
-      }
-      setTaskColumns(newColumns)
+      })
     }
   }, [tasks])
 
@@ -227,7 +226,8 @@ export default function ProjectBoard() {
         t.description?.toLowerCase().includes(s)
       )
     }
-    return filtered
+    const priorityOrder = { high: 0, medium: 1, low: 2 }
+    return filtered.sort((a, b) => (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1))
   }
 
   const getColumnTaskCount = (status) => getTasksByStatus(status).length
