@@ -16,96 +16,80 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-primary)]">
-      <header className="border-b border-subtle bg-[var(--color-bg-secondary)]/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16 gap-4">
-            <Link 
-              to="/" 
-              className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <h1 className="text-lg font-medium text-[var(--color-text-primary)]">Profile</h1>
-          </div>
+    <div className="card p-6 md:p-8">
+      <div className="flex items-center gap-4 mb-8">
+        <div className="w-14 h-14 rounded-2xl bg-[var(--color-accent)] flex items-center justify-center">
+          <User className="w-7 h-7 text-[var(--color-bg-primary)]" />
         </div>
-      </header>
+        <div>
+          <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Account Settings</h2>
+          <p className="text-sm text-[var(--color-text-muted)]">Manage your account preferences</p>
+        </div>
+      </div>
+      
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Email</label>
+          <input
+            type="email"
+            value={user?.email || ''}
+            disabled
+            className="input-field bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"
+          />
+          <p className="text-xs text-[var(--color-text-muted)]">Email cannot be changed</p>
+        </div>
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="card p-6 md:p-8">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-[var(--color-accent)] flex items-center justify-center">
-              <User className="w-7 h-7 text-[var(--color-bg-primary)]" />
-            </div>
-            <div>
-              <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Account Settings</h2>
-              <p className="text-sm text-[var(--color-text-muted)]">Manage your account preferences</p>
-            </div>
+        <div className="pt-6 border-t border-subtle">
+          <div className="flex items-center gap-2 mb-6">
+            <Shield className="w-4 h-4 text-[var(--color-text-muted)]" />
+            <h3 className="text-sm font-medium text-[var(--color-text-secondary)]">Change Password</h3>
           </div>
           
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div className="space-y-2">
-              <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Email</label>
+              <label className="block text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">New Password</label>
               <input
-                type="email"
-                value={user?.email || ''}
-                disabled
-                className="input-field bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="input-field"
               />
-              <p className="text-xs text-[var(--color-text-muted)]">Email cannot be changed</p>
             </div>
 
-            <div className="pt-4 border-t border-subtle">
-              <div className="flex items-center gap-2 mb-4">
-                <Shield className="w-4 h-4 text-[var(--color-text-muted)]" />
-                <h3 className="text-sm font-medium text-[var(--color-text-secondary)]">Change Password</h3>
-              </div>
-              
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <label className="block text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">New Password</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    className="input-field"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Confirm Password</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="input-field"
-                  />
-                </div>
-
-                <button
-                  onClick={() => toast.success('Password updated!')}
-                  className="btn-primary text-sm w-fit"
-                >
-                  Update Password
-                </button>
-              </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Confirm Password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                className="input-field"
+              />
             </div>
-          </div>
 
-          <div className="mt-8 pt-6 border-t border-subtle">
-            <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-4">Session</h3>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-[var(--color-priority-high)]/10 text-[var(--color-priority-high)] rounded-lg hover:bg-[var(--color-priority-high)]/20 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Log Out
-            </button>
+            <div className="pt-2">
+              <button
+                onClick={() => toast.success('Password updated!')}
+                className="btn-primary text-sm"
+              >
+                Update Password
+              </button>
+            </div>
           </div>
         </div>
-      </main>
+      </div>
+
+      <div className="mt-8 pt-6 border-t border-subtle">
+        <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-5">Session</h3>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-4 py-2.5 bg-[var(--color-priority-high)]/10 text-[var(--color-priority-high)] rounded-lg hover:bg-[var(--color-priority-high)]/20 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Log Out
+        </button>
+      </div>
     </div>
   )
 }

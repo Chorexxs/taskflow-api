@@ -1,15 +1,10 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { Plus, Users, FolderKanban, LogOut, Settings, ChevronRight } from 'lucide-react'
-import NotificationsBell from '../components/NotificationsBell'
+import { Plus, Users, FolderKanban, ChevronRight } from 'lucide-react'
 
 export default function Dashboard() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showCreateTeam, setShowCreateTeam] = useState(false)
   const [newTeam, setNewTeam] = useState({ name: '', slug: '', description: '' })
@@ -37,57 +32,20 @@ export default function Dashboard() {
     createTeamMutation.mutate(newTeam)
   }
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
-
   return (
-    <div className="min-h-screen bg-[var(--color-bg-primary)]">
-      <header className="border-b border-subtle bg-[var(--color-bg-secondary)]/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[var(--color-accent)] flex items-center justify-center">
-                <span className="text-sm font-bold text-[var(--color-bg-primary)]">T</span>
-              </div>
-              <span className="font-display text-xl font-semibold text-gradient">TaskFlow</span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <NotificationsBell />
-              
-              <Link 
-                to="/profile"
-                className="p-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-all"
-              >
-                <Settings className="w-5 h-5" />
-              </Link>
-              
-              <button
-                onClick={handleLogout}
-                className="p-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-priority-high)] transition-all"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+    <>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-2xl font-medium text-[var(--color-text-primary)] mb-1">My Teams</h2>
+          <p className="text-sm text-[var(--color-text-muted)]">Manage your projects and collaborators</p>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h2 className="text-2xl font-medium text-[var(--color-text-primary)] mb-1">My Teams</h2>
-            <p className="text-sm text-[var(--color-text-muted)]">Manage your projects and collaborators</p>
-          </div>
-          <button
-            onClick={() => setShowCreateTeam(true)}
-            className="btn-primary flex items-center gap-2 text-sm"
-          >
-            <Plus className="w-4 h-4" />
-            New Team
-          </button>
+        <button
+          onClick={() => setShowCreateTeam(true)}
+          className="btn-primary flex items-center gap-2 text-sm"
+        >
+          <Plus className="w-4 h-4" />
+          New Team
+        </button>
         </div>
 
         {isLoading ? (
@@ -142,7 +100,6 @@ export default function Dashboard() {
             ))}
           </div>
         )}
-      </main>
 
       {showCreateTeam && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
@@ -208,6 +165,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

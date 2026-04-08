@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
+import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -35,31 +36,41 @@ function App() {
       
       <Route path="/" element={
         <ProtectedRoute>
-          <Dashboard />
+          <Layout>
+            <Dashboard />
+          </Layout>
         </ProtectedRoute>
       } />
       
       <Route path="/teams/:teamId" element={
         <ProtectedRoute>
-          <TeamDetail />
+          <Layout>
+            <TeamDetail />
+          </Layout>
         </ProtectedRoute>
       } />
       
       <Route path="/teams/:teamId/projects/:projectId" element={
         <ProtectedRoute>
-          <ProjectBoard />
+          <Layout>
+            <ProjectBoard />
+          </Layout>
         </ProtectedRoute>
       } />
       
       <Route path="/teams/:teamId/projects/:projectId/tasks/:taskId" element={
         <ProtectedRoute>
-          <TaskDetail />
+          <Layout>
+            <TaskDetail />
+          </Layout>
         </ProtectedRoute>
       } />
       
       <Route path="/profile" element={
         <ProtectedRoute>
-          <Profile />
+          <Layout>
+            <Profile />
+          </Layout>
         </ProtectedRoute>
       } />
       
