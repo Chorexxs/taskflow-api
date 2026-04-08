@@ -1,180 +1,389 @@
 # TaskFlow API
 
-API REST con FastAPI y JWT para gestión de tareas con soporte para equipos, proyectos y más.
+API REST completa para gestión de tareas en equipo con autenticación JWT, equipos, proyectos y más.
 
-## Probar online
-
-La API está desplegada y lista para probar: https://taskflow-api-tau.vercel.app/
-
-### Endpoints públicos
-- GET `/` - Mensaje de bienvenida
-- GET `/health` - Health check  
-- GET `/docs` - Documentación Swagger interactiva
+[![Tests](https://img.shields.io/badge/tests-54%20passed-brightgreen)](https://github.com/anomalyco/taskflow-api/actions)
+[![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-blue)](https://fastapi.tiangolo.com/)
 
 ---
 
-## Inicio rápido (local)
+## Probar online
 
-```bash
-docker compose up
+| Servicio     | URL                                                | Descripción                  |
+| ------------ | -------------------------------------------------- | ---------------------------- |
+| **Frontend** | https://taskflow-api-tau.vercel.app                | Interfaz de usuario completa |
+| **API**      | https://web-production-053e1.up.railway.app        | Backend REST con Swagger     |
+| **Health**   | https://web-production-053e1.up.railway.app/health | Estado del servidor          |
+
+### Endpoints públicos
+
+- `GET /` - Mensaje de bienvenida
+- `GET /health` - Health check (BD, Redis, disco)
+- `GET /docs` - Documentación Swagger interactiva
+
+---
+
+## Arquitectura
+
+```
+┌─────────────────┐      ┌─────────────────────┐      ┌─────────────────┐
+│   Frontend      │ ───▶ │      TaskFlow API   │ ───▶ │   PostgreSQL    │
+│   (Vercel)      │      │     (Railway)       │      │   (Database)    │
+│                 │      │                     │      │                 │
+│  React + Vite   │      │  FastAPI + JWT      │      │  SQLAlchemy     │
+│  Tailwind CSS   │      │  Pydantic v2        │      │  Alembic        │
+└─────────────────┘      └─────────────────────┘      └─────────────────┘
+                                 │
+                                 ▼
+                          ┌─────────────────┐
+                          │     Redis       │
+                          │  (Rate Limit)   │
+                          └─────────────────┘
 ```
 
-La API estará disponible en http://localhost:8000
+### Stack tecnológico
+
+| Capa              | Tecnología           | Justificación                                                                             |
+| ----------------- | -------------------- | ----------------------------------------------------------------------------------------- |
+| **Backend**       | FastAPI              | Alto rendimiento, validación automática con Pydantic, documentación interactiva integrada |
+| **ORM**           | SQLAlchemy 2.0       | Maduro, type-safe con el nuevo API, previene SQL injection                                |
+| **Base de datos** | PostgreSQL           | Robusto, relacional, ideal para datos estructurados de equipos/tareas                     |
+| **Autenticación** | JWT + Refresh Tokens | Sin estado, segura, con rotación de tokens para mayor seguridad                           |
+| **Rate Limiting** | SlowAPI              | Implementación simple de límite por IP                                                    |
+| **Frontend**      | React + Vite         | Carga rápida, HMR, ecosistema maduro                                                      |
+| **Estilos**       | Tailwind CSS         | Utility-first, consistente, rápido de prototipar                                          |
+| **Deployment**    | Railway + Vercel     | CI/CD automático, escalable, free tier generoso                                           |
+
+---
 
 ## Características
 
-- Autenticación JWT con refresh tokens y rotación
-- Equipos y membresías con roles (admin, member, viewer)
-- Proyectos con funcionalidad de archivo
-- Tareas con estados, prioridades, assignees y fechas
-- Comentarios en tareas
-- Registro de actividad
-- Filtros y búsqueda
-- Archivos adjuntos (hasta 10MB)
-- Notificaciones
-- Rate limiting por IP
-- Logging estructurado con request_id
-- Health check completo (BD, Redis, disco)
-- Sentry para errores en producción
-- Versionado API (/api/v1/)
+### Autenticación y Seguridad
 
-## Instalación local
+- JWT con access y refresh tokens con rotación automática
+- Rate limiting por IP (10 requests/minuto en login)
+- Hash de contraseñas con bcrypt
+- Headers de seguridad (X-Content-Type-Options, X-Frame-Options, HSTS)
+- Logging estructurado con request_id para debugging
+- Integración con Sentry para monitoreo de errores en producción
+
+### Gestión de Equipos
+
+- Equipos con membresías y roles (admin, member)
+- Invite de miembros por email
+- Actualización de roles y removal de miembros
+- Búsqueda de usuarios en el equipo
+
+### Proyectos
+
+- Proyectos dentro de equipos
+- Estados: active, archived
+- Registro de actividad por proyecto
+
+### Tareas
+
+- Estados: todo, in_progress, done
+- Prioridades: high, medium, low
+- Asignación a miembros del equipo
+- Fechas de vencimiento
+- Filtros y paginación
+- Registro de actividad completo
+
+### Colaboración
+
+- Comentarios en tareas
+- Adjuntos de archivos (hasta 10MB)
+- Notificaciones en tiempo real
+- Activity log detallado
+
+---
+
+## Decisiones Técnicas
+
+### 1. FastAPI + Pydantic v2
+
+**Decisión:** Usar FastAPI como framework principal con Pydantic v2 para validación.
+
+**Justificación:**
+
+- Validación automática de request/response - reduce bugs y código repetitivo
+- Documentación Swagger/OpenAPI automática - developers pueden probar inmediatamente
+- Alto rendimiento async - ideal para I/O bound operations como API calls
+- Type hints integrados con Python - mejor DX y autocompletado
+
+### 2. SQLAlchemy con joinedload
+
+**Decisión:** Usar `joinedload()` para relaciones eager loading.
+
+**Justificación:**
+
+- Previene el problema N+1 queries - cada tarea con su assignee hace 1 query en lugar de N+1
+- Ejemplo: listar 20 tareas con assignees = 1 query en lugar de 21
+- Mejor rendimiento en producción y menor carga en BD
+
+```python
+# Antes: N+1 queries
+tasks = db.query(Task).filter(...).all()  # 1 query
+for task in tasks:
+    print(task.assignee.email)  # N queries adicionales
+
+# Después: 1 query con join
+tasks = db.query(Task).options(joinedload(Task.assignee)).filter(...).all()
+```
+
+### 3. JWT con refresh tokens y rotación
+
+**Decisión:** Implementar sistema de tokens duales con rotación.
+
+**Justificación:**
+
+- Access tokens cortos (30 min) = menor ventana de vulnerabilidad si roban token
+- Refresh tokens permiten sesión larga sin mantener access token válido
+- Rotación = cada refresh genera nuevos tokens, invalida el anterior
+- Si alguien roba refresh token, se invalida en el próximo uso legítimo
+
+### 4. Rate limiting con SlowAPI
+
+**Decisión:** Limitar requests por IP.
+
+**Justificación:**
+
+- Previene ataques de fuerza bruta en endpoints de login
+- Protege contra DDoS básico
+- Implementado a nivel de aplicación, no requiere infraestructura adicional
+- 10 requests/minuto es restrictivo para usuarios reales pero efectivo contra bots
+
+---
+
+## 📡 API Reference
+
+### Autenticación
+
+| Método | Endpoint                | Descripción                            |
+| ------ | ----------------------- | -------------------------------------- |
+| POST   | `/api/v1/auth/register` | Registrar nuevo usuario                |
+| POST   | `/api/v1/auth/login`    | Login (retorna access + refresh token) |
+| POST   | `/api/v1/auth/refresh`  | Refrescar access token                 |
+| POST   | `/api/v1/auth/logout`   | Logout e invalidar refresh token       |
+
+### Equipos
+
+| Método | Endpoint                               | Descripción                |
+| ------ | -------------------------------------- | -------------------------- |
+| POST   | `/api/v1/teams/`                       | Crear equipo               |
+| GET    | `/api/v1/teams/`                       | Listar equipos del usuario |
+| GET    | `/api/v1/teams/{id}`                   | Ver equipo con miembros    |
+| POST   | `/api/v1/teams/{id}/members`           | Invitar miembro (admin)    |
+| PATCH  | `/api/v1/teams/{id}/members/{user_id}` | Actualizar rol (admin)     |
+| DELETE | `/api/v1/teams/{id}/members/{user_id}` | Remover miembro (admin)    |
+
+### Proyectos
+
+| Método | Endpoint                                     | Descripción                 |
+| ------ | -------------------------------------------- | --------------------------- |
+| POST   | `/api/v1/teams/{team}/projects/`             | Crear proyecto              |
+| GET    | `/api/v1/teams/{team}/projects/`             | Listar proyectos            |
+| PATCH  | `/api/v1/teams/{team}/projects/{id}`         | Actualizar proyecto (admin) |
+| DELETE | `/api/v1/teams/{team}/projects/{id}`         | Eliminar proyecto (admin)   |
+| POST   | `/api/v1/teams/{team}/projects/{id}/archive` | Archivar proyecto (admin)   |
+
+### Tareas
+
+| Método | Endpoint                                                    | Descripción                     |
+| ------ | ----------------------------------------------------------- | ------------------------------- |
+| POST   | `/api/v1/teams/{team}/projects/{project}/tasks/`            | Crear tarea                     |
+| GET    | `/api/v1/teams/{team}/projects/{project}/tasks/`            | Listar tareas (soporta filtros) |
+| GET    | `/api/v1/teams/{team}/projects/{project}/tasks/{id}`        | Ver tarea específica            |
+| PATCH  | `/api/v1/teams/{team}/projects/{project}/tasks/{id}`        | Actualizar tarea                |
+| DELETE | `/api/v1/teams/{team}/projects/{project}/tasks/{id}`        | Eliminar tarea                  |
+| PATCH  | `/api/v1/teams/{team}/projects/{project}/tasks/{id}/assign` | Asignar tarea (admin)           |
+
+### Filtros de tareas
+
+- `status` - todo, in_progress, done
+- `priority` - high, medium, low
+- `assigned_to` - user_id
+- `due_before`, `due_after` - fechas
+- `sort_by` - created_at, title, priority, due_date
+- `page`, `page_size` - paginación
+
+### Otros recursos
+
+- **Comentarios:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/comments/`
+- **Adjuntos:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/attachments/`
+- **Notificaciones:** `/api/v1/notifications/`
+- **Actividad:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/activity`
+
+> Documentación completa e interactiva disponible en `/docs`
+
+---
+
+## Tests
 
 ```bash
-# Con Docker
-docker compose up
+# Ejecutar todos los tests
+pytest -v
 
-# Sin Docker
+# Tests por módulo
+pytest tests/test_auth.py -v
+pytest tests/test_tasks.py -v
+pytest tests/test_teams.py -v
+
+# Con coverage
+pytest --cov=app --cov-report=html
+```
+
+### Cobertura actual: 54 tests
+
+| Módulo        | Tests |
+| ------------- | ----- |
+| Auth          | 8     |
+| Teams         | 8     |
+| Projects      | 7     |
+| Tasks         | 8     |
+| Comments      | 6     |
+| Filters       | 5     |
+| Activity      | 5     |
+| Notifications | 5     |
+| Attachments   | 5     |
+
+---
+
+## Frontend
+
+El frontend es una aplicación React desplegada en Vercel:
+
+- **Stack:** React 18 + Vite + Tailwind CSS
+- **Estado:** React Query + Context API
+- **Componentes:** Lucide React (icons)
+- **URL:** https://taskflow-api-tau.vercel.app
+
+### Estructura del frontend
+
+```
+frontend/
+├── src/
+│   ├── api/           # Cliente API (fetch wrapper)
+│   ├── components/    # Componentes reutilizables
+│   ├── context/       # AuthContext, ThemeContext
+│   └── pages/         # Páginas principales
+│       ├── Login.jsx
+│       ├── Register.jsx
+│       ├── Dashboard.jsx
+│       ├── TeamDetail.jsx
+│       ├── ProjectBoard.jsx
+│       └── TaskDetail.jsx
+```
+
+### Variables de entorno
+
+```bash
+VITE_API_URL=https://web-production-053e1.up.railway.app
+```
+
+---
+
+## Deployment
+
+### Backend - Railway
+
+```
+URL: https://web-production-053e1.up.railway.app
+RAM: 512MB
+Disk: 1GB
+```
+
+**Variables requeridas:**
+
+```
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+SECRET_KEY=your-secret-key-min-32-chars
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+SENTRY_DSN=optional
+REDIS_URL=optional
+```
+
+**Dockerfile:**
+
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+RUN mkdir -p /uploads
+CMD ["python", "app/main.py"]
+```
+
+### Frontend - Vercel
+
+```
+URL: https://taskflow-api-tau.vercel.app
+```
+
+Desplegado desde la carpeta `frontend/` con configuración automática de Vite.
+
+---
+
+## Inicio rápido
+
+### Con Docker (recomendado)
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/anomalyco/taskflow-api.git
+cd taskflow-api
+
+# Iniciar servicios
+docker compose up -d
+
+# La API estará disponible en http://localhost:8000
+# Swagger: http://localhost:8000/docs
+```
+
+### Sin Docker
+
+```bash
+# Python 3.11+ requerido
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+
 pip install -r requirements.txt
 cp .env.example .env
+# Editar .env con tu configuración
+
 uvicorn app.main:app --reload
 ```
 
-## Documentación
-
-- Swagger: http://localhost:8000/docs
-- Redoc: http://localhost:8000/redoc
-
-## Endpoints (todos con prefijo /api/v1/)
-
-### Auth
-- POST `/api/v1/auth/register` - Registro
-- POST `/api/v1/auth/login` - Login
-- POST `/api/v1/auth/refresh` - Refresh token
-- POST `/api/v1/auth/logout` - Logout
-
-### Equipos
-- POST `/api/v1/teams/` - Crear equipo
-- GET `/api/v1/teams/` - Listar equipos
-- GET `/api/v1/teams/{id}` - Ver equipo
-
-### Proyectos
-- POST `/api/v1/teams/{team}/projects/` - Crear proyecto
-- GET `/api/v1/teams/{team}/projects/` - Listar proyectos
-
-### Tareas
-- POST `/api/v1/teams/{team}/projects/{project}/tasks/` - Crear tarea
-- GET `/api/v1/teams/{team}/projects/{project}/tasks/` - Listar tareas
-
-### Más endpoints en `/api/v1/docs`
-
-## Tests
+### Variables de entorno (.env)
 
 ```bash
-pytest -v
+# Requerido
+DATABASE_URL=postgresql://user:password@localhost:5432/taskflow
+SECRET_KEY=your-secret-key-at-least-32-characters-long
+
+# Opcional
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REDIS_URL=redis://localhost:6379/0
+SENTRY_DSN=
 ```
 
-## Despliegue
+---
 
-Desplegado en Vercel: https://taskflow-api-tau.vercel.app/
+## Licencia
 
-## Endpoints - Auditoría de Seguridad
+MIT License - ver [LICENSE](LICENSE) para más detalles.
 
-### Endpoints Públicos (sin autenticación)
+---
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | `/auth/register` | Registrar nuevo usuario |
-| POST | `/auth/login` | Login (rate limited: 10/min) |
-| GET | `/` | Mensaje de bienvenida |
-| GET | `/health` | Health check |
-| GET | `/docs` | Documentación Swagger |
+## Contributing
 
-### Endpoints Protegidos (requieren JWT)
-
-| Método | Endpoint | Rol requerido |
-|--------|----------|---------------|
-| GET | `/users/me` | Cualquier usuario |
-| PUT | `/users/me` | Cualquier usuario |
-| POST | `/auth/refresh` | Usuario autenticado |
-| POST | `/auth/logout` | Usuario autenticado |
-
-### Endpoints de Equipos
-
-| Método | Endpoint | Rol requerido |
-|--------|----------|---------------|
-| POST | `/teams/` | Cualquier usuario |
-| GET | `/teams/` | Cualquier usuario |
-| GET | `/teams/{team_id_or_slug}` | Miembro |
-| POST | `/teams/{team_id_or_slug}/members` | Admin |
-| GET | `/teams/{team_id_or_slug}/members` | Miembro |
-| DELETE | `/teams/{team_id_or_slug}/members/{user_id}` | Admin |
-| PATCH | `/teams/{team_id_or_slug}/members/{user_id}` | Admin |
-| GET | `/teams/{team_id_or_slug}/search` | Miembro |
-
-### Endpoints de Proyectos
-
-| Método | Endpoint | Rol requerido |
-|--------|----------|---------------|
-| POST | `/teams/{team}/projects/` | Miembro |
-| GET | `/teams/{team}/projects/` | Miembro |
-| GET | `/teams/{team}/projects/{project_id_or_slug}` | Miembro |
-| PATCH | `/teams/{team}/projects/{project_id_or_slug}` | Admin |
-| DELETE | `/teams/{team}/projects/{project_id_or_slug}` | Admin |
-| POST | `/teams/{team}/projects/{project_id_or_slug}/archive` | Admin |
-| GET | `/teams/{team}/projects/{project_id_or_slug}/activity` | Miembro |
-
-### Endpoints de Tareas
-
-| Método | Endpoint | Rol requerido |
-|--------|----------|---------------|
-| POST | `/teams/{team}/projects/{project}/tasks/` | Miembro |
-| GET | `/teams/{team}/projects/{project}/tasks/` | Miembro |
-| GET | `/teams/{team}/projects/{project}/tasks/{task_id_or_title}` | Miembro |
-| PATCH | `/teams/{team}/projects/{project}/tasks/{task_id_or_title}` | Miembro |
-| DELETE | `/teams/{team}/projects/{project}/tasks/{task_id_or_title}` | Creador/Admin |
-| PATCH | `/teams/{team}/projects/{project}/tasks/{task_id_or_title}/assign` | Admin |
-| GET | `/teams/{team}/projects/{project}/tasks/{task_id_or_title}/activity` | Miembro |
-
-### Endpoints de Comentarios
-
-| Método | Endpoint | Rol requerido |
-|--------|----------|---------------|
-| POST | `/teams/{team}/projects/{project}/tasks/{task}/comments/` | Miembro |
-| GET | `/teams/{team}/projects/{project}/tasks/{task}/comments/` | Miembro |
-| PATCH | `/teams/{team}/projects/{project}/tasks/{task}/comments/{comment_id}` | Autor/Admin |
-| DELETE | `/teams/{team}/projects/{project}/tasks/{task}/comments/{comment_id}` | Autor/Admin |
-
-### Endpoints de Archivos Adjuntos
-
-| Método | Endpoint | Rol requerido |
-|--------|----------|---------------|
-| POST | `/teams/{team}/projects/{project}/tasks/{task}/attachments/` | Miembro |
-| GET | `/teams/{team}/projects/{project}/tasks/{task}/attachments/` | Miembro |
-| DELETE | `/teams/{team}/projects/{project}/tasks/{task}/attachments/{attachment_id}` | Uploader/Admin |
-
-### Endpoints de Notificaciones
-
-| Método | Endpoint | Rol requerido |
-|--------|----------|---------------|
-| GET | `/notifications/` | Cualquier usuario |
-| PATCH | `/notifications/{notification_id}/read` | Dueño |
-| PATCH | `/notifications/read-all` | Cualquier usuario |
-
-## Tests
-
-```bash
-pytest
-```
+1. Fork el repositorio
+2. Crear branch para feature (`git checkout -b feature/amazing`)
+3. Commit cambios (`git commit -m 'Add amazing feature'`)
+4. Push al branch (`git push origin feature/amazing`)
+5. Crear Pull Request
