@@ -59,7 +59,7 @@ def list_tasks(
     project_id_or_name: str,
     status: str = None,
     priority: str = None,
-    assigned_to: int = None,
+    assigned_to: str = None,
     due_before: datetime = None,
     due_after: datetime = None,
     sort_by: str = "created_at",
@@ -75,8 +75,11 @@ def list_tasks(
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     if page_size > 100:
         page_size = 100
+    
+    assigned_to_param = int(assigned_to) if assigned_to and assigned_to.isdigit() else None
+    
     return crud.get_tasks_by_project(
-        db, project.id, status, priority, assigned_to, due_before, due_after, sort_by, order, page, page_size
+        db, project.id, status, priority, assigned_to_param, due_before, due_after, sort_by, order, page, page_size
     )
 
 

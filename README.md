@@ -2,7 +2,18 @@
 
 API REST con FastAPI y JWT para gestión de tareas con soporte para equipos, proyectos y más.
 
-## Inicio rápido (un comando)
+## Probar online
+
+La API está desplegada y lista para probar: https://taskflow-api-tau.vercel.app/
+
+### Endpoints públicos
+- GET `/` - Mensaje de bienvenida
+- GET `/health` - Health check  
+- GET `/docs` - Documentación Swagger interactiva
+
+---
+
+## Inicio rápido (local)
 
 ```bash
 docker compose up
@@ -77,7 +88,7 @@ pytest -v
 
 ## Despliegue
 
-Desplegado en Railway: https://web-production-053e1.up.railway.app/
+Desplegado en Vercel: https://taskflow-api-tau.vercel.app/
 
 ## Endpoints - Auditoría de Seguridad
 
@@ -161,14 +172,6 @@ Desplegado en Railway: https://web-production-053e1.up.railway.app/
 | GET | `/notifications/` | Cualquier usuario |
 | PATCH | `/notifications/{notification_id}/read` | Dueño |
 | PATCH | `/notifications/read-all` | Cualquier usuario |
-
-## Documentación
-
-Accede a `/docs` para ver la documentación Swagger interactiva.
-
-## Despliegue
-
-Desplegado en Railway: https://web-production-053e1.up.railway.app/
 
 ## Tests
 
