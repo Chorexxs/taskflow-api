@@ -170,7 +170,22 @@ export default function ProjectBoard() {
         if (taskIndex > -1) {
           const [movedTask] = newColumns[oldStatus].splice(taskIndex, 1)
           movedTask.status = newStatus
-          newColumns[newStatus] = [...newColumns[newStatus], movedTask]
+          
+          const priorityOrder = { high: 0, medium: 1, low: 2 }
+          const targetTasks = newColumns[newStatus]
+          const insertIndex = targetTasks.findIndex(t => 
+            priorityOrder[movedTask.priority] < priorityOrder[t.priority]
+          )
+          
+          if (insertIndex === -1) {
+            newColumns[newStatus] = [...targetTasks, movedTask]
+          } else {
+            newColumns[newStatus] = [
+              ...targetTasks.slice(0, insertIndex),
+              movedTask,
+              ...targetTasks.slice(insertIndex)
+            ]
+          }
         }
         
         return newColumns
