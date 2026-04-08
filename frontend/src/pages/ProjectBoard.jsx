@@ -263,7 +263,7 @@ export default function ProjectBoard() {
                   placeholder="Search tasks..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className={`input-field ${search ? 'pl-3' : 'pl-10'}`}
+                  className={`input-field ${search ? 'pl-7' : 'pl-10'}`}
                 />
               </div>
             </div>
