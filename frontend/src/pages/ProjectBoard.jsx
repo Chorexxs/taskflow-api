@@ -266,20 +266,22 @@ export default function ProjectBoard() {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`p-2 rounded-lg transition-all ${showFilters ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]'}`}
-            >
-              <Filter className="w-5 h-5" />
-            </button>
-            
-            <button
-              onClick={() => setShowCreateTask(true)}
-              className="btn-primary flex items-center gap-2 text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              New Task
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`p-2 rounded-lg transition-all ${showFilters ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]'}`}
+              >
+                <Filter className="w-5 h-5" />
+              </button>
+              
+              <button
+                onClick={() => setShowCreateTask(true)}
+                className="btn-primary flex items-center gap-2 text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                New Task
+              </button>
+            </div>
           </div>
         </div>
       </header>
