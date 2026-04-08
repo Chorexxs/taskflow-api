@@ -255,21 +255,16 @@ export default function ProjectBoard() {
             
             <div className="flex-1 max-w-md mx-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] transition-all pointer-events-none" />
+                {!search && (
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+                )}
                 <input
                   type="text"
+                  placeholder="Search tasks..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  onFocus={() => document.getElementById('search-label')?.classList.add('-translate-y-6', 'scale-75', 'text-xs')}
-                  onBlur={() => !search && document.getElementById('search-label')?.classList.remove('-translate-y-6', 'scale-75', 'text-xs')}
-                  className="input-field pl-10 peer"
+                  className={`input-field ${search ? 'pl-3' : 'pl-10'}`}
                 />
-                <label
-                  id="search-label"
-                  className="absolute left-10 top-1/2 transform -translate-y-1/2 text-sm text-[var(--color-text-muted)] pointer-events-none transition-all duration-200 peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-xs peer-[:not(:placeholder-shown)]:-translate-y-6 peer-[:not(:placeholder-shown)]:scale-75 peer-[:not(:placeholder-shown)]:text-xs"
-                >
-                  Search tasks...
-                </label>
               </div>
             </div>
 
