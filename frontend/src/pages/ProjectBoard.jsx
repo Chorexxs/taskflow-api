@@ -84,8 +84,6 @@ function DroppableColumn({ column, children, taskCount }) {
   )
 }
 
-}
-
 /**
  * ProjectBoard Component - Main Kanban board page for project task management
  * 
