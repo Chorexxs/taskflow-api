@@ -147,6 +147,7 @@ class TaskCreate(BaseModel):
     description: str | None = None
     priority: TaskPriority = TaskPriority.medium
     due_date: datetime | None = None
+    assigned_to: int | None = None
 
     @field_validator('title', 'description', mode='before')
     @classmethod

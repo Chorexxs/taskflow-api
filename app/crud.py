@@ -207,6 +207,7 @@ def create_task(db: Session, task: schemas.TaskCreate, project_id: int, user_id:
         priority=task.priority.value,
         due_date=task.due_date,
         created_by=user_id,
+        assigned_to=task.assigned_to,
     )
     db.add(db_task)
     db.commit()
