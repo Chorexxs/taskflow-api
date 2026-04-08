@@ -16,7 +16,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="card p-6 md:p-8">
+    <div className="card p-8 md:p-10">
       <div className="flex items-center gap-4 mb-8">
         <div className="w-14 h-14 rounded-2xl bg-[var(--color-accent)] flex items-center justify-center">
           <User className="w-7 h-7 text-[var(--color-bg-primary)]" />
@@ -28,7 +28,7 @@ export default function Profile() {
       </div>
       
       <div className="space-y-6">
-        <div className="space-y-2">
+        <div className="space-y-3">
           <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Email</label>
           <input
             type="email"
@@ -39,14 +39,14 @@ export default function Profile() {
           <p className="text-xs text-[var(--color-text-muted)]">Email cannot be changed</p>
         </div>
 
-        <div className="pt-6 border-t border-subtle">
-          <div className="flex items-center gap-2 mb-6">
+        <div className="pt-8 border-t border-subtle">
+          <div className="flex items-center gap-2 mb-8">
             <Shield className="w-4 h-4 text-[var(--color-text-muted)]" />
             <h3 className="text-sm font-medium text-[var(--color-text-secondary)]">Change Password</h3>
           </div>
           
-          <div className="space-y-5">
-            <div className="space-y-2">
+          <div className="space-y-6">
+            <div className="space-y-3">
               <label className="block text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">New Password</label>
               <input
                 type="password"
@@ -57,7 +57,7 @@ export default function Profile() {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <label className="block text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Confirm Password</label>
               <input
                 type="password"
@@ -68,7 +68,7 @@ export default function Profile() {
               />
             </div>
 
-            <div className="pt-2">
+            <div className="pt-3">
               <button
                 onClick={() => toast.success('Password updated!')}
                 className="btn-primary text-sm"
@@ -80,11 +80,11 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="mt-8 pt-6 border-t border-subtle">
+      <div className="mt-10 pt-6 border-t border-subtle">
         <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-5">Session</h3>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[var(--color-priority-high)]/10 text-[var(--color-priority-high)] rounded-lg hover:bg-[var(--color-priority-high)]/20 transition-colors"
+          className="flex items-center gap-2 px-4 py-3 bg-[var(--color-priority-high)]/10 text-[var(--color-priority-high)] rounded-lg hover:bg-[var(--color-priority-high)]/20 transition-colors"
         >
           <LogOut className="w-4 h-4" />
           Log Out
