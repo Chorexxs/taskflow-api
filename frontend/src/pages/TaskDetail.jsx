@@ -397,7 +397,7 @@ export default function TaskDetail() {
           </div>
         </div>
 
-        <div className="">
+        <div className="mt-8">
           <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-5 flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
             Comments ({comments?.length || 0})
