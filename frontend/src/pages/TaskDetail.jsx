@@ -290,7 +290,7 @@ export default function TaskDetail() {
             )}
           </div>
 
-          <div className="border-t border-subtle pt-6">
+          <div className="">
             <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-5 flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
               Comments ({comments?.length || 0})
@@ -301,13 +301,13 @@ export default function TaskDetail() {
                 <div key={comment.id} className="flex gap-4 p-4 bg-[var(--color-bg-tertiary)] rounded-xl">
                   <div className="w-9 h-9 rounded-full bg-[var(--color-accent-muted)] flex items-center justify-center flex-shrink-0">
                     <span className="text-sm font-semibold text-[var(--color-accent)]">
-                      {comment.author_id?.[0]?.toUpperCase() || '?'}
+                      {comment.author?.email?.[0]?.toUpperCase() || '?'}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                        User {comment.author_id}
+                        {comment.author?.email || `User ${comment.author_id}`}
                       </span>
                       <span className="text-xs text-[var(--color-text-muted)]">
                         {new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}

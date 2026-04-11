@@ -17,6 +17,7 @@ The module is organized by entity type:
 
 Key patterns used:
 - joinedload: Eager loading of relationships to prevent N+1 queries
+- selectinload: Eager loading with separate queries
 - Soft deletes: Using status fields instead of actual deletes where appropriate
 - Cache invalidation: Clearing cached data when entities are modified
 """
@@ -860,7 +861,12 @@ def get_comments_by_task(db: Session, task_id: int):
     Example:
         >>> comments = get_comments_by_task(db, task_id=1)
     """
-    return db.query(models.Comment).filter(models.Comment.task_id == task_id).order_by(models.Comment.created_at.desc()).all()
+    from sqlalchemy.orm import selectinload
+    return db.query(models.Comment).options(
+        selectinload(models.Comment.author)
+    ).filter(
+        models.Comment.task_id == task_id
+    ).order_by(models.Comment.created_at.desc()).all()
 
 
 def update_comment(db: Session, comment_id: int, content: str):

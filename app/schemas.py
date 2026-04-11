@@ -598,6 +598,7 @@ class CommentOut(BaseModel):
         id (int): Comment's unique identifier
         task_id (int): Task the comment belongs to
         author_id (int): User who wrote the comment
+        author (UserMini | None): Author user details
         content (str): Comment text
         created_at (datetime): Comment creation timestamp
         updated_at (datetime): Last update timestamp
@@ -608,6 +609,7 @@ class CommentOut(BaseModel):
     id: int
     task_id: int
     author_id: int
+    author: UserMini | None = None
     content: str
     created_at: datetime
     updated_at: datetime
