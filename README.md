@@ -73,7 +73,8 @@ API REST completa para gestión de tareas en equipo con autenticación JWT, equi
 - Equipos con membresías y roles (admin, member)
 - Invite de miembros por email
 - Actualización de roles y removal de miembros
-- Búsqueda de usuarios en el equipo
+- Búsqueda de proyectos y tareas dentro del equipo
+- Roles de miembro editables (promover/quitar rol de admin)
 
 ### Proyectos
 
@@ -89,11 +90,12 @@ API REST completa para gestión de tareas en equipo con autenticación JWT, equi
 - Fechas de vencimiento
 - Filtros y paginación
 - Registro de actividad completo
+- **Edición de tareas** (solo creador o admin pueden editar)
 
 ### Colaboración
 
-- Comentarios en tareas
-- Adjuntos de archivos (hasta 10MB)
+- Comentarios en tareas (muestra email del autor)
+- Adjuntos de archivos (upload, download, delete)
 - Notificaciones en tiempo real
 - Activity log detallado
 
@@ -174,30 +176,34 @@ tasks = db.query(Task).options(joinedload(Task.assignee)).filter(...).all()
 | POST   | `/api/v1/teams/`                       | Crear equipo               |
 | GET    | `/api/v1/teams/`                       | Listar equipos del usuario |
 | GET    | `/api/v1/teams/{id}`                   | Ver equipo con miembros    |
+| GET    | `/api/v1/teams/{id}/search`            | Buscar proyectos/tareas    |
 | POST   | `/api/v1/teams/{id}/members`           | Invitar miembro (admin)    |
+| GET    | `/api/v1/teams/{id}/members`           | Listar miembros            |
 | PATCH  | `/api/v1/teams/{id}/members/{user_id}` | Actualizar rol (admin)     |
 | DELETE | `/api/v1/teams/{id}/members/{user_id}` | Remover miembro (admin)    |
 
 ### Proyectos
 
-| Método | Endpoint                                     | Descripción                 |
-| ------ | -------------------------------------------- | --------------------------- |
-| POST   | `/api/v1/teams/{team}/projects/`             | Crear proyecto              |
-| GET    | `/api/v1/teams/{team}/projects/`             | Listar proyectos            |
-| PATCH  | `/api/v1/teams/{team}/projects/{id}`         | Actualizar proyecto (admin) |
-| DELETE | `/api/v1/teams/{team}/projects/{id}`         | Eliminar proyecto (admin)   |
-| POST   | `/api/v1/teams/{team}/projects/{id}/archive` | Archivar proyecto (admin)   |
+| Método | Endpoint                                      | Descripción                 |
+| ------ | --------------------------------------------- | --------------------------- |
+| POST   | `/api/v1/teams/{team}/projects/`              | Crear proyecto              |
+| GET    | `/api/v1/teams/{team}/projects/`              | Listar proyectos            |
+| GET    | `/api/v1/teams/{team}/projects/{id}`          | Ver proyecto                |
+| PATCH  | `/api/v1/teams/{team}/projects/{id}`          | Actualizar proyecto (admin) |
+| DELETE | `/api/v1/teams/{team}/projects/{id}`          | Eliminar proyecto (admin)   |
+| GET    | `/api/v1/teams/{team}/projects/{id}/activity` | Ver actividad del proyecto  |
 
 ### Tareas
 
-| Método | Endpoint                                                    | Descripción                     |
-| ------ | ----------------------------------------------------------- | ------------------------------- |
-| POST   | `/api/v1/teams/{team}/projects/{project}/tasks/`            | Crear tarea                     |
-| GET    | `/api/v1/teams/{team}/projects/{project}/tasks/`            | Listar tareas (soporta filtros) |
-| GET    | `/api/v1/teams/{team}/projects/{project}/tasks/{id}`        | Ver tarea específica            |
-| PATCH  | `/api/v1/teams/{team}/projects/{project}/tasks/{id}`        | Actualizar tarea                |
-| DELETE | `/api/v1/teams/{team}/projects/{project}/tasks/{id}`        | Eliminar tarea                  |
-| PATCH  | `/api/v1/teams/{team}/projects/{project}/tasks/{id}/assign` | Asignar tarea (admin)           |
+| Método | Endpoint                                                      | Descripción                     |
+| ------ | ------------------------------------------------------------- | ------------------------------- |
+| POST   | `/api/v1/teams/{team}/projects/{project}/tasks/`              | Crear tarea                     |
+| GET    | `/api/v1/teams/{team}/projects/{project}/tasks/`              | Listar tareas (soporta filtros) |
+| GET    | `/api/v1/teams/{team}/projects/{project}/tasks/{id}`          | Ver tarea específica            |
+| PATCH  | `/api/v1/teams/{team}/projects/{project}/tasks/{id}`          | Actualizar tarea                |
+| DELETE | `/api/v1/teams/{team}/projects/{project}/tasks/{id}`          | Eliminar tarea                  |
+| PATCH  | `/api/v1/teams/{team}/projects/{project}/tasks/{id}/assign`   | Asignar tarea (admin)           |
+| GET    | `/api/v1/teams/{team}/projects/{project}/tasks/{id}/activity` | Ver actividad de la tarea       |
 
 ### Filtros de tareas
 
@@ -210,9 +216,9 @@ tasks = db.query(Task).options(joinedload(Task.assignee)).filter(...).all()
 
 ### Otros recursos
 
-- **Comentarios:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/comments/`
-- **Adjuntos:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/attachments/`
-- **Notificaciones:** `/api/v1/notifications/`
+- **Comentarios:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/comments/` (list, create, update, delete)
+- **Adjuntos:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/attachments/` (upload, list, download, delete)
+- **Notificaciones:** `/api/v1/notifications/` (list, mark read, mark all read)
 - **Actividad:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/activity`
 
 > Documentación completa e interactiva disponible en `/docs`
@@ -254,10 +260,27 @@ pytest --cov=app --cov-report=html
 
 El frontend es una aplicación React desplegada en Vercel:
 
-- **Stack:** React 18 + Vite + Tailwind CSS
+- **Stack:** React 18 + Vite + Tailwind CSS 4
 - **Estado:** React Query + Context API
-- **Componentes:** Lucide React (icons)
+- **Componentes:** Lucide React (icons), React Hot Toast
+- **Drag & Drop:** @dnd-kit
 - **URL:** https://taskflow-api-tau.vercel.app
+
+### Características del Frontend
+
+- **Dashboard**: Vista de equipos con acceso rápido a proyectos
+- **TeamDetail**:
+  - Búsqueda de proyectos y tareas dentro del equipo
+  - Gestión de miembros (invitar, cambiar roles)
+- **ProjectBoard**:
+  - Kanban board con drag-and-drop
+  - Filtros por estado, prioridad y assignee
+  - Crear tareas
+- **TaskDetail**:
+  - Ver y editar tarea (solo creador/admin)
+  - Comentarios con email del autor
+  - Adjuntos de archivos (upload, download, delete)
+  - Historial de actividad
 
 ### Estructura del frontend
 
