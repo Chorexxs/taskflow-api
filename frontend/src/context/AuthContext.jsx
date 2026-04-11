@@ -73,8 +73,12 @@ export function AuthProvider({ children }) {
     if (accessToken) {
       api.users.me(accessToken)
         .then(data => {
-          if (data.id) setUser(data);
-          else logout();
+          if (data.id) {
+            setUser(data);
+            localStorage.setItem('user_id', String(data.id));
+          } else {
+            logout();
+          }
         })
         .catch(() => logout())
         .finally(() => setLoading(false));
@@ -131,6 +135,7 @@ export function AuthProvider({ children }) {
       setRefreshToken(data.refresh_token);
       const user = await api.users.me(data.access_token);
       setUser(user);
+      localStorage.setItem('user_id', String(user.id));
       return user;
     }
     throw new Error(data.detail || 'Login failed');
@@ -176,6 +181,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     setAccessToken(null);
     setRefreshToken(null);
+    localStorage.removeItem('user_id');
   };
 
   /**
