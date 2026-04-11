@@ -92,7 +92,10 @@ export default function TaskDetail() {
       queryClient.invalidateQueries(['attachments', teamId, projectId, taskId])
       toast.success('File deleted!')
     },
-    onError: (err) => toast.error(err.response?.data?.detail || 'Failed to delete file'),
+    onError: (err) => {
+      const msg = err.response?.data?.detail || err.message || 'Failed to delete file'
+      toast.error(msg)
+    },
   })
 
   const handleFileSelect = (e) => {

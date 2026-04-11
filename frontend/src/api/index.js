@@ -782,7 +782,16 @@ update: (token, teamId, projectId, taskId, commentId, data) => fetch(`${API_URL}
     delete: (token, teamId, projectId, taskId, attachmentId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/attachments/${attachmentId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
-    }).then(r => r.json()),
+    }).then(async r => {
+      if (r.status === 204) return { success: true };
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        const error = new Error(data.detail || 'Delete failed');
+        error.response = { data };
+        throw error;
+      }
+      return r.json();
+    }),
   },
    
   /**
