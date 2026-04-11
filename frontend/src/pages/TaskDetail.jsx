@@ -23,7 +23,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Send, MessageSquare, User, Calendar, Edit2, X, Check } from 'lucide-react'
+import { ArrowLeft, Send, MessageSquare, User, Calendar, Edit2, X, Check, Paperclip, Download, Trash2, File } from 'lucide-react'
 
 /**
  * TaskDetail Component - Page for viewing and interacting with a single task
@@ -71,6 +71,56 @@ export default function TaskDetail() {
     queryKey: ['comments', teamId, projectId, taskId],
     queryFn: () => api.comments.list(token, teamId, projectId, taskId),
   })
+
+  const { data: attachments } = useQuery({
+    queryKey: ['attachments', teamId, projectId, taskId],
+    queryFn: () => api.attachments.list(token, teamId, projectId, taskId),
+  })
+
+  const uploadMutation = useMutation({
+    mutationFn: (formData) => api.attachments.upload(token, teamId, projectId, taskId, formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['attachments', teamId, projectId, taskId])
+      toast.success('File uploaded!')
+    },
+    onError: () => toast.error('Failed to upload file'),
+  })
+
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: (attachmentId) => api.attachments.delete(token, teamId, projectId, taskId, attachmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['attachments', teamId, projectId, taskId])
+      toast.success('File deleted!')
+    },
+    onError: () => toast.error('Failed to delete file'),
+  })
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setSelectedFile(file)
+      const formData = new FormData()
+      formData.append('file', file)
+      uploadMutation.mutate(formData)
+      e.target.value = ''
+    }
+  }
+
+  const handleDownload = async (attachment) => {
+    try {
+      const blob = await api.attachments.download(token, teamId, projectId, taskId, attachment.id)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = attachment.filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      a.remove()
+    } catch {
+      toast.error('Failed to download file')
+    }
+  }
 
   const addCommentMutation = useMutation({
     mutationFn: (content) => api.comments.create(token, teamId, projectId, taskId, { content }),
@@ -275,25 +325,80 @@ export default function TaskDetail() {
                 <span className="text-[var(--color-text-primary)]">
                   {task?.assignee?.email || 'Unassigned'}
                 </span>
+</div>
+           </div>
+
+          {task?.due_date && (
+            <div>
+              <h3 className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Due date</h3>
+              <div className="flex items-center gap-3">
+                <Calendar className={`w-4 h-4 ${isOverdue ? 'text-[var(--color-priority-high)]' : 'text-[var(--color-text-muted)]'}`} />
+                <span className={`${isOverdue ? 'text-[var(--color-priority-high)]' : 'text-[var(--color-text-primary)]'}`}>
+                  {new Date(task.due_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
               </div>
             </div>
-            {task?.due_date && (
-              <div>
-                <h3 className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Due date</h3>
-                <div className="flex items-center gap-3">
-                  <Calendar className={`w-4 h-4 ${isOverdue ? 'text-[var(--color-priority-high)]' : 'text-[var(--color-text-muted)]'}`} />
-                  <span className={`${isOverdue ? 'text-[var(--color-priority-high)]' : 'text-[var(--color-text-primary)]'}`}>
-                    {new Date(task.due_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-                  </span>
-                </div>
-              </div>
-            )}
+          )}
+        </div>
+
+        <div className="border-t border-subtle pt-6">
+          <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-5 flex items-center gap-2">
+            <Paperclip className="w-4 h-4" />
+            Attachments ({attachments?.length || 0})
+          </h3>
+
+          <div className="mb-4">
+            <label className="btn-secondary cursor-pointer inline-flex items-center gap-2">
+              <Paperclip className="w-4 h-4" />
+              Upload File
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleFileSelect}
+                disabled={uploadMutation.isPending}
+              />
+            </label>
+            {uploadMutation.isPending && <span className="ml-3 text-sm text-[var(--color-text-muted)]">Uploading...</span>}
           </div>
 
-          <div className="">
-            <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-5 flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Comments ({comments?.length || 0})
+          <div className="space-y-2">
+            {attachments?.map(attachment => (
+              <div key={attachment.id} className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-xl">
+                <div className="flex items-center gap-3">
+                  <File className="w-5 h-5 text-[var(--color-text-muted)]" />
+                  <div>
+                    <p className="text-sm text-[var(--color-text-primary)]">{attachment.filename}</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">
+                      {(attachment.file_size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleDownload(attachment)}
+                    className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all"
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => deleteAttachmentMutation.mutate(attachment.id)}
+                    className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-priority-high)] transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+            {(!attachments || attachments.length === 0) && (
+              <p className="text-sm text-[var(--color-text-muted)]">No attachments</p>
+            )}
+          </div>
+        </div>
+
+        <div className="border-t border-subtle pt-6">
+          <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-5 flex items-center gap-2">
+            <MessageSquare className="w-4 h-4" />
+            Comments ({comments?.length || 0})
             </h3>
 
             <div className="space-y-4 mb-6">
