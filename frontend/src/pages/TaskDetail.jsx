@@ -77,6 +77,11 @@ export default function TaskDetail() {
     queryFn: () => api.attachments.list(token, teamId, projectId, taskId),
   })
 
+  const { data: activity } = useQuery({
+    queryKey: ['task-activity', teamId, projectId, taskId],
+    queryFn: () => api.tasks.getActivity(token, teamId, projectId, taskId),
+  })
+
   const uploadMutation = useMutation({
     mutationFn: (formData) => api.attachments.upload(token, teamId, projectId, taskId, formData),
     onSuccess: () => {
@@ -396,6 +401,20 @@ export default function TaskDetail() {
             )}
           </div>
         </div>
+
+        {activity && activity.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-4">Activity</h3>
+            <div className="space-y-2">
+              {activity.slice(0, 5).map(log => (
+                <div key={log.id} className="text-xs text-[var(--color-text-muted)]">
+                  <span className="font-medium text-[var(--color-text-primary)]">{log.action}</span>
+                  {' - '}{new Date(log.created_at).toLocaleString()}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-8">
           <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-5 flex items-center gap-2">

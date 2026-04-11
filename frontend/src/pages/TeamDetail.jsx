@@ -23,7 +23,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Plus, Users, Crown, X, FolderOpen, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Plus, Users, Crown, X, FolderOpen, ChevronRight, Search } from 'lucide-react'
 
 /**
  * TeamDetail Component - Main page for viewing and managing a single team
@@ -60,8 +60,11 @@ export default function TeamDetail() {
   const [inviteRole, setInviteRole] = useState('member')
   const [showCreateProject, setShowCreateProject] = useState(false)
   const [newProject, setNewProject] = useState({ name: '', description: '' })
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState(null)
 
   const token = localStorage.getItem('access_token')
+  const currentUserId = parseInt(localStorage.getItem('user_id') || '0')
 
   const { data: team, isLoading: teamLoading } = useQuery({
     queryKey: ['team', teamId],
@@ -102,6 +105,32 @@ export default function TeamDetail() {
     },
     onError: () => toast.error('Failed to create project'),
   })
+
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ userId, role }) => api.teams.updateMemberRole(token, teamId, userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['team-members', teamId])
+      toast.success('Role updated!')
+    },
+    onError: () => toast.error('Failed to update role'),
+  })
+
+  const handleSearch = async (query) => {
+    setSearchQuery(query)
+    if (query.length < 2) {
+      setSearchResults(null)
+      return
+    }
+    try {
+      const results = await api.teams.search(token, teamId, query)
+      setSearchResults(results)
+    } catch {
+      toast.error('Search failed')
+    }
+  }
+
+  const myMember = members?.find(m => m.user_id === currentUserId)
+  const isAdmin = myMember?.role === 'admin'
 
   /**
    * Handles the invite member form submission
@@ -156,6 +185,53 @@ export default function TeamDetail() {
                 </span>
               </div>
               <h1 className="text-xl font-medium text-[var(--color-text-primary)]">{team?.name}</h1>
+            </div>
+            <div className="flex-1 max-w-md ml-auto">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+                <input
+                  type="text"
+                  placeholder="Search projects and tasks..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="input-field w-full pl-10 py-1.5 text-sm"
+                />
+              </div>
+              {searchResults && (
+                <div className="absolute top-full mt-2 w-full max-w-md bg-[var(--color-bg-secondary)] border border-subtle rounded-xl shadow-elevated overflow-hidden z-50">
+                  {searchResults.projects?.length > 0 && (
+                    <div className="p-2">
+                      <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase px-2 py-1">Projects</p>
+                      {searchResults.projects.slice(0, 3).map(p => (
+                        <button
+                          key={p.id}
+                          onClick={() => { navigate(`/teams/${teamId}/projects/${p.id}`); setSearchResults(null); setSearchQuery(''); }}
+                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-sm text-[var(--color-text-primary)]"
+                        >
+                          {p.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {searchResults.tasks?.length > 0 && (
+                    <div className="p-2 border-t border-subtle">
+                      <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase px-2 py-1">Tasks</p>
+                      {searchResults.tasks.slice(0, 3).map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => { navigate(`/teams/${teamId}/projects/${t.project_id}/tasks/${t.id}`); setSearchResults(null); setSearchQuery(''); }}
+                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-sm text-[var(--color-text-primary)]"
+                        >
+                          {t.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {searchResults.projects?.length === 0 && searchResults.tasks?.length === 0 && (
+                    <p className="p-4 text-sm text-[var(--color-text-muted)] text-center">No results found</p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -249,9 +325,22 @@ export default function TeamDetail() {
                       </div>
                       <span className="text-sm text-[var(--color-text-primary)]">{member.user?.email}</span>
                     </div>
-                    {member.role === 'admin' && (
-                      <Crown className="w-4 h-4 text-[var(--color-priority-medium)]" />
-                    )}
+                    <div className="flex items-center gap-2">
+                      {member.role === 'admin' ? (
+                        <Crown className="w-4 h-4 text-[var(--color-priority-medium)]" />
+                      ) : (
+                        isAdmin && member.user_id !== currentUserId && (
+                          <select
+                            value={member.role}
+                            onChange={(e) => updateRoleMutation.mutate({ userId: member.user_id, role: e.target.value })}
+                            className="text-xs bg-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] cursor-pointer"
+                          >
+                            <option value="member">Member</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        )
+                      )}
+                    </div>
                   </div>
                 ))}
                 {(!members || members.length === 0) && (
