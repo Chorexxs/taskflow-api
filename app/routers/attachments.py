@@ -185,12 +185,15 @@ def delete_attachment(
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
     attachment = crud.get_attachment_by_id(db, attachment_id)
     
-    if not attachment or attachment.task_id != task.id:
+    if not attachment:
         raise HTTPException(status_code=404, detail="Attachment not found")
+    
+    if attachment.task_id != task.id:
+        raise HTTPException(status_code=404, detail="Attachment does not belong to this task")
     
     # Check permissions: uploader or admin can delete
     if attachment.uploaded_by != current_user.id and member.role != "admin":
-        raise HTTPException(status_code=403, detail="Only the uploader or admin can delete this attachment")
+        raise HTTPException(status_code=403, detail="Only the uploader or team admin can delete this attachment")
     
     # Remove file from disk
     if os.path.exists(attachment.file_path):
