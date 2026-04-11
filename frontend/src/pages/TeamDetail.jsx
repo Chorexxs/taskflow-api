@@ -194,7 +194,7 @@ export default function TeamDetail() {
                   placeholder="Search projects and tasks..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="input-field w-full pl-10 py-1.5 text-sm"
+                  className="input-field w-full ml-8 pl-10 py-1.5 text-sm"
                 />
               </div>
               {searchResults && (
