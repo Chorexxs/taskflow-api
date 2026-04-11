@@ -98,7 +98,6 @@ export default function TaskDetail() {
   const handleFileSelect = (e) => {
     const file = e.target.files[0]
     if (file) {
-      setSelectedFile(file)
       const formData = new FormData()
       formData.append('file', file)
       uploadMutation.mutate(formData)
