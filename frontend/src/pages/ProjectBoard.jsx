@@ -131,6 +131,7 @@ export default function ProjectBoard() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const token = localStorage.getItem('access_token')
+  const currentUserId = parseInt(localStorage.getItem('user_id') || '0')
   const [showCreateTask, setShowCreateTask] = useState(false)
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium', assigned_to: null, due_date: null })
   const [showFilters, setShowFilters] = useState(false)
@@ -289,6 +290,10 @@ export default function ProjectBoard() {
   const handleCreateTask = (e) => {
     e.preventDefault()
     createTaskMutation.mutate(newTask)
+  }
+
+  const handleEditTask = (task) => {
+    navigate(`/teams/${teamId}/projects/${projectId}/tasks/${task.id}`)
   }
 
   const handleFilterChange = (key, value) => {
@@ -463,7 +468,7 @@ export default function ProjectBoard() {
                     <div className="space-y-3">
                       {getTasksByStatus(column.id).map(task => (
                         <div key={task.id} className="task-card-transition">
-                          <TaskCard task={task} />
+                          <TaskCard task={task} onEdit={handleEditTask} currentUserId={currentUserId} />
                         </div>
                       ))}
                       {getTasksByStatus(column.id).length === 0 && (

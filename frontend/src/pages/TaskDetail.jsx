@@ -23,7 +23,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Send, Clock, MessageSquare, User, Calendar } from 'lucide-react'
+import { ArrowLeft, Send, MessageSquare, User, Calendar, Edit2, X, Check } from 'lucide-react'
 
 /**
  * TaskDetail Component - Page for viewing and interacting with a single task
@@ -51,7 +51,16 @@ export default function TaskDetail() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const token = localStorage.getItem('access_token')
+  const currentUserId = parseInt(localStorage.getItem('user_id') || '0')
   const [newComment, setNewComment] = useState('')
+  const [isEditing, setIsEditing] = useState(false)
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    priority: 'medium',
+    status: 'todo',
+    due_date: '',
+  })
 
   const { data: task, isLoading } = useQuery({
     queryKey: ['task', teamId, projectId, taskId],
@@ -72,6 +81,44 @@ export default function TaskDetail() {
     },
     onError: () => toast.error('Failed to add comment'),
   })
+
+  const updateTaskMutation = useMutation({
+    mutationFn: (data) => api.tasks.update(token, teamId, projectId, taskId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['task', teamId, projectId, taskId])
+      setIsEditing(false)
+      toast.success('Task updated!')
+    },
+    onError: (err) => toast.error(err.response?.data?.detail || 'Failed to update task'),
+  })
+
+  const canEdit = task?.created_by === currentUserId
+
+  const handleStartEdit = () => {
+    setEditForm({
+      title: task?.title || '',
+      description: task?.description || '',
+      priority: task?.priority || 'medium',
+      status: task?.status || 'todo',
+      due_date: task?.due_date ? new Date(task.due_date).toISOString().slice(0, 16) : '',
+    })
+    setIsEditing(true)
+  }
+
+  const handleSaveEdit = () => {
+    const data = {
+      title: editForm.title,
+      description: editForm.description || null,
+      priority: editForm.priority,
+      status: editForm.status,
+      due_date: editForm.due_date ? new Date(editForm.due_date).toISOString() : null,
+    }
+    updateTaskMutation.mutate(data)
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+  }
 
   const handleAddComment = (e) => {
     e.preventDefault()
@@ -113,21 +160,105 @@ export default function TaskDetail() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="card p-6 md:p-8">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex-1">
-              <h2 className="text-2xl font-medium text-[var(--color-text-primary)] mb-4">{task?.title}</h2>
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className={priorityClasses[task?.priority]}>
-                  {task?.priority}
-                </span>
-                <span className="badge badge-accent">
-                  {task?.status}
-                </span>
+          {isEditing ? (
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Title</label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="input-field w-full"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Description</label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="input-field w-full h-24 resize-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Priority</label>
+                  <select
+                    value={editForm.priority}
+                    onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
+                    className="input-field w-full"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Status</label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                    className="input-field w-full"
+                  >
+                    <option value="todo">To Do</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="done">Done</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Due Date</label>
+                <input
+                  type="datetime-local"
+                  value={editForm.due_date}
+                  onChange={(e) => setEditForm({ ...editForm, due_date: e.target.value })}
+                  className="input-field w-full"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={updateTaskMutation.isPending || !editForm.title.trim()}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  Save
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="btn-secondary flex items-center gap-2"
+                >
+                  <X className="w-4 h-4" />
+                  Cancel
+                </button>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h2 className="text-2xl font-medium text-[var(--color-text-primary)]">{task?.title}</h2>
+                  {canEdit && (
+                    <button
+                      onClick={handleStartEdit}
+                      className="p-1.5 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className={priorityClasses[task?.priority]}>
+                    {task?.priority}
+                  </span>
+                  <span className="badge badge-accent">
+                    {task?.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
-          {task?.description && (
+          {!isEditing && task?.description && (
             <div className="mb-8">
               <h3 className="text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-3">Description</h3>
               <p className="text-[var(--color-text-primary)] leading-relaxed whitespace-pre-wrap">{task.description}</p>

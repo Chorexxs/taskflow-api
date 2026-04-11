@@ -235,7 +235,8 @@ def update_task(
     """
     Update a task's details.
     
-    All team members can update tasks. Only provided fields are updated.
+    Only the task creator or a team admin can update tasks.
+    Only provided fields are updated.
     Changes are logged to the activity log.
     
     Args:
@@ -249,11 +250,18 @@ def update_task(
     
     Returns:
         TaskOut: Updated task.
+    
+    Raises:
+        HTTPException 403: If user is not creator or admin.
     """
     from app.dependencies import get_team_from_id_or_slug
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
+    
+    # Check permissions: creator or admin can update
+    if task.created_by != current_user.id and member.role != "admin":
+        raise HTTPException(status_code=403, detail="Only the creator or admin can edit this task")
     
     # Track old values for activity log
     old_values = {}

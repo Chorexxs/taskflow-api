@@ -15,15 +15,17 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Calendar, User } from 'lucide-react';
+import { Calendar, User, Edit2 } from 'lucide-react';
 
 /**
  * Task card component for displaying task summary in project board.
  * 
  * @param {Object} props - Component props
- * @param {Object} props.task - Task object with title, description, priority, due_date, assignee
+ * @param {Object} props.task - Task object with title, description, priority, due_date, assignee, created_by
  * @param {Function} props.onClick - Callback when card is clicked
+ * @param {Function} props.onEdit - Callback when edit button is clicked
  * @param {boolean} props.isOverlay - Whether this is a drag overlay (visual feedback during drag)
+ * @param {number} props.currentUserId - Current logged in user ID
  * @returns {JSX.Element} Task card element
  * 
  * @example
@@ -38,7 +40,7 @@ import { Calendar, User } from 'lucide-react';
  *   onClick={() => navigate(`/tasks/${task.id}`)}
  * />
  */
-export default function TaskCard({ task, onClick, isOverlay }) {
+export default function TaskCard({ task, onClick, onEdit, isOverlay, currentUserId }) {
   // Setup sortable functionality
   const {
     attributes,
@@ -83,12 +85,22 @@ export default function TaskCard({ task, onClick, isOverlay }) {
     >
       {/* Title and priority */}
       <div className="flex items-start justify-between gap-3 mb-3">
-        <h4 className="text-sm font-medium text-[var(--color-text-primary)] leading-snug">
+        <h4 className="text-sm font-medium text-[var(--color-text-primary)] leading-snug flex-1">
           {task.title}
         </h4>
-        <span className={priorityClasses[task.priority]}>
-          {task.priority}
-        </span>
+        <div className="flex items-center gap-2">
+          {currentUserId === task.created_by && onEdit && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(task); }}
+              className="p-1 rounded hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <span className={priorityClasses[task.priority]}>
+            {task.priority}
+          </span>
+        </div>
       </div>
       
       {/* Description (truncated) */}
