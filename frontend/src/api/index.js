@@ -287,7 +287,7 @@ export const api = {
      * @example
      * await api.teams.updateMemberRole(token, 1, 5, 'admin');
      */
-    updateMemberRole: (token, teamId, userId, role) => fetch(`${API_URL}/api/v1/teams/${teamId}/members/${userId}`, {
+updateMemberRole: (token, teamId, userId, role) => fetch(`${API_URL}/api/v1/teams/${teamId}/members/${userId}`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
@@ -295,8 +295,23 @@ export const api = {
       },
       body: JSON.stringify({ role }),
     }).then(r => r.json()),
+    
+    /**
+     * Search for projects and tasks in a team.
+     * 
+     * @param {string} token - Valid access token
+     * @param {string|number} teamId - Team ID or slug
+     * @param {string} query - Search query string
+     * @returns {Promise<Object>} Object with projects and tasks arrays
+     * 
+     * @example
+     * const results = await api.teams.search(token, 1, 'website');
+     */
+    search: (token, teamId, query) => fetch(`${API_URL}/api/v1/teams/${teamId}/search?q=${encodeURIComponent(query)}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    }).then(r => r.json()),
   },
-  
+   
   /**
    * Project management endpoints.
    * Handles listing, creating, updating, and archiving projects.
@@ -390,6 +405,21 @@ export const api = {
      */
     delete: (token, teamId, projectId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}`, {
       method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` },
+    }).then(r => r.json()),
+    
+    /**
+     * Get activity log for a project.
+     * 
+     * @param {string} token - Valid access token
+     * @param {string|number} teamId - Team ID or slug
+     * @param {string|number} projectId - Project ID or name
+     * @returns {Promise<Array>} Array of activity log entries
+     * 
+     * @example
+     * const activity = await api.projects.getActivity(token, 1, 1);
+     */
+    getActivity: (token, teamId, projectId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/activity`, {
       headers: { 'Authorization': `Bearer ${token}` },
     }).then(r => r.json()),
     
@@ -558,7 +588,7 @@ export const api = {
      * // Unassign
      * await api.tasks.assign(token, 1, 1, 1, null);
      */
-    assign: (token, teamId, projectId, taskId, userId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/assign`, {
+assign: (token, teamId, projectId, taskId, userId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/assign`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
@@ -566,8 +596,24 @@ export const api = {
       },
       body: JSON.stringify({ assigned_to: userId }),
     }).then(r => r.json()),
+    
+    /**
+     * Get activity log for a task.
+     * 
+     * @param {string} token - Valid access token
+     * @param {string|number} teamId - Team ID or slug
+     * @param {string|number} projectId - Project ID or name
+     * @param {string|number} taskId - Task ID or title
+     * @returns {Promise<Array>} Array of activity log entries
+     * 
+     * @example
+     * const activity = await api.tasks.getActivity(token, 1, 1, 1);
+     */
+    getActivity: (token, teamId, projectId, taskId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/activity`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    }).then(r => r.json()),
   },
-  
+   
   /**
    * Comment management endpoints.
    * Handles listing, creating, and deleting comments on tasks.
@@ -631,8 +677,114 @@ export const api = {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
     }).then(r => r.json()),
+    
+    /**
+     * Update an existing comment.
+     * 
+     * @param {string} token - Valid access token
+     * @param {string|number} teamId - Team ID or slug
+     * @param {string|number} projectId - Project ID or name
+     * @param {string|number} taskId - Task ID or title
+     * @param {number} commentId - Comment ID to update
+     * @param {Object} data - Comment data
+     * @param {string} data.content - New comment content
+     * @returns {Promise<Object>} Updated comment object
+     * 
+     * @example
+     * await api.comments.update(token, 1, 1, 1, 3, { content: 'Updated comment' });
+     */
+update: (token, teamId, projectId, taskId, commentId, data) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/comments/${commentId}`, {
+      method: 'PATCH',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      },
+      body: JSON.stringify(data),
+    }).then(r => r.json()),
   },
-  
+   
+  /**
+   * Attachment endpoints.
+   * Handles file uploads, listings, and downloads for tasks.
+   */
+  attachments: {
+    /**
+     * Upload a file to a task.
+     * 
+     * @param {string} token - Valid access token
+     * @param {string|number} teamId - Team ID or slug
+     * @param {string|number} projectId - Project ID or name
+     * @param {string|number} taskId - Task ID or title
+     * @param {FormData} formData - FormData with file
+     * @returns {Promise<Object>} Uploaded file info
+     * 
+     * @example
+     * const formData = new FormData();
+     * formData.append('file', fileInput.files[0]);
+     * await api.attachments.upload(token, 1, 1, 1, formData);
+     */
+    upload: (token, teamId, projectId, taskId, formData) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/attachments/`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData,
+    }).then(r => r.json()),
+    
+    /**
+     * Get all attachments for a task.
+     * 
+     * @param {string} token - Valid access token
+     * @param {string|number} teamId - Team ID or slug
+     * @param {string|number} projectId - Project ID or name
+     * @param {string|number} taskId - Task ID or title
+     * @returns {Promise<Array>} Array of attachment objects
+     * 
+     * @example
+     * const attachments = await api.attachments.list(token, 1, 1, 1);
+     */
+    list: (token, teamId, projectId, taskId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/attachments/`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    }).then(r => r.json()),
+    
+    /**
+     * Download an attachment file.
+     * 
+     * @param {string} token - Valid access token
+     * @param {string|number} teamId - Team ID or slug
+     * @param {string|number} projectId - Project ID or name
+     * @param {string|number} taskId - Task ID or title
+     * @param {number} attachmentId - Attachment ID
+     * @returns {Promise<Blob>} File blob
+     * 
+     * @example
+     * const blob = await api.attachments.download(token, 1, 1, 1, 5);
+     */
+    download: (token, teamId, projectId, taskId, attachmentId) => 
+      fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/attachments/${attachmentId}/download`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      }).then(r => {
+        if (!r.ok) throw new Error('Download failed');
+        return r.blob();
+      }),
+    
+    /**
+     * Delete an attachment.
+     * 
+     * @param {string} token - Valid access token
+     * @param {string|number} teamId - Team ID or slug
+     * @param {string|number} projectId - Project ID or name
+     * @param {string|number} taskId - Task ID or title
+     * @param {number} attachmentId - Attachment ID to delete
+     * @returns {Promise<void>}
+     * 
+     * @example
+     * await api.attachments.delete(token, 1, 1, 1, 5);
+     */
+    delete: (token, teamId, projectId, taskId, attachmentId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/attachments/${attachmentId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` },
+    }).then(r => r.json()),
+  },
+   
   /**
    * Notification endpoints.
    * Handles listing and managing user notifications.
