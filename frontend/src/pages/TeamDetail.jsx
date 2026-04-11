@@ -23,7 +23,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Plus, Users, Crown, X, FolderOpen, ChevronRight, Search } from 'lucide-react'
+import { ArrowLeft, Plus, Users, Crown, X, FolderOpen, ChevronRight } from 'lucide-react'
 
 /**
  * TeamDetail Component - Main page for viewing and managing a single team
@@ -188,13 +188,12 @@ export default function TeamDetail() {
             </div>
             <div className="flex-1 max-w-md ml-auto">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                 <input
                   type="text"
-                  placeholder="Search projects and tasks..."
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="input-field w-full pl-10 py-1.5 text-sm"
+                  className="input-field w-full py-1.5 text-sm"
                 />
               </div>
               {searchResults && (
