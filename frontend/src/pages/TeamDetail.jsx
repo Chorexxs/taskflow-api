@@ -23,7 +23,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Plus, Users, Crown, X, FolderOpen, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Plus, Users, Crown, X, FolderOpen, ChevronRight, Edit2, Save, Pencil } from 'lucide-react'
 
 /**
  * TeamDetail Component - Main page for viewing and managing a single team
@@ -62,6 +62,9 @@ export default function TeamDetail() {
   const [newProject, setNewProject] = useState({ name: '', description: '' })
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState(null)
+  const [showEditProject, setShowEditProject] = useState(false)
+  const [editingProject, setEditingProject] = useState(null)
+  const [editProjectForm, setEditProjectForm] = useState({ name: '', description: '' })
 
   const token = localStorage.getItem('access_token')
   const currentUserId = parseInt(localStorage.getItem('user_id') || '0')
@@ -106,6 +109,31 @@ export default function TeamDetail() {
     onError: () => toast.error('Failed to create project'),
   })
 
+  const updateProjectMutation = useMutation({
+    mutationFn: ({ projectId, data }) => api.projects.update(token, teamId, projectId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projects', teamId])
+      setShowEditProject(false)
+      setEditingProject(null)
+      setEditProjectForm({ name: '', description: '' })
+      toast.success('Project updated!')
+    },
+    onError: () => toast.error('Failed to update project'),
+  })
+
+  const myMember = members?.find(m => m.user_id === currentUserId)
+  const isAdmin = myMember?.role === 'admin'
+
+  const handleStartEditProject = (project) => {
+    setEditingProject(project)
+    setEditProjectForm({ name: project.name, description: project.description || '' })
+    setShowEditProject(true)
+  }
+
+  const handleSaveEditProject = () => {
+    updateProjectMutation.mutate({ projectId: editingProject.id, data: editProjectForm })
+  }
+
   const updateRoleMutation = useMutation({
     mutationFn: ({ userId, role }) => api.teams.updateMemberRole(token, teamId, userId, role),
     onSuccess: () => {
@@ -128,9 +156,6 @@ export default function TeamDetail() {
       toast.error('Search failed')
     }
   }
-
-  const myMember = members?.find(m => m.user_id === currentUserId)
-  const isAdmin = myMember?.role === 'admin'
 
   /**
    * Handles the invite member form submission
@@ -285,7 +310,18 @@ export default function TeamDetail() {
                       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-emerald-400 flex items-center justify-center">
                         <FolderOpen className="w-5 h-5 text-[var(--color-bg-primary)]" />
                       </div>
-                      <ChevronRight className="w-5 h-5 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] group-hover:translate-x-1 transition-all" />
+                      <div className="flex items-center gap-1">
+                        {isAdmin && (
+                          <button
+                            onClick={(e) => { e.preventDefault(); handleStartEditProject(project); }}
+                            className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-secondary)] rounded transition-all"
+                            title="Edit project"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        <ChevronRight className="w-5 h-5 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] group-hover:translate-x-1 transition-all" />
+                      </div>
                     </div>
                     <h3 className="text-base font-medium text-[var(--color-text-primary)] mb-2">
                       {project.name}
@@ -454,6 +490,60 @@ export default function TeamDetail() {
                   className="btn-primary text-sm"
                 >
                   {createProjectMutation.isPending ? 'Creating...' : 'Create Project'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditProject && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--color-bg-secondary)] rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b border-subtle">
+              <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Edit Project</h2>
+              <button
+                onClick={() => { setShowEditProject(false); setEditingProject(null); }}
+                className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveEditProject(); }} className="p-4 space-y-4">
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Name</label>
+                <input
+                  type="text"
+                  value={editProjectForm.name}
+                  onChange={(e) => setEditProjectForm({ ...editProjectForm, name: e.target.value })}
+                  required
+                  className="input-field"
+                  placeholder="My Project"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
+                <textarea
+                  value={editProjectForm.description}
+                  onChange={(e) => setEditProjectForm({ ...editProjectForm, description: e.target.value })}
+                  className="input-field min-h-[80px] resize-none"
+                  placeholder="Optional description..."
+                />
+              </div>
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowEditProject(false); setEditingProject(null); }}
+                  className="btn-secondary text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateProjectMutation.isPending || !editProjectForm.name.trim()}
+                  className="btn-primary text-sm"
+                >
+                  {updateProjectMutation.isPending ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

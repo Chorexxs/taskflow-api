@@ -23,7 +23,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Send, MessageSquare, User, Calendar, Edit2, X, Check, Paperclip, Download, Trash2, File } from 'lucide-react'
+import { ArrowLeft, Send, MessageSquare, User, Calendar, Edit2, X, Check, Paperclip, Download, Trash2, File, Pencil, Trash, ChevronDown, Activity } from 'lucide-react'
 
 /**
  * TaskDetail Component - Page for viewing and interacting with a single task
@@ -54,6 +54,9 @@ export default function TaskDetail() {
   const currentUserId = parseInt(localStorage.getItem('user_id') || '0')
   const [newComment, setNewComment] = useState('')
   const [isEditing, setIsEditing] = useState(false)
+  const [editingCommentId, setEditingCommentId] = useState(null)
+  const [editingCommentContent, setEditingCommentContent] = useState('')
+  const [showAllActivity, setShowAllActivity] = useState(false)
   const [editForm, setEditForm] = useState({
     title: '',
     description: '',
@@ -101,6 +104,34 @@ export default function TaskDetail() {
       const msg = err.response?.data?.detail || err.message || 'Failed to delete file'
       toast.error(msg)
     },
+  })
+
+  const { data: teamMembers } = useQuery({
+    queryKey: ['team-members', teamId],
+    queryFn: () => api.teams.listMembers(token, teamId),
+    enabled: !!teamId,
+  })
+
+  const isAdmin = teamMembers?.some(m => m.user_id === currentUserId && m.role === 'admin')
+
+  const updateCommentMutation = useMutation({
+    mutationFn: ({ commentId, content }) => api.comments.update(token, teamId, projectId, taskId, commentId, { content }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['comments', teamId, projectId, taskId])
+      setEditingCommentId(null)
+      setEditingCommentContent('')
+      toast.success('Comment updated!')
+    },
+    onError: (err) => toast.error(err.response?.data?.detail || 'Failed to update comment'),
+  })
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId) => api.comments.delete(token, teamId, projectId, taskId, commentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['comments', teamId, projectId, taskId])
+      toast.success('Comment deleted!')
+    },
+    onError: (err) => toast.error(err.response?.data?.detail || 'Failed to delete comment'),
   })
 
   const handleFileSelect = (e) => {
@@ -404,14 +435,49 @@ export default function TaskDetail() {
 
         {activity && activity.length > 0 && (
           <div className="mt-8">
-            <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-4">Activity</h3>
+            <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-4 flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Activity ({activity.length})
+            </h3>
             <div className="space-y-2">
-              {activity.slice(0, 5).map(log => (
-                <div key={log.id} className="text-xs text-[var(--color-text-muted)]">
-                  <span className="font-medium text-[var(--color-text-primary)]">{log.action}</span>
-                  {' - '}{new Date(log.created_at).toLocaleString()}
-                </div>
-              ))}
+              {(showAllActivity ? activity : activity.slice(0, 5)).map(log => {
+                const actionLabel = log.action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                return (
+                  <div key={log.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded-lg text-xs">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-[var(--color-accent)]">{actionLabel}</span>
+                      <span className="text-[var(--color-text-muted)]">
+                        {new Date(log.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    {log.old_value && log.new_value && (
+                      <div className="text-[var(--color-text-secondary)]">
+                        <span className="line-through text-[var(--color-text-muted)] mr-1">{log.old_value}</span>
+                        <span className="text-[var(--color-text-primary)]">→ {log.new_value}</span>
+                      </div>
+                    )}
+                    {log.old_value && !log.new_value && (
+                      <div className="text-[var(--color-text-secondary)]">
+                        Removed: <span className="text-[var(--color-text-muted)]">{log.old_value}</span>
+                      </div>
+                    )}
+                    {!log.old_value && log.new_value && log.action !== 'created' && (
+                      <div className="text-[var(--color-text-secondary)]">
+                        Set to: <span className="text-[var(--color-text-primary)]">{log.new_value}</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+              {activity.length > 5 && (
+                <button
+                  onClick={() => setShowAllActivity(!showAllActivity)}
+                  className="text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] flex items-center gap-1 mt-2"
+                >
+                  {showAllActivity ? 'Show less' : `Show ${activity.length - 5} more`}
+                  <ChevronDown className={`w-3 h-3 transition-transform ${showAllActivity ? 'rotate-180' : ''}`} />
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -423,7 +489,12 @@ export default function TaskDetail() {
             </h3>
 
             <div className="space-y-4 mb-6">
-              {comments?.map(comment => (
+              {comments?.map(comment => {
+                const isAuthor = comment.author_id === currentUserId
+                const canEdit = isAuthor
+                const canDelete = isAuthor || isAdmin
+
+                return (
                 <div key={comment.id} className="flex gap-4 p-4 bg-[var(--color-bg-tertiary)] rounded-xl">
                   <div className="w-9 h-9 rounded-full bg-[var(--color-accent-muted)] flex items-center justify-center flex-shrink-0">
                     <span className="text-sm font-semibold text-[var(--color-accent)]">
@@ -431,18 +502,78 @@ export default function TaskDetail() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {comment.author?.email || `User ${comment.author_id}`}
-                      </span>
-                      <span className="text-xs text-[var(--color-text-muted)]">
-                        {new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                          {comment.author?.email || `User ${comment.author_id}`}
+                        </span>
+                        <span className="text-xs text-[var(--color-text-muted)]">
+                          {new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      {canEdit || canDelete ? (
+                        <div className="flex items-center gap-1">
+                          {canEdit && (
+                            <button
+                              onClick={() => {
+                                setEditingCommentId(comment.id)
+                                setEditingCommentContent(comment.content)
+                              }}
+                              className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-secondary)] rounded transition-all"
+                              title="Edit comment"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm('Are you sure you want to delete this comment?')) {
+                                  deleteCommentMutation.mutate(comment.id)
+                                }
+                              }}
+                              className="p-1.5 text-[var(--color-text-muted)] hover:text-red-500 hover:bg-[var(--color-bg-secondary)] rounded transition-all"
+                              title="Delete comment"
+                            >
+                              <Trash className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
-                    <p className="text-[var(--color-text-secondary)] leading-relaxed">{comment.content}</p>
+                    {editingCommentId === comment.id ? (
+                      <div className="space-y-2">
+                        <textarea
+                          value={editingCommentContent}
+                          onChange={(e) => setEditingCommentContent(e.target.value)}
+                          className="input-field w-full h-20 resize-none text-sm"
+                          placeholder="Edit your comment..."
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => updateCommentMutation.mutate({ commentId: comment.id, content: editingCommentContent })}
+                            disabled={updateCommentMutation.isPending || !editingCommentContent.trim()}
+                            className="btn-primary text-xs px-3 py-1.5"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingCommentId(null)
+                              setEditingCommentContent('')
+                            }}
+                            className="text-xs px-3 py-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[var(--color-text-secondary)] leading-relaxed">{comment.content}</p>
+                    )}
                   </div>
                 </div>
-              ))}
+              )})}
               {(!comments || comments.length === 0) && (
                 <div className="text-center py-8">
                   <MessageSquare className="w-8 h-8 text-[var(--color-text-muted)] mx-auto mb-2" />
