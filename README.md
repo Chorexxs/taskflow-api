@@ -80,7 +80,8 @@ API REST completa para gestión de tareas en equipo con autenticación JWT, equi
 
 - Proyectos dentro de equipos
 - Estados: active, archived
-- Registro de actividad por proyecto
+- Edición de proyectos (solo admins del equipo)
+- Registro de actividad (creación, archival)
 
 ### Tareas
 
@@ -90,14 +91,16 @@ API REST completa para gestión de tareas en equipo con autenticación JWT, equi
 - Fechas de vencimiento
 - Filtros y paginación
 - Registro de actividad completo
-- **Edición de tareas** (solo creador o admin pueden editar)
+- Edición de tareas (solo creador o admin pueden editar)
 
 ### Colaboración
 
 - Comentarios en tareas (muestra email del autor)
+  - Editar comentarios (solo el autor)
+  - Eliminar comentarios (autor o admin)
 - Adjuntos de archivos (upload, download, delete)
 - Notificaciones en tiempo real
-- Activity log detallado
+- Activity log detallado (tareas y proyectos)
 
 ---
 
@@ -216,7 +219,7 @@ tasks = db.query(Task).options(joinedload(Task.assignee)).filter(...).all()
 
 ### Otros recursos
 
-- **Comentarios:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/comments/` (list, create, update, delete)
+- **Comentarios:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/comments/` (list, create, PATCH update, DELETE)
 - **Adjuntos:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/attachments/` (upload, list, download, delete)
 - **Notificaciones:** `/api/v1/notifications/` (list, mark read, mark all read)
 - **Actividad:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/activity`
@@ -276,6 +279,7 @@ El frontend es una aplicación React desplegada en Vercel:
   - Kanban board con drag-and-drop
   - Filtros por estado, prioridad y assignee
   - Crear tareas
+  - Historial de actividad del proyecto
 - **TaskDetail**:
   - Ver y editar tarea (solo creador/admin)
   - Comentarios con email del autor
