@@ -23,7 +23,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Plus, Users, Crown, X, FolderOpen, ChevronRight, Edit2, Save, Pencil } from 'lucide-react'
+import { ArrowLeft, Plus, Users, Crown, X, FolderOpen, ChevronRight, Edit2, Save, Pencil, Trash2 } from 'lucide-react'
 
 /**
  * TeamDetail Component - Main page for viewing and managing a single team
@@ -141,6 +141,15 @@ export default function TeamDetail() {
       toast.success('Role updated!')
     },
     onError: () => toast.error('Failed to update role'),
+  })
+
+  const removeMemberMutation = useMutation({
+    mutationFn: (userId) => api.teams.removeMember(token, teamId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['team-members', teamId])
+      toast.success('Member removed!')
+    },
+    onError: () => toast.error('Failed to remove member'),
   })
 
   const handleSearch = async (query) => {
@@ -374,6 +383,19 @@ export default function TeamDetail() {
                             <option value="admin">Admin</option>
                           </select>
                         )
+                      )}
+                      {isAdmin && member.user_id !== currentUserId && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Remove ${member.user?.email} from this team?`)) {
+                              removeMemberMutation.mutate(member.user_id)
+                            }
+                          }}
+                          className="p-1.5 text-[var(--color-text-muted)] hover:text-red-500 hover:bg-[var(--color-bg-secondary)] rounded transition-all"
+                          title="Remove member"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       )}
                     </div>
                   </div>
