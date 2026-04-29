@@ -307,6 +307,14 @@ def remove_member(
     
     Returns:
         None: Returns 204 No Content on success.
+
+    Raises:
+        HTTPException 404: If member not found.
+        HTTPException 403: If not authorized to remove.
+
+    Example:
+        >>> curl -X DELETE https://api.taskflow.com/api/v1/teams/1/members/2 \\
+        ...   -H "Authorization: Bearer eyJhbGc..."
     """
     logger.info(
         "remove_member_request",
@@ -314,15 +322,7 @@ def remove_member(
         user_id=user_id,
         current_user_id=current_user.id,
     )
-    
-    Raises:
-        HTTPException 404: If member not found.
-        HTTPException 403: If not authorized to remove.
-    
-    Example:
-        >>> curl -X DELETE https://api.taskflow.com/api/v1/teams/1/members/2 \\
-        ...   -H "Authorization: Bearer eyJhbGc..."
-    """
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     logger.info(
         "team_resolved",
