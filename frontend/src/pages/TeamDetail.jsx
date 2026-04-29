@@ -144,12 +144,20 @@ export default function TeamDetail() {
   })
 
   const removeMemberMutation = useMutation({
-    mutationFn: (userId) => api.teams.removeMember(token, teamId, userId),
+    mutationFn: (userId) => {
+      console.log('[DEBUG] removeMember called:', { teamId, userId })
+      return api.teams.removeMember(token, teamId, userId)
+    },
     onSuccess: () => {
+      console.log('[DEBUG] removeMember success')
       queryClient.invalidateQueries(['team-members', teamId])
       toast.success('Member removed!')
     },
-    onError: () => toast.error('Failed to remove member'),
+    onError: (error) => {
+      console.log('[DEBUG] removeMember error:', error)
+      toast.error('Failed to remove member')
+    },
+    retry: 0,
   })
 
   const handleSearch = async (query) => {

@@ -270,10 +270,16 @@ export const api = {
      * @example
      * await api.teams.removeMember(token, 1, 5);
      */
-    removeMember: (token, teamId, userId) => fetch(`${API_URL}/api/v1/teams/${teamId}/members/${userId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` },
-    }).then(r => r.json()),
+    removeMember: (token, teamId, userId) => {
+      console.log('[API] removeMember request:', { teamId, userId })
+      return fetch(`${API_URL}/api/v1/teams/${teamId}/members/${userId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      }).then(r => {
+        console.log('[API] removeMember response status:', r.status)
+        return r.json()
+      })
+    },
     
     /**
      * Update a member's role.
