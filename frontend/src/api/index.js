@@ -24,6 +24,17 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 /**
+ * Handle API response - parses JSON unless status is 204 No Content.
+ * This prevents SyntaxError when trying to parse empty 204 responses.
+ */
+const handleResponse = (response) => {
+  if (response.status === 204) {
+    return {}
+  }
+  return response.json()
+}
+
+/**
  * API client object containing methods for all backend resources.
  * Each method returns a Promise that resolves to the JSON response.
  * 
@@ -271,14 +282,10 @@ export const api = {
      * await api.teams.removeMember(token, 1, 5);
      */
     removeMember: (token, teamId, userId) => {
-      console.log('[API] removeMember request:', { teamId, userId })
       return fetch(`${API_URL}/api/v1/teams/${teamId}/members/${userId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
-      }).then(r => {
-        console.log('[API] removeMember response status:', r.status)
-        return r.json()
-      })
+      }).then(handleResponse)
     },
     
     /**
@@ -412,7 +419,7 @@ updateMemberRole: (token, teamId, userId, role) => fetch(`${API_URL}/api/v1/team
     delete: (token, teamId, projectId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
-    }).then(r => r.json()),
+    }).then(handleResponse),
     
     /**
      * Get activity log for a project.
@@ -575,7 +582,7 @@ updateMemberRole: (token, teamId, userId, role) => fetch(`${API_URL}/api/v1/team
     delete: (token, teamId, projectId, taskId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
-    }).then(r => r.json()),
+    }).then(handleResponse),
     
     /**
      * Assign or unassign a task (admin only).
@@ -682,7 +689,7 @@ assign: (token, teamId, projectId, taskId, userId) => fetch(`${API_URL}/api/v1/t
     delete: (token, teamId, projectId, taskId, commentId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/comments/${commentId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
-    }).then(r => r.json()),
+    }).then(handleResponse),
     
     /**
      * Update an existing comment.
@@ -788,16 +795,7 @@ update: (token, teamId, projectId, taskId, commentId, data) => fetch(`${API_URL}
     delete: (token, teamId, projectId, taskId, attachmentId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/attachments/${attachmentId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
-    }).then(async r => {
-      if (r.status === 204) return { success: true };
-      if (!r.ok) {
-        const data = await r.json().catch(() => ({}));
-        const error = new Error(data.detail || 'Delete failed');
-        error.response = { data };
-        throw error;
-      }
-      return r.json();
-    }),
+    }).then(handleResponse),
   },
    
   /**
