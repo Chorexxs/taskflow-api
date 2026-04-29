@@ -42,11 +42,22 @@ def get_team_from_id_or_slug(db: Session, team_id_or_slug: str) -> models.Team:
     Raises:
         HTTPException 404: If team not found.
     """
+    logger.info(
+        "resolve_team_start",
+        team_id_or_slug=team_id_or_slug,
+        is_numeric=team_id_or_slug.isdigit(),
+    )
+    
     if team_id_or_slug.isdigit():
         team = crud.get_team_by_id(db, int(team_id_or_slug))
     else:
         team = crud.get_team_by_slug(db, team_id_or_slug)
+    
     if not team:
+        logger.warning(
+            "team_not_found",
+            team_id_or_slug=team_id_or_slug,
+        )
         raise HTTPException(status_code=404, detail="Team not found")
     return team
 
@@ -269,6 +280,11 @@ def list_members(
     return crud.get_team_members(db, team.id)
 
 
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+
 @router.delete("/{team_id_or_slug}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_member(
     team_id_or_slug: str,
@@ -291,6 +307,13 @@ def remove_member(
     
     Returns:
         None: Returns 204 No Content on success.
+    """
+    logger.info(
+        "remove_member_request",
+        team_id_or_slug=team_id_or_slug,
+        user_id=user_id,
+        current_user_id=current_user.id,
+    )
     
     Raises:
         HTTPException 404: If member not found.
@@ -301,8 +324,28 @@ def remove_member(
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
     team = get_team_from_id_or_slug(db, team_id_or_slug)
+    logger.info(
+        "team_resolved",
+        team_id=team.id,
+        team_slug=team.slug,
+        team_name=team.name,
+    )
+    
     member = crud.get_team_member(db, team.id, user_id)
+    logger.info(
+        "member_lookup",
+        team_id=team.id,
+        user_id=user_id,
+        member_found=member is not None,
+    )
+    
     if not member:
+        logger.warning(
+            "member_not_found",
+            team_id=team.id,
+            team_slug=team.slug,
+            user_id=user_id,
+        )
         raise HTTPException(status_code=404, detail="Member not found")
 
     # Check permissions: member can remove themselves, admin can remove anyone
