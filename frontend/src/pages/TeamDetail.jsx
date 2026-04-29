@@ -378,7 +378,7 @@ export default function TeamDetail() {
                           <select
                             value={member.role}
                             onChange={(e) => updateRoleMutation.mutate({ userId: member.user_id, role: e.target.value })}
-                            className="input-field py-1 px-2 text-xs w-auto min-w-[80px]"
+                            className="input-field py-0.5 px-1 text-xs w-auto min-w-[70px]"
                           >
                             <option value="member">Member</option>
                             <option value="admin">Admin</option>
