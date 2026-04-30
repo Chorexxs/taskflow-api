@@ -28,7 +28,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Plus, Search, Filter, X, Activity, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Plus, Search, Filter, X, Activity, ChevronDown, Settings, Archive } from 'lucide-react'
 import TaskCard from '../components/TaskCard'
 
 /**
@@ -138,6 +138,8 @@ export default function ProjectBoard() {
   const [search, setSearch] = useState('')
   const [activeTask, setActiveTask] = useState(null)
   const [showActivityPanel, setShowActivityPanel] = useState(false)
+  const [showEditProject, setShowEditProject] = useState(false)
+  const [projectForm, setProjectForm] = useState({ name: '', description: '' })
   const [taskColumns, setTaskColumns] = useState({
     todo: [],
     in_progress: [],
@@ -184,6 +186,35 @@ export default function ProjectBoard() {
     queryKey: ['project-activity', teamId, projectId],
     queryFn: () => api.projects.getActivity(token, teamId, projectId),
     enabled: showActivityPanel,
+  })
+
+  const { data: project } = useQuery({
+    queryKey: ['project', teamId, projectId],
+    queryFn: () => api.projects.get(token, teamId, projectId),
+    retry: false,
+  })
+
+  const updateProjectMutation = useMutation({
+    mutationFn: (data) => api.projects.update(token, teamId, projectId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['project', teamId, projectId])
+      setShowEditProject(false)
+      toast.success('Project updated!')
+    },
+    onError: (error) => {
+      toast.error(error.detail || 'Failed to update project')
+    },
+  })
+
+  const archiveProjectMutation = useMutation({
+    mutationFn: () => api.projects.archive(token, teamId, projectId),
+    onSuccess: () => {
+      toast.success('Project archived!')
+      navigate(`/teams/${teamId}`)
+    },
+    onError: (error) => {
+      toast.error(error.detail || 'Failed to archive project')
+    },
   })
 
   const createTaskMutation = useMutation({
@@ -403,6 +434,14 @@ export default function ProjectBoard() {
               >
                 <Activity className="w-5 h-5" />
               </button>
+              
+              <button
+                onClick={() => { setProjectForm({ name: project?.name || '', description: project?.description || '' }); setShowEditProject(true); }}
+                className="p-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-all"
+                title="Project Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </div>
@@ -594,6 +633,74 @@ export default function ProjectBoard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+)}
+
+      {showEditProject && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Project Settings</h3>
+              <button 
+                onClick={() => setShowEditProject(false)}
+                className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form 
+              onSubmit={(e) => { e.preventDefault(); updateProjectMutation.mutate(projectForm); }}
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Project Name</label>
+                <input
+                  type="text"
+                  value={projectForm.name}
+                  onChange={(e) => setProjectForm({ ...projectForm, name: e.target.value })}
+                  required
+                  className="input-field"
+                  placeholder="Project name"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
+                <textarea
+                  value={projectForm.description}
+                  onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
+                  className="input-field min-h-[80px] resize-none"
+                  placeholder="Optional description..."
+                />
+              </div>
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditProject(false)}
+                  className="btn-secondary text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateProjectMutation.isPending}
+                  className="btn-primary text-sm"
+                >
+                  {updateProjectMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+            
+            <div className="mt-6 pt-4 border-t border-subtle">
+              <button
+                onClick={() => { if (confirm('Are you sure you want to archive this project?')) { archiveProjectMutation.mutate(); }}}
+                disabled={archiveProjectMutation.isPending}
+                className="flex items-center gap-2 px-4 py-2 bg-[var(--color-priority-high)]/10 text-[var(--color-priority-high)] rounded-lg hover:bg-[var(--color-priority-high)]/20 transition-colors text-sm w-full justify-center"
+              >
+                <Archive className="w-4 h-4" />
+                {archiveProjectMutation.isPending ? 'Archiving...' : 'Archive Project'}
+              </button>
+            </div>
           </div>
         </div>
       )}
