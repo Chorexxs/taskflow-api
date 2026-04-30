@@ -450,7 +450,7 @@ updateMemberRole: (token, teamId, userId, role) => fetch(`${API_URL}/api/v1/team
     archive: (token, teamId, projectId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
-    }).then(r => r.json()),
+    }).then(handleResponse),
   },
   
   /**
