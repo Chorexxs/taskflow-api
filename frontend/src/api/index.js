@@ -447,8 +447,8 @@ updateMemberRole: (token, teamId, userId, role) => fetch(`${API_URL}/api/v1/team
      * @example
      * await api.projects.archive(token, 1, 1);
      */
-    archive: (token, teamId, projectId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}/archive`, {
-      method: 'POST',
+    archive: (token, teamId, projectId) => fetch(`${API_URL}/api/v1/teams/${teamId}/projects/${projectId}`, {
+      method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
     }).then(r => r.json()),
   },
