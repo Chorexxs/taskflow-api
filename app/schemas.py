@@ -130,6 +130,27 @@ class UserCreate(UserBase):
     password: str
 
 
+class UserUpdate(BaseModel):
+    """
+    Schema for updating user profile.
+    
+    Used in PUT /users/me endpoint.
+    Both email and password are optional - only provided fields are updated.
+    
+    Attributes:
+        email (Optional[EmailStr]): New email address
+        password (Optional[str]): New password (will be hashed)
+    
+    Config:
+        from_attributes: Allows creation from ORM objects
+    """
+    email: EmailStr | None = None
+    password: str | None = None
+    
+    class Config:
+        from_attributes = True
+
+
 class UserOut(UserBase):
     """
     Schema for user data returned to clients.

@@ -125,7 +125,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
-def update_user(db: Session, user_id: int, user_update: schemas.UserCreate):
+def update_user(db: Session, user_id: int, user_update: schemas.UserUpdate):
     """
     Update an existing user's email or password.
     
@@ -135,7 +135,7 @@ def update_user(db: Session, user_id: int, user_update: schemas.UserCreate):
     Args:
         db (Session): SQLAlchemy database session.
         user_id (int): ID of the user to update.
-        user_update (UserCreate): Schema with new email and/or password.
+        user_update (UserUpdate): Schema with new email and/or password.
     
     Returns:
         User | None: Updated user object, or None if user not found.

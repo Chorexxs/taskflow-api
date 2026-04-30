@@ -50,7 +50,7 @@ def read_users_me(current_user: User = Depends(get_current_user)):
 
 @router.put("/me", response_model=schemas.UserOut)
 def update_current_user(
-    user_update: schemas.UserCreate,
+    user_update: schemas.UserUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -61,7 +61,7 @@ def update_current_user(
     are updated - omitted fields remain unchanged.
     
     Args:
-        user_update (UserCreate): Schema with email and/or password to update.
+        user_update (UserUpdate): Schema with email and/or password to update.
         current_user (User): The authenticated user (injected via JWT dependency).
         db (Session): Database session (injected by FastAPI).
     
