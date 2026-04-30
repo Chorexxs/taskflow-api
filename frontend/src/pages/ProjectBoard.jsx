@@ -209,6 +209,7 @@ export default function ProjectBoard() {
   const archiveProjectMutation = useMutation({
     mutationFn: () => api.projects.archive(token, teamId, projectId),
     onSuccess: () => {
+      queryClient.invalidateQueries(['projects', teamId])
       toast.success('Project archived!')
       navigate(`/teams/${teamId}`)
     },
