@@ -3,7 +3,7 @@
 API REST completa para gestión de tareas en equipo con autenticación JWT, equipos, proyectos y más.
 
 [![Tests](https://img.shields.io/badge/tests-54%20passed-brightgreen)](https://github.com/anomalyco/taskflow-api/actions)
-[![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-blue)](https://fastapi.tiangolo.com/)
 
 ---
@@ -65,7 +65,6 @@ API REST completa para gestión de tareas en equipo con autenticación JWT, equi
 - Rate limiting por IP (10 requests/minuto en login)
 - Hash de contraseñas con bcrypt
 - Headers de seguridad (X-Content-Type-Options, X-Frame-Options, HSTS)
-- Logging estructurado con request_id para debugging
 - Integración con Sentry para monitoreo de errores en producción
 
 ### Gestión de Equipos
@@ -97,7 +96,7 @@ API REST completa para gestión de tareas en equipo con autenticación JWT, equi
 
 - Comentarios en tareas (muestra email del autor)
   - Editar comentarios (solo el autor)
-  - Eliminar comentarios (autor o admin)
+  - Eliminar comentarios (autor o admin del equipo)
 - Adjuntos de archivos (upload, download, delete)
 - Notificaciones en tiempo real
 - Activity log detallado (tareas y proyectos)
@@ -230,6 +229,8 @@ tasks = db.query(Task).options(joinedload(Task.assignee)).filter(...).all()
 
 ## Tests
 
+### Backend (pytest)
+
 ```bash
 # Ejecutar todos los tests
 pytest -v
@@ -241,6 +242,16 @@ pytest tests/test_teams.py -v
 
 # Con coverage
 pytest --cov=app --cov-report=html
+```
+
+### Frontend (vitest)
+
+```bash
+# Tests interactivos
+npm run test:watch
+
+# Tests una vez
+npm run test
 ```
 
 ### Cobertura actual: 54 tests
@@ -368,6 +379,7 @@ docker compose up -d
 
 # La API estará disponible en http://localhost:8000
 # Swagger: http://localhost:8000/docs
+# Frontend: http://localhost:5173
 ```
 
 ### Sin Docker
