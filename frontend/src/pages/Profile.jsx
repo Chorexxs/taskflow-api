@@ -19,8 +19,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, LogOut, User, Shield } from 'lucide-react'
+import { LogOut, User, Shield, Loader2 } from 'lucide-react'
 
 /**
  * Profile Component - User account settings page
@@ -39,10 +40,12 @@ import { ArrowLeft, LogOut, User, Shield } from 'lucide-react'
  */
 
 export default function Profile() {
-  const { user, logout } = useAuth()
+  const { user, accessToken, logout } = useAuth()
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   /**
    * Handles user logout by calling the logout function from AuthContext
@@ -54,6 +57,42 @@ export default function Profile() {
   const handleLogout = () => {
     logout()
     navigate('/login')
+  }
+
+  /**
+   * Handle password update - validates and calls the API
+   */
+  const handlePasswordUpdate = async () => {
+    setError('')
+    
+    if (!password || !confirmPassword) {
+      setError('Please fill in both password fields')
+      return
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    setLoading(true)
+    try {
+      await api.users.update(accessToken, { password })
+      toast.success('Password updated successfully')
+      setPassword('')
+      setConfirmPassword('')
+    } catch (err) {
+      const msg = err.detail || 'Failed to update password'
+      setError(msg)
+      toast.error(msg)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -92,15 +131,22 @@ export default function Profile() {
                 <h3 className="text-sm font-medium text-[var(--color-text-secondary)]">Change Password</h3>
               </div>
               
+              {error && (
+                <div className="mb-3 p-2 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-[var(--color-priority-high)]">
+                  {error}
+                </div>
+              )}
+              
               <div className="space-y-3 ">
                 <div className="space-y-1">
                   <label className="block text-xs  font-medium text-[var(--color-text-muted)] uppercase tracking-wider">New Password</label>
                   <input
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => { setPassword(e.target.value); setError(''); }}
                     placeholder="Enter new password"
                     className="input-field"
+                    minLength={6}
                   />
                 </div>
 
@@ -109,16 +155,19 @@ export default function Profile() {
                   <input
                     type="password"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => { setConfirmPassword(e.target.value); setError(''); }}
                     placeholder="Confirm new password"
                     className="input-field"
+                    minLength={6}
                   />
                 </div>
 
                 <button
-                  onClick={() => toast.success('Password updated!')}
-                  className="btn-primary text-sm w-full"
+                  onClick={handlePasswordUpdate}
+                  disabled={loading}
+                  className="btn-primary text-sm w-full flex items-center justify-center gap-2 disabled:opacity-50"
                 >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                   Update Password
                 </button>
               </div>
