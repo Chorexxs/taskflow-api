@@ -692,7 +692,7 @@ export default function ProjectBoard() {
               </div>
             </form>
             
-            <div className="mt-6 pt-4 border-t border-subtle">
+            <div className="mt-6 pt-4">
               <button
                 onClick={() => { if (confirm('Are you sure you want to archive this project?')) { archiveProjectMutation.mutate(); }}}
                 disabled={archiveProjectMutation.isPending}
