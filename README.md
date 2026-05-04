@@ -65,15 +65,16 @@ API REST completa para gestión de tareas en equipo con autenticación JWT, equi
 - Rate limiting por IP (10 requests/minuto en login)
 - Hash de contraseñas con bcrypt
 - Headers de seguridad (X-Content-Type-Options, X-Frame-Options, HSTS)
+- Logging estructurado con structlog y request_id
+- Caching con Redis (degrada gracefully si no está disponible)
 - Integración con Sentry para monitoreo de errores en producción
 
 ### Gestión de Equipos
 
 - Equipos con membresías y roles (admin, member)
-- Invite de miembros por email
-- Actualización de roles y removal de miembros
 - Búsqueda de proyectos y tareas dentro del equipo
-- Roles de miembro editables (promover/quitar rol de admin)
+  - Invite de miembros por email
+  - Actualización de roles y removal de miembros
 
 ### Proyectos
 
@@ -282,20 +283,24 @@ El frontend es una aplicación React desplegada en Vercel:
 
 ### Características del Frontend
 
+- **Login/Register**: Autenticación de usuarios
 - **Dashboard**: Vista de equipos con acceso rápido a proyectos
 - **TeamDetail**:
+  - Ver equipo y proyectos
   - Búsqueda de proyectos y tareas dentro del equipo
-  - Gestión de miembros (invitar, cambiar roles)
 - **ProjectBoard**:
   - Kanban board con drag-and-drop
   - Filtros por estado, prioridad y assignee
   - Crear tareas
   - Historial de actividad del proyecto
+  - Editar y archivar proyecto (solo admins)
 - **TaskDetail**:
   - Ver y editar tarea (solo creador/admin)
   - Comentarios con email del autor
   - Adjuntos de archivos (upload, download, delete)
   - Historial de actividad
+- **Profile**:
+  - Cambiar contraseña
 
 ### Estructura del frontend
 
