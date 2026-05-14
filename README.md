@@ -10,11 +10,11 @@ API REST completa para gestión de tareas en equipo con autenticación JWT, equi
 
 ## Probar online
 
-| Servicio     | URL                                                | Descripción                  |
-| ------------ | -------------------------------------------------- | ---------------------------- |
-| **Frontend** | https://taskflow-api-tau.vercel.app                | Interfaz de usuario completa |
-| **API**      | https://web-production-053e1.up.railway.app        | Backend REST con Swagger     |
-| **Health**   | https://web-production-053e1.up.railway.app/health | Estado del servidor          |
+| Servicio     | URL                                 | Descripción                  |
+| ------------ | ----------------------------------- | ---------------------------- |
+| **Frontend** | https://taskflow-api-tau.vercel.app | Interfaz de usuario completa |
+| **API**      | (Backend desplegándose en Render)   | Backend REST con Swagger     |
+| **Health**   | (Backend desplegándose en Render)   | Estado del servidor          |
 
 ### Endpoints públicos
 
@@ -322,30 +322,33 @@ frontend/
 ### Variables de entorno
 
 ```bash
-VITE_API_URL=https://web-production-053e1.up.railway.app
+VITE_API_URL=(URL del backend en Render cuando esté desplegado)
 ```
 
 ---
 
 ## Deployment
 
-### Backend - Railway
+### Base de Datos - InsForge
 
-```
-URL: https://web-production-053e1.up.railway.app
-RAM: 512MB
-Disk: 1GB
-```
+La base de datos PostgreSQL está desplegada en **InsForge** (https://insforge.dev).
+
+**Tablas creadas:** users, teams, team_members, projects, tasks, comments, attachments, activity_logs, notifications, revoked_tokens
+
+### Backend - Render
+
+El backend se despliega en **Render** (https://render.com).
 
 **Variables requeridas:**
 
 ```
-DATABASE_URL=postgresql://user:pass@host:5432/dbname
+DATABASE_URL=the-password-to-your-database
 SECRET_KEY=your-secret-key-min-32-chars
 ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-SENTRY_DSN=optional
-REDIS_URL=optional
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=7
+MAX_LOGIN_ATTEMPTS=5
+LOCKOUT_DURATION_MINUTES=15
 ```
 
 **Dockerfile:**
