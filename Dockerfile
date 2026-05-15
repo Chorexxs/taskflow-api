@@ -11,4 +11,4 @@ RUN mkdir -p /app/uploads
 
 EXPOSE 8000
 
-CMD ["python", "app/main.py"]
+CMD ["python", "main.py"]
