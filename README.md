@@ -13,8 +13,8 @@ API REST completa para gestión de tareas en equipo con autenticación JWT, equi
 | Servicio     | URL                                 | Descripción                  |
 | ------------ | ----------------------------------- | ---------------------------- |
 | **Frontend** | https://taskflow-api-tau.vercel.app | Interfaz de usuario completa |
-| **API**      | (Backend desplegándose en Render)   | Backend REST con Swagger     |
-| **Health**   | (Backend desplegándose en Render)   | Estado del servidor          |
+| **API**      | https://taskflow-api-gkgl.onrender.com/api/v1 | Backend REST con Swagger |
+| **Health**   | https://taskflow-api-gkgl.onrender.com/health | Estado del servidor |
 
 ### Endpoints públicos
 
@@ -29,17 +29,11 @@ API REST completa para gestión de tareas en equipo con autenticación JWT, equi
 ```
 ┌─────────────────┐      ┌─────────────────────┐      ┌─────────────────┐
 │   Frontend      │ ───▶ │      TaskFlow API   │ ───▶ │   PostgreSQL    │
-│   (Vercel)      │      │     (Railway)       │      │   (Database)    │
+│   (Vercel)      │      │      (Render)       │      │   (InsForge)    │
 │                 │      │                     │      │                 │
 │  React + Vite   │      │  FastAPI + JWT      │      │  SQLAlchemy     │
 │  Tailwind CSS   │      │  Pydantic v2        │      │  Alembic        │
 └─────────────────┘      └─────────────────────┘      └─────────────────┘
-                                 │
-                                 ▼
-                          ┌─────────────────┐
-                          │     Redis       │
-                          │  (Rate Limit)   │
-                          └─────────────────┘
 ```
 
 ### Stack tecnológico
@@ -53,7 +47,7 @@ API REST completa para gestión de tareas en equipo con autenticación JWT, equi
 | **Rate Limiting** | SlowAPI              | Implementación simple de límite por IP                                                    |
 | **Frontend**      | React + Vite         | Carga rápida, HMR, ecosistema maduro                                                      |
 | **Estilos**       | Tailwind CSS         | Utility-first, consistente, rápido de prototipar                                          |
-| **Deployment**    | Railway + Vercel     | CI/CD automático, escalable, free tier generoso                                           |
+| **Deployment**    | Render + Vercel + InsForge | CI/CD automático, escalable, free tier generoso |
 
 ---
 
@@ -322,7 +316,7 @@ frontend/
 ### Variables de entorno
 
 ```bash
-VITE_API_URL=(URL del backend en Render cuando esté desplegado)
+VITE_API_URL=https://taskflow-api-gkgl.onrender.com
 ```
 
 ---
@@ -342,10 +336,10 @@ El backend se despliega en **Render** (https://render.com).
 **Variables requeridas:**
 
 ```
-DATABASE_URL=the-password-to-your-database
-SECRET_KEY=your-secret-key-min-32-chars
+DATABASE_URL=postgresql://postgres:xxx@your-db-id.us-east.database.insforge.app:5432/insforge?sslmode=require
+SECRET_KEY=your-secret-key-at-least-32-characters
 ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=15
+ACCESS_TOKEN_EXPIRE_MINUTES=30
 REFRESH_TOKEN_EXPIRE_DAYS=7
 MAX_LOGIN_ATTEMPTS=5
 LOCKOUT_DURATION_MINUTES=15
@@ -360,7 +354,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY . .
 RUN mkdir -p /uploads
-CMD ["python", "app/main.py"]
+CMD ["python", "-m", "app.main"]
 ```
 
 ### Frontend - Vercel
