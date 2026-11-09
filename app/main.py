@@ -106,6 +106,20 @@ async def lifespan(app: FastAPI):
 
     # Schema creation is owned by Alembic. Tests create their own schema in
     # tests/conftest.py, so the application must never call create_all.
+    #
+    # Housekeeping is best-effort and must never prevent startup. Tests use
+    # their own in-memory database and skip this production cleanup.
+    if not os.environ.get("TESTING"):
+        try:
+            from app.auth import clean_expired_tokens
+            from app.database import get_db_context
+
+            with get_db_context() as db:
+                clean_expired_tokens(db)
+            logger.info("expired_tokens_cleaned")
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("token_cleanup_failed", error=str(exc))
+
     logger.info("application_started")
     yield
     logger.info("application_shutdown")
@@ -317,6 +331,34 @@ def health_check():
         return JSONResponse(status_code=503, content=health_status)
     
     return health_status
+
+
+@app.get("/health/live")
+def health_live():
+    """Liveness probe: the process is running."""
+    return {"status": "alive"}
+
+
+@app.get("/health/ready")
+def health_ready():
+    """Readiness probe: the API can serve traffic (database reachable)."""
+    from sqlalchemy import text
+
+    from app.database import get_engine
+
+    try:
+        engine = get_engine()
+        if engine is None:
+            raise RuntimeError("database is not configured")
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "not_ready", "database": "unavailable"},
+        )
+
+    return {"status": "ready", "database": "connected"}
 
 
 # Entry point for running the application directly

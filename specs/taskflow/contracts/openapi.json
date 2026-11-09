@@ -1,0 +1,3950 @@
+{
+  "components": {
+    "schemas": {
+      "ActivityLogOut": {
+        "description": "Schema for activity log response.\n\nUsed in activity endpoints for tasks and projects.\n\nAttributes:\n    id (int): Log entry ID\n    entity_type (str): Type of entity (task, project, etc.)\n    entity_id (int): ID of the entity\n    action (str): Action performed\n    changed_by (int): User who performed the action\n    old_value (str | None): Previous value\n    new_value (str | None): New value\n    created_at (datetime): When the action occurred\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserMini"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "changed_by": {
+            "title": "Changed By",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "integer"
+          },
+          "entity_type": {
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "new_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Value"
+          },
+          "old_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Value"
+          }
+        },
+        "required": [
+          "id",
+          "entity_type",
+          "entity_id",
+          "action",
+          "changed_by",
+          "old_value",
+          "new_value",
+          "created_at"
+        ],
+        "title": "ActivityLogOut",
+        "type": "object"
+      },
+      "AttachmentOut": {
+        "description": "Schema for attachment response data.\n\nUsed in attachment list and upload endpoints.\n\nAttributes:\n    id (int): Attachment's unique identifier\n    task_id (int): Task the attachment belongs to\n    uploaded_by (int): User who uploaded the file\n    filename (str): Original filename\n    file_size (int): File size in bytes\n    mime_type (str): MIME type of the file\n    created_at (datetime): Upload timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "file_size": {
+            "title": "File Size",
+            "type": "integer"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "mime_type": {
+            "title": "Mime Type",
+            "type": "string"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "integer"
+          },
+          "uploaded_by": {
+            "title": "Uploaded By",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "uploaded_by",
+          "filename",
+          "file_size",
+          "mime_type",
+          "created_at"
+        ],
+        "title": "AttachmentOut",
+        "type": "object"
+      },
+      "Body_login_api_v1_auth_login_post": {
+        "properties": {
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "password",
+            "title": "Client Secret"
+          },
+          "grant_type": {
+            "anyOf": [
+              {
+                "pattern": "^password$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "password": {
+            "format": "password",
+            "title": "Password",
+            "type": "string"
+          },
+          "scope": {
+            "default": "",
+            "title": "Scope",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_api_v1_auth_login_post",
+        "type": "object"
+      },
+      "Body_upload_attachment_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__attachments__post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_attachment_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__attachments__post",
+        "type": "object"
+      },
+      "CommentCreate": {
+        "description": "Schema for creating a comment.\n\nUsed in POST /tasks/{id}/comments endpoint.\n\nAttributes:\n    content (str): Comment text (required)\n\nValidators:\n    sanitize_input: Removes control characters from text",
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "CommentCreate",
+        "type": "object"
+      },
+      "CommentOut": {
+        "description": "Schema for comment response data.\n\nUsed in comment list and detail endpoints.\n\nAttributes:\n    id (int): Comment's unique identifier\n    task_id (int): Task the comment belongs to\n    author_id (int): User who wrote the comment\n    author (UserMini | None): Author user details\n    content (str): Comment text\n    created_at (datetime): Comment creation timestamp\n    updated_at (datetime): Last update timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserMini"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "author_id": {
+            "title": "Author Id",
+            "type": "integer"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "author_id",
+          "content",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CommentOut",
+        "type": "object"
+      },
+      "CommentUpdate": {
+        "description": "Schema for updating a comment.\n\nUsed in PATCH /tasks/{id}/comments/{id} endpoint.\n\nAttributes:\n    content (str): New comment text\n\nValidators:\n    sanitize_input: Removes control characters from text",
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "CommentUpdate",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LogoutRequest": {
+        "description": "Request body for logout.\n\nThe refresh token is optional for backwards compatibility, but clients\nshould always send it so the server can revoke the whole session.",
+        "properties": {
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token"
+          }
+        },
+        "title": "LogoutRequest",
+        "type": "object"
+      },
+      "NotificationOut": {
+        "description": "Schema for notification response data.\n\nUsed in notification list and update endpoints.\n\nAttributes:\n    id (int): Notification's unique identifier\n    user_id (int): User who receives the notification\n    type (str): Notification type\n    entity_type (str): Related entity type\n    entity_id (int): Related entity ID\n    message (str): Human-readable message\n    is_read (bool): Whether notification has been read\n    created_at (datetime): Notification creation timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "integer"
+          },
+          "entity_type": {
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_read": {
+            "title": "Is Read",
+            "type": "boolean"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "type",
+          "entity_type",
+          "entity_id",
+          "message",
+          "is_read",
+          "created_at"
+        ],
+        "title": "NotificationOut",
+        "type": "object"
+      },
+      "PaginatedActivityResponse": {
+        "description": "Paginated list of activity entries.",
+        "properties": {
+          "has_next": {
+            "title": "Has Next",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityLogOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "title": "Pages",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pages",
+          "has_next"
+        ],
+        "title": "PaginatedActivityResponse",
+        "type": "object"
+      },
+      "PaginatedCommentResponse": {
+        "description": "Paginated list of comments.",
+        "properties": {
+          "has_next": {
+            "title": "Has Next",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CommentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "title": "Pages",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pages",
+          "has_next"
+        ],
+        "title": "PaginatedCommentResponse",
+        "type": "object"
+      },
+      "PaginatedNotificationResponse": {
+        "description": "Paginated list of notifications.",
+        "properties": {
+          "has_next": {
+            "title": "Has Next",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "title": "Pages",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pages",
+          "has_next"
+        ],
+        "title": "PaginatedNotificationResponse",
+        "type": "object"
+      },
+      "PaginatedProjectResponse": {
+        "description": "Paginated list of projects.",
+        "properties": {
+          "has_next": {
+            "title": "Has Next",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "title": "Pages",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pages",
+          "has_next"
+        ],
+        "title": "PaginatedProjectResponse",
+        "type": "object"
+      },
+      "PaginatedTaskResponse": {
+        "description": "Schema for paginated task list response.\n\nUsed in GET /tasks endpoint for paginated results.\n\nAttributes:\n    items (list[TaskOut]): List of tasks for the current page\n    total (int): Total number of tasks matching the query\n    page (int): Current page number\n    pages (int): Total number of pages\n    has_next (bool | None): Whether there's a next page\n    next_cursor (str | None): Cursor for next page (if using cursor pagination)",
+        "properties": {
+          "has_next": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Next"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TaskOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "title": "Pages",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pages"
+        ],
+        "title": "PaginatedTaskResponse",
+        "type": "object"
+      },
+      "ProjectCreate": {
+        "description": "Schema for project creation.\n\nUsed in POST /teams/{id}/projects endpoint.\n\nAttributes:\n    name (str): Project name\n    description (str | None): Optional project description\n\nValidators:\n    sanitize_input: Removes control characters from text fields",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ProjectCreate",
+        "type": "object"
+      },
+      "ProjectOut": {
+        "description": "Schema for project response data.\n\nUsed in project list and detail endpoints.\n\nAttributes:\n    id (int): Project's unique identifier\n    team_id (int): Team the project belongs to\n    name (str): Project name\n    description (str | None): Project description\n    status (ProjectStatus): Project status\n    created_by (int): ID of user who created the project\n    created_at (datetime): Project creation timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "integer"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          },
+          "team_id": {
+            "title": "Team Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "team_id",
+          "name",
+          "description",
+          "status",
+          "created_by",
+          "created_at"
+        ],
+        "title": "ProjectOut",
+        "type": "object"
+      },
+      "ProjectStatus": {
+        "description": "Enum representing project status.\n\nAttributes:\n    active: Project is active and visible\n    archived: Project is archived and hidden by default",
+        "enum": [
+          "active",
+          "archived"
+        ],
+        "title": "ProjectStatus",
+        "type": "string"
+      },
+      "ProjectUpdate": {
+        "description": "Schema for project updates.\n\nUsed in PATCH /teams/{id}/projects/{id} endpoint.\nAll fields are optional - only included fields are updated.\n\nAttributes:\n    name (str | None): New project name\n    description (str | None): New project description\n    status (ProjectStatus | None): New project status\n\nValidators:\n    sanitize_input: Removes control characters from text fields",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "ProjectUpdate",
+        "type": "object"
+      },
+      "RefreshTokenRequest": {
+        "description": "Request body for token refresh.\n\nRefresh tokens must travel in the request body, never in a query string\nor URL, so they cannot leak through logs or browser history.",
+        "properties": {
+          "refresh_token": {
+            "title": "Refresh Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshTokenRequest",
+        "type": "object"
+      },
+      "SearchResult": {
+        "description": "Paginated search results for projects and tasks.",
+        "properties": {
+          "projects": {
+            "$ref": "#/components/schemas/PaginatedProjectResponse"
+          },
+          "tasks": {
+            "$ref": "#/components/schemas/PaginatedTaskResponse"
+          }
+        },
+        "required": [
+          "projects",
+          "tasks"
+        ],
+        "title": "SearchResult",
+        "type": "object"
+      },
+      "TaskAssign": {
+        "description": "Schema for assigning a task to a user.\n\nUsed in PATCH /teams/{id}/projects/{id}/tasks/{id}/assign endpoint.\n\nAttributes:\n    user_id (int | None): User ID to assign. None to unassign.\n\nExample:\n    >>> # Assign to user\n    >>> TaskAssign(user_id=123)\n    >>> # Unassign\n    >>> TaskAssign(user_id=None)",
+        "properties": {
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "title": "TaskAssign",
+        "type": "object"
+      },
+      "TaskCreate": {
+        "description": "Schema for task creation.\n\nUsed in POST /teams/{id}/projects/{id}/tasks endpoint.\n\nAttributes:\n    title (str): Task title (required)\n    description (str | None): Task description\n    priority (TaskPriority): Task priority (default: medium)\n    due_date (datetime | None): Optional due date\n    assigned_to (int | None): User ID to assign the task to\n\nValidators:\n    sanitize_input: Removes control characters from text fields\n\nExample:\n    >>> task = TaskCreate(\n    ...     title=\"Fix login bug\",\n    ...     description=\"Users cannot login with special characters\",\n    ...     priority=TaskPriority.high,\n    ...     assigned_to=123\n    ... )",
+        "properties": {
+          "assigned_to": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned To"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TaskPriority",
+            "default": "medium"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "TaskCreate",
+        "type": "object"
+      },
+      "TaskOut": {
+        "description": "Schema for task response data.\n\nUsed in task list, detail, and creation endpoints.\nIncludes assignee information for displaying task ownership.\n\nAttributes:\n    id (int): Task's unique identifier\n    project_id (int): Project the task belongs to\n    title (str): Task title\n    description (str | None): Task description\n    status (TaskStatus): Task status\n    priority (TaskPriority): Task priority\n    assigned_to (int | None): User ID of assignee\n    assignee (UserMini | None): Full assignee user object\n    due_date (datetime | None): Task due date\n    created_by (int): ID of user who created the task\n    created_at (datetime): Task creation timestamp\n    updated_at (datetime): Last update timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "properties": {
+          "assigned_to": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned To"
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserMini"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "integer"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TaskPriority"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "title",
+          "description",
+          "status",
+          "priority",
+          "assigned_to",
+          "assignee",
+          "due_date",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TaskOut",
+        "type": "object"
+      },
+      "TaskPriority": {
+        "description": "Enum representing task priority.\n\nAttributes:\n    low: Low priority task\n    medium: Medium priority task\n    high: High priority task",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "TaskPriority",
+        "type": "string"
+      },
+      "TaskStatus": {
+        "description": "Enum representing task status.\n\nAttributes:\n    todo: Task needs to be done\n    in_progress: Task is being worked on\n    done: Task is completed",
+        "enum": [
+          "todo",
+          "in_progress",
+          "done"
+        ],
+        "title": "TaskStatus",
+        "type": "string"
+      },
+      "TaskUpdate": {
+        "description": "Schema for task updates.\n\nUsed in PATCH /teams/{id}/projects/{id}/tasks/{id} endpoint.\nAll fields are optional - only included fields are updated.\n\nAttributes:\n    title (str | None): New task title\n    description (str | None): New task description\n    status (TaskStatus | None): New task status\n    priority (TaskPriority | None): New task priority\n    due_date (datetime | None): New due date\n\nValidators:\n    sanitize_input: Removes control characters from text fields",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskPriority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "TaskUpdate",
+        "type": "object"
+      },
+      "TeamCreate": {
+        "description": "Schema for team creation.\n\nUsed in POST /teams endpoint.\n\nAttributes:\n    name (str): Team display name\n    slug (str): URL-friendly unique identifier\n    description (str | None): Optional team description\n\nValidators:\n    sanitize_input: Removes control characters from text fields",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "slug"
+        ],
+        "title": "TeamCreate",
+        "type": "object"
+      },
+      "TeamMemberAdd": {
+        "description": "Schema for adding a new team member.\n\nUsed in POST /teams/{id}/members endpoint.\n\nAttributes:\n    email (EmailStr): Email of user to invite\n    role (TeamRole): Role to assign (default: member)",
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TeamRole",
+            "default": "member"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "TeamMemberAdd",
+        "type": "object"
+      },
+      "TeamMemberOut": {
+        "description": "Schema for team member response with user details.\n\nUsed when returning member list with full user information.\n\nAttributes:\n    team_id (int): Team identifier\n    user_id (int): User identifier\n    role (TeamRole): Member's role in the team\n    joined_at (datetime): When the user joined\n    user (UserOut): Full user object\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "properties": {
+          "joined_at": {
+            "format": "date-time",
+            "title": "Joined At",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TeamRole"
+          },
+          "team_id": {
+            "title": "Team Id",
+            "type": "integer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "team_id",
+          "user_id",
+          "role",
+          "joined_at",
+          "user"
+        ],
+        "title": "TeamMemberOut",
+        "type": "object"
+      },
+      "TeamMemberUpdate": {
+        "description": "Schema for updating team member role.\n\nUsed in PATCH /teams/{id}/members/{user_id} endpoint.\n\nAttributes:\n    role (TeamRole): New role for the member",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/TeamRole"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "TeamMemberUpdate",
+        "type": "object"
+      },
+      "TeamOut": {
+        "description": "Schema for team response data.\n\nUsed in team list and detail endpoints.\n\nAttributes:\n    id (int): Team's unique identifier\n    name (str): Team display name\n    slug (str): URL-friendly identifier\n    description (str | None): Team description\n    created_by (int): ID of user who created the team\n    created_at (datetime): Team creation timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "integer"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "description",
+          "created_by",
+          "created_at"
+        ],
+        "title": "TeamOut",
+        "type": "object"
+      },
+      "TeamRole": {
+        "description": "Enum representing team member roles.\n\nAttributes:\n    admin: Can manage team members, projects, and all team resources\n    member: Can view and work within team projects",
+        "enum": [
+          "admin",
+          "member"
+        ],
+        "title": "TeamRole",
+        "type": "string"
+      },
+      "TeamUpdate": {
+        "description": "Editable team fields. Only admins may change them.",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "TeamUpdate",
+        "type": "object"
+      },
+      "Token": {
+        "description": "Schema for authentication token response.\n\nReturned on successful login and token refresh.\n\nAttributes:\n    access_token (str): JWT access token for API authentication\n    refresh_token (str | None): JWT refresh token for session extension\n    token_type (str): Token type (\"bearer\")",
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token"
+          },
+          "token_type": {
+            "title": "Token Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "token_type"
+        ],
+        "title": "Token",
+        "type": "object"
+      },
+      "UserCreate": {
+        "description": "Schema for user registration.\n\nUsed in POST /auth/register endpoint.\n\nAttributes:\n    email (EmailStr): Valid email address (validated by Pydantic)\n    password (str): Plain text password (hashed before storage)",
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserCreate",
+        "type": "object"
+      },
+      "UserMini": {
+        "description": "Minimal user schema for nested responses.\n\nUsed when embedding user information in other responses,\nsuch as task assignee information.\n\nAttributes:\n    id (int): User's unique identifier\n    email (EmailStr): User's email address\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "email"
+        ],
+        "title": "UserMini",
+        "type": "object"
+      },
+      "UserOut": {
+        "description": "Schema for user data returned to clients.\n\nUsed in responses that need to expose user information.\nDoes NOT include password or sensitive data.\n\nAttributes:\n    id (int): User's unique identifier\n    email (EmailStr): User's email address\n    is_active (bool): Whether the account is active\n    created_at (datetime): Account creation timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "email",
+          "id",
+          "is_active",
+          "created_at"
+        ],
+        "title": "UserOut",
+        "type": "object"
+      },
+      "UserUpdate": {
+        "description": "Schema for updating user profile.\n\nUsed in PUT /users/me endpoint.\nBoth email and password are optional - only provided fields are updated.\nChanging either requires the current password.\n\nAttributes:\n    email (Optional[EmailStr]): New email address\n    password (Optional[str]): New password (will be hashed)\n    current_password (Optional[str]): Current password for verification\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "properties": {
+          "current_password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Password"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "format": "email",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "title": "UserUpdate",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "/api/v1/auth/login"
+          }
+        },
+        "type": "oauth2"
+      }
+    }
+  },
+  "info": {
+    "description": "API REST con FastAPI y JWT",
+    "title": "TaskFlow API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/": {
+      "get": {
+        "description": "Root endpoint returning API information.\n\nThis is the base endpoint that provides a simple welcome message.\nUsed for basic connectivity testing.\n\nReturns:\n    dict: Dictionary with a welcome message.\n\nExample:\n    >>> curl https://api.taskflow.com/\n    {\"message\": \"TaskFlow API\"}",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Root"
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Authenticate a user and return JWT tokens.\n\nValidates user credentials and returns access and refresh tokens.\nThe endpoint supports OAuth2 password flow for compatibility.\n\nRate limit: 10 requests per minute per IP.\n\nArgs:\n    request (Request): The incoming HTTP request (for rate limiting).\n    form_data (OAuth2PasswordRequestForm): Form with username (email) and password.\n    db (Session): Database session (injected by FastAPI).\n\nReturns:\n    Token: Dictionary with access_token, refresh_token, and token_type.\n\nRaises:\n    HTTPException 401: If credentials are incorrect.\n    HTTPException 423: If account is locked due to failed attempts.\n    HTTPException 429: If rate limit is exceeded.\n\nExample:\n    >>> curl -X POST https://api.taskflow.com/api/v1/auth/login \\\n    ...   -H \"Content-Type: application/x-www-form-urlencoded\" \\\n    ...   -d \"username=user@example.com&password=secure123\"\n    \n    Response:\n    {\n        \"access_token\": \"eyJhbGc...\",\n        \"refresh_token\": \"eyJhbGc...\",\n        \"token_type\": \"bearer\"\n    }",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_api_v1_auth_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "description": "Logout the current user by revoking both tokens.\n\nThe access token comes from the ``Authorization`` header and the refresh\ntoken from the JSON body. Logout does not depend on an active session, so\nrepeated calls are idempotent and an expired access token does not block\nrevoking the refresh token.\n\nExample:\n    >>> curl -X POST https://api.taskflow.com/api/v1/auth/logout \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\" \\\n    ...   -H \"Content-Type: application/json\" \\\n    ...   -d '{\"refresh_token\":\"eyJhbGc...\"}'",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/LogoutRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Logout",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "Refresh access token using a valid refresh token.\n\nAccepts the refresh token in the JSON body (preferred):\n``{\"refresh_token\": \"...\"}``.\n\nA query-string fallback is kept temporarily for backwards compatibility,\nbut it is deprecated because tokens in URLs can leak through logs.\n\nThe old refresh token is revoked and a new pair is issued (rotation).\n\nRaises:\n    HTTPException 401: If the refresh token is invalid, expired or revoked.\n    HTTPException 422: If no refresh token is provided.",
+        "operationId": "refresh_api_v1_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RefreshTokenRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "description": "Register a new user in the system.\n\nCreates a new user account with the provided email and password.\nThe password is automatically hashed before storage.\n\nRate limit: 5 requests per minute per IP.\n\nArgs:\n    request (Request): The incoming HTTP request (for logging/tracing).\n    user (UserCreate): Schema containing email and password.\n    db (Session): Database session (injected by FastAPI).\n\nReturns:\n    UserOut: The newly created user (without password).\n\nRaises:\n    HTTPException 400: If the email is already registered.\n    HTTPException 429: If rate limit is exceeded.\n\nExample:\n    >>> curl -X POST https://api.taskflow.com/api/v1/auth/register \\\n    ...   -H \"Content-Type: application/json\" \\\n    ...   -d '{\"email\":\"user@example.com\",\"password\":\"secure123\"}'\n    \n    Response:\n    {\n        \"id\": 1,\n        \"email\": \"user@example.com\",\n        \"is_active\": true,\n        \"created_at\": \"2024-01-01T00:00:00Z\"\n    }",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/notifications/": {
+      "get": {
+        "description": "Get notifications for the current user.\n\nReturns all notifications for the authenticated user, optionally\nfiltered by read status. Notifications are ordered by creation\ndate (newest first).\n\nArgs:\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    is_read (bool | None): Filter by read status. None returns all.\n\nReturns:\n    PaginatedNotificationResponse: Page of notifications plus metadata.\n\nExample:\n    >>> # Get all notifications\n    >>> curl -X GET https://api.taskflow.com/api/v1/notifications/ \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"\n    \n    >>> # Get only unread\n    >>> curl \"https://api.taskflow.com/api/v1/notifications/?is_read=false\" \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "get_notifications_api_v1_notifications__get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "is_read",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Read"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedNotificationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Notifications",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "patch": {
+        "description": "Mark all notifications as read.\n\nBulk operation to mark all unread notifications as read\nfor the current user.\n\nArgs:\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    None: Returns 204 No Content on success.\n\nExample:\n    >>> curl -X PATCH https://api.taskflow.com/api/v1/notifications/read-all \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "mark_all_notifications_read_api_v1_notifications_read_all_patch",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Mark All Notifications Read",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/unread-count": {
+      "get": {
+        "description": "Return the number of unread notifications for the current user.",
+        "operationId": "get_unread_count_api_v1_notifications_unread_count_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Unread Count",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{notification_id}/read": {
+      "patch": {
+        "description": "Mark a single notification as read.\n\nOnly the notification owner can mark it as read.\n\nArgs:\n    notification_id (int): ID of the notification to mark as read.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    NotificationOut: The updated notification.\n\nRaises:\n    HTTPException 404: If notification not found.\n    HTTPException 403: If user doesn't own the notification.\n\nExample:\n    >>> curl -X PATCH https://api.taskflow.com/api/v1/notifications/1/read \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "mark_notification_read_api_v1_notifications__notification_id__read_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notification_id",
+            "required": true,
+            "schema": {
+              "title": "Notification Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Mark Notification Read",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/teams/": {
+      "get": {
+        "description": "List all teams the current user is a member of.\n\nReturns all teams where the current user has membership,\nregardless of their role.\n\nArgs:\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    list[TeamOut]: List of teams the user belongs to.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/ \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"\n    \n    Response:\n    [\n        {\"id\": 1, \"name\": \"My Team\", \"slug\": \"my-team\", ...},\n        {\"id\": 2, \"name\": \"Another Team\", \"slug\": \"another\", ...}\n    ]",
+        "operationId": "get_teams_api_v1_teams__get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TeamOut"
+                  },
+                  "title": "Response Get Teams Api V1 Teams  Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Teams",
+        "tags": [
+          "teams"
+        ]
+      },
+      "post": {
+        "description": "Create a new team.\n\nCreates a new team and adds the creator as an admin member.\nThe team requires a unique slug that can be used in URLs.\n\nArgs:\n    team (TeamCreate): Schema with name, slug, and optional description.\n    current_user (User): The authenticated user (creator becomes admin).\n    db (Session): Database session (injected by FastAPI).\n\nReturns:\n    TeamOut: The newly created team.\n\nRaises:\n    HTTPException 400: If the team slug already exists.\n\nExample:\n    >>> curl -X POST https://api.taskflow.com/api/v1/teams/ \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\" \\\n    ...   -H \"Content-Type: application/json\" \\\n    ...   -d '{\"name\":\"My Team\",\"slug\":\"my-team\",\"description\":\"A team\"}'",
+        "operationId": "create_team_api_v1_teams__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Team",
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}": {
+      "get": {
+        "description": "Get team details.\n\nReturns detailed information about a specific team.\nThe user must be a member of the team to access this endpoint.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    TeamOut: Team details including name, slug, description, and metadata.\n\nRaises:\n    HTTPException 403: If user is not a member of the team.\n    HTTPException 404: If team not found.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/my-team \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "get_team_api_v1_teams__team_id_or_slug__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Team",
+        "tags": [
+          "teams"
+        ]
+      },
+      "patch": {
+        "description": "Update a team's name or description. Only team admins may do this.",
+        "operationId": "update_team_api_v1_teams__team_id_or_slug__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Team",
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/members": {
+      "get": {
+        "description": "List all members of a team.\n\nReturns all members with their roles and user information.\nThe user must be a member of the team to access this endpoint.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    list[TeamMemberOut]: List of team members with user details.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/members \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "list_members_api_v1_teams__team_id_or_slug__members_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TeamMemberOut"
+                  },
+                  "title": "Response List Members Api V1 Teams  Team Id Or Slug  Members Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Members",
+        "tags": [
+          "teams"
+        ]
+      },
+      "post": {
+        "description": "Invite a user to join the team.\n\nAdds an existing user to the team with the specified role.\nOnly team admins can invite new members.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    member_data (TeamMemberAdd): Schema with email and role.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    admin (TeamMember): Admin check (injected via dependency).\n\nReturns:\n    TeamMemberOut: The newly created member record with user details.\n\nRaises:\n    HTTPException 404: If user with the given email doesn't exist.\n    HTTPException 400: If user is already a member.\n\nExample:\n    >>> curl -X POST https://api.taskflow.com/api/v1/teams/1/members \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\" \\\n    ...   -H \"Content-Type: application/json\" \\\n    ...   -d '{\"email\":\"newuser@example.com\",\"role\":\"member\"}'",
+        "operationId": "invite_member_api_v1_teams__team_id_or_slug__members_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamMemberAdd"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMemberOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Invite Member",
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/members/{user_id}": {
+      "delete": {
+        "description": "Remove a member from a team.\n\nAllows removing members. Members can remove themselves, while\nadmins can remove any member. A user cannot remove themselves\nif they are the only admin.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    user_id (int): ID of the user to remove.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    None: Returns 204 No Content on success.\n\nRaises:\n    HTTPException 404: If member not found.\n    HTTPException 403: If not authorized to remove.\n\nExample:\n    >>> curl -X DELETE https://api.taskflow.com/api/v1/teams/1/members/2 \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "remove_member_api_v1_teams__team_id_or_slug__members__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Remove Member",
+        "tags": [
+          "teams"
+        ]
+      },
+      "patch": {
+        "description": "Update a member's role in a team.\n\nOnly team admins can change member roles. An admin cannot\ndemote themselves to member if they are the only admin.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    user_id (int): ID of the user to update.\n    role_update (TeamMemberUpdate): Schema with new role.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    admin (TeamMember): Admin check (injected via dependency).\n\nReturns:\n    TeamMemberOut: Updated member record.\n\nRaises:\n    HTTPException 404: If member not found.\n    HTTPException 400: If admin tries to demote themselves.\n\nExample:\n    >>> curl -X PATCH https://api.taskflow.com/api/v1/teams/1/members/2 \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\" \\\n    ...   -H \"Content-Type: application/json\" \\\n    ...   -d '{\"role\":\"admin\"}'",
+        "operationId": "update_member_role_api_v1_teams__team_id_or_slug__members__user_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamMemberUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMemberOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Member Role",
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/": {
+      "get": {
+        "description": "List all active projects in a team.\n\nReturns all projects with \"active\" status. Archived projects\nare not included by default.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    list[ProjectOut]: List of active projects in the team.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/projects/ \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "list_projects_api_v1_teams__team_id_or_slug__projects__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_archived",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Archived",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectOut"
+                  },
+                  "title": "Response List Projects Api V1 Teams  Team Id Or Slug  Projects  Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Projects",
+        "tags": [
+          "projects"
+        ]
+      },
+      "post": {
+        "description": "Create a new project within a team.\n\nCreates a project in the specified team. All team members can\ncreate projects. The project is created with \"active\" status.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project (ProjectCreate): Schema with name and optional description.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user (becomes project creator).\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    ProjectOut: The newly created project.\n\nExample:\n    >>> curl -X POST https://api.taskflow.com/api/v1/teams/1/projects/ \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\" \\\n    ...   -H \"Content-Type: application/json\" \\\n    ...   -d '{\"name\":\"Website Redesign\",\"description\":\"Redesign company website\"}'",
+        "operationId": "create_project_api_v1_teams__team_id_or_slug__projects__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Project",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/": {
+      "get": {
+        "description": "List tasks with filters and pagination.\n\nReturns paginated tasks for a project. Supports filtering by:\n- status: todo, in_progress, done\n- priority: low, medium, high\n- assigned_to: user ID\n- due_before, due_after: due date range\n\nAlso supports sorting and pagination.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    status (str | None): Filter by task status.\n    priority (str | None): Filter by task priority.\n    assigned_to (str | None): Filter by assignee user ID (as string).\n    due_before (datetime | None): Filter tasks due before this date.\n    due_after (datetime | None): Filter tasks due after this date.\n    sort_by (str): Field to sort by.\n    order (str): Sort order (asc or desc).\n    page (int): Page number (1-indexed).\n    page_size (int): Items per page (max 100).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    PaginatedTaskResponse: Dictionary with items, total, page info.\n\nExample:\n    >>> curl \"https://api.taskflow.com/api/v1/teams/1/projects/1/tasks/?status=todo&priority=high\" \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "list_tasks_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priority",
+            "required": false,
+            "schema": {
+              "title": "Priority",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "assigned_to",
+            "required": false,
+            "schema": {
+              "title": "Assigned To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "due_before",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "title": "Due Before",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "due_after",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "title": "Due After",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "default": "created_at",
+              "title": "Sort By",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "required": false,
+            "schema": {
+              "default": "desc",
+              "title": "Order",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedTaskResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Tasks",
+        "tags": [
+          "tasks"
+        ]
+      },
+      "post": {
+        "description": "Create a new task within a project.\n\nCreates a task with the given details. The task is created with\nstatus \"todo\" and can be assigned to a team member.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task (TaskCreate): Schema with task details.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user (becomes task creator).\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    TaskOut: The newly created task with assignee information.\n\nExample:\n    >>> curl -X POST https://api.taskflow.com/api/v1/teams/1/projects/1/tasks/ \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\" \\\n    ...   -H \"Content-Type: application/json\" \\\n    ...   -d '{\"title\":\"Fix login bug\",\"priority\":\"high\",\"assigned_to\":2}'",
+        "operationId": "create_task_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Task",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}": {
+      "delete": {
+        "description": "Delete a task.\n\nOnly the task creator or a team admin can delete tasks.\nThis permanently removes the task and associated data.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    None: Returns 204 No Content on success.\n\nRaises:\n    HTTPException 403: If user is not creator or admin.",
+        "operationId": "delete_task_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete Task",
+        "tags": [
+          "tasks"
+        ]
+      },
+      "get": {
+        "description": "Get task details.\n\nReturns detailed information about a specific task,\nincluding assignee information.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    TaskOut: Task details with assignee information.",
+        "operationId": "get_task_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Task",
+        "tags": [
+          "tasks"
+        ]
+      },
+      "patch": {
+        "description": "Update a task's details.\n\nOnly the task creator or a team admin can update tasks.\nOnly provided fields are updated.\nChanges are logged to the activity log.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    task_update (TaskUpdate): Schema with fields to update.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    TaskOut: Updated task.\n\nRaises:\n    HTTPException 403: If user is not creator or admin.",
+        "operationId": "update_task_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Task",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/activity": {
+      "get": {
+        "description": "Get activity logs for a task.\n\nReturns all activity events related to the task, such as\ncreation, updates, and assignments. Ordered by creation date.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    PaginatedActivityResponse: Page of activity logs plus metadata.",
+        "operationId": "get_task_activity_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__activity_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedActivityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Task Activity",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/assign": {
+      "patch": {
+        "description": "Assign or unassign a task.\n\nOnly team admins can assign tasks. The assignee must be a member\nof the team. A notification is sent to the assigned user.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    assignment (TaskAssign): Schema with user_id (can be null to unassign).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    admin (TeamMember): Admin check (injected via dependency).\n\nReturns:\n    TaskOut: Updated task with new assignee.\n\nRaises:\n    HTTPException 400: If assignee is not a team member.",
+        "operationId": "assign_task_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__assign_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskAssign"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Assign Task",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/attachments/": {
+      "get": {
+        "description": "List all attachments for a task.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    list[AttachmentOut]: List of attachments for the task.",
+        "operationId": "list_attachments_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__attachments__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AttachmentOut"
+                  },
+                  "title": "Response List Attachments Api V1 Teams  Team Id Or Slug  Projects  Project Id Or Name  Tasks  Task Id Or Title  Attachments  Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Attachments",
+        "tags": [
+          "attachments"
+        ]
+      },
+      "post": {
+        "description": "Upload a file attachment to a task.\n\nAccepts file uploads up to 10MB. Files are stored in the\nuploads directory with task-specific subdirectories.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    file (UploadFile): The file to upload.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user (uploader).\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    AttachmentOut: The created attachment metadata.\n\nRaises:\n    HTTPException 413: If file exceeds 10MB limit.\n\nExample:\n    >>> curl -X POST https://api.taskflow.com/api/v1/teams/1/projects/1/tasks/1/attachments/ \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\" \\\n    ...   -F \"file=@document.pdf\"",
+        "operationId": "upload_attachment_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__attachments__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_attachment_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__attachments__post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Upload Attachment",
+        "tags": [
+          "attachments"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/attachments/{attachment_id}": {
+      "delete": {
+        "description": "Delete an attachment.\n\nOnly the uploader or a team admin can delete attachments.\nThis removes both the database record and the file from disk.\n\nArgs:\n    attachment_id (int): ID of the attachment to delete.\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    None: Returns 204 No Content on success.\n\nRaises:\n    HTTPException 404: If attachment not found or doesn't belong to task.\n    HTTPException 403: If user is not uploader or admin.",
+        "operationId": "delete_attachment_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__attachments__attachment_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "attachment_id",
+            "required": true,
+            "schema": {
+              "title": "Attachment Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete Attachment",
+        "tags": [
+          "attachments"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/attachments/{attachment_id}/download": {
+      "get": {
+        "description": "Download an attachment.\n\nReturns the file as a downloadable response with proper\ncontent-disposition header.\n\nArgs:\n    attachment_id (int): ID of the attachment to download.\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    FileResponse: The file for download.\n\nRaises:\n    HTTPException 404: If attachment not found or file doesn't exist.",
+        "operationId": "download_attachment_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__attachments__attachment_id__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "attachment_id",
+            "required": true,
+            "schema": {
+              "title": "Attachment Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Download Attachment",
+        "tags": [
+          "attachments"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/comments/": {
+      "get": {
+        "description": "List all comments for a task.\n\nReturns all comments on a task, ordered by creation date\n(newest first).\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    PaginatedCommentResponse: Page of comments plus metadata.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/projects/1/tasks/1/comments/ \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "list_comments_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__comments__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedCommentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Comments",
+        "tags": [
+          "comments"
+        ]
+      },
+      "post": {
+        "description": "Create a comment on a task.\n\nAll team members can comment on tasks. The task's assignee\nreceives a notification about the new comment.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    comment (CommentCreate): Schema with comment content.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user (comment author).\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    CommentOut: The newly created comment.\n\nExample:\n    >>> curl -X POST https://api.taskflow.com/api/v1/teams/1/projects/1/tasks/1/comments/ \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\" \\\n    ...   -H \"Content-Type: application/json\" \\\n    ...   -d '{\"content\":\"This looks great!\"}'",
+        "operationId": "create_comment_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__comments__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Comment",
+        "tags": [
+          "comments"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/comments/{comment_id}": {
+      "delete": {
+        "description": "Delete a comment.\n\nThe comment author or a team admin can delete comments.\n\nArgs:\n    comment_id (int): ID of the comment to delete.\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    None: Returns 204 No Content on success.\n\nRaises:\n    HTTPException 404: If comment not found or doesn't belong to task.\n    HTTPException 403: If user is not author or admin.\n\nExample:\n    >>> curl -X DELETE https://api.taskflow.com/api/v1/teams/1/projects/1/tasks/1/comments/1 \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "delete_comment_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__comments__comment_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "comment_id",
+            "required": true,
+            "schema": {
+              "title": "Comment Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete Comment",
+        "tags": [
+          "comments"
+        ]
+      },
+      "patch": {
+        "description": "Update a comment's content.\n\nOnly the comment author can edit their own comments.\n\nArgs:\n    comment_id (int): ID of the comment to update.\n    comment_update (CommentUpdate): Schema with new content.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    CommentOut: Updated comment.\n\nRaises:\n    HTTPException 404: If comment not found.\n    HTTPException 403: If user is not the comment author.\n\nExample:\n    >>> curl -X PATCH https://api.taskflow.com/api/v1/teams/1/projects/1/tasks/1/comments/1 \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\" \\\n    ...   -H \"Content-Type: application/json\" \\\n    ...   -d '{\"content\":\"Updated content\"}'",
+        "operationId": "update_comment_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__comments__comment_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_name",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "task_id_or_title",
+            "required": true,
+            "schema": {
+              "title": "Task Id Or Title",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "comment_id",
+            "required": true,
+            "schema": {
+              "title": "Comment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Comment",
+        "tags": [
+          "comments"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_slug}": {
+      "delete": {
+        "description": "Archive a project.\n\nOnly team admins can archive projects. Archived projects are\nhidden from default project listings but can be retrieved\nwith include_archived=true.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_slug (str): The project identifier (ID or name).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    admin (TeamMember): Admin check (injected via dependency).\n\nReturns:\n    None: Returns 204 No Content on success.\n\nExample:\n    >>> curl -X DELETE https://api.taskflow.com/api/v1/teams/1/projects/1 \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "archive_project_api_v1_teams__team_id_or_slug__projects__project_id_or_slug__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Archive Project",
+        "tags": [
+          "projects"
+        ]
+      },
+      "get": {
+        "description": "Get project details.\n\nReturns detailed information about a specific project.\nThe user must be a member of the team to access this endpoint.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_slug (str): The project identifier (ID or name).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    ProjectOut: Project details including name, description, status, and metadata.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/projects/1 \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "get_project_api_v1_teams__team_id_or_slug__projects__project_id_or_slug__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Project",
+        "tags": [
+          "projects"
+        ]
+      },
+      "patch": {
+        "description": "Update a project's details.\n\nOnly team admins can update projects. Supports updating name,\ndescription, and status.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_slug (str): The project identifier (ID or name).\n    project_update (ProjectUpdate): Schema with fields to update.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    admin (TeamMember): Admin check (injected via dependency).\n\nReturns:\n    ProjectOut: Updated project.\n\nExample:\n    >>> curl -X PATCH https://api.taskflow.com/api/v1/teams/1/projects/1 \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\" \\\n    ...   -H \"Content-Type: application/json\" \\\n    ...   -d '{\"name\":\"New Name\",\"status\":\"archived\"}'",
+        "operationId": "update_project_api_v1_teams__team_id_or_slug__projects__project_id_or_slug__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Project",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_slug}/activity": {
+      "get": {
+        "description": "Get activity logs for a project.\n\nReturns all activity events related to the project, such as\ncreation and archival. Ordered by creation date (newest first).\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_slug (str): The project identifier (ID or name).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    PaginatedActivityResponse: Page of activity logs plus metadata.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/projects/1/activity \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "operationId": "get_project_activity_api_v1_teams__team_id_or_slug__projects__project_id_or_slug__activity_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedActivityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Project Activity",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_slug}/archive": {
+      "post": {
+        "description": "Explicitly archive a project. Only team admins may do this.",
+        "operationId": "archive_project_endpoint_api_v1_teams__team_id_or_slug__projects__project_id_or_slug__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Archive Project Endpoint",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_slug}/restore": {
+      "post": {
+        "description": "Restore an archived project to active status. Only team admins may do this.",
+        "operationId": "restore_project_endpoint_api_v1_teams__team_id_or_slug__projects__project_id_or_slug__restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Project Id Or Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Restore Project Endpoint",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id_or_slug}/search": {
+      "get": {
+        "description": "Search for projects and tasks in a team.\n\nPerforms a case-insensitive search across project names and task titles\nwithin the specified team.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    q (str): Search query string.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    dict: Dictionary with \"projects\" and \"tasks\" lists.\n\nExample:\n    >>> curl \"https://api.taskflow.com/api/v1/teams/1/search?q=website\" \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"\n    \n    Response:\n    {\n        \"projects\": [...],\n        \"tasks\": [...]\n    }",
+        "operationId": "search_in_team_api_v1_teams__team_id_or_slug__search_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id_or_slug",
+            "required": true,
+            "schema": {
+              "title": "Team Id Or Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Search In Team",
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "description": "Get the currently authenticated user.\n\nReturns the profile information of the currently logged-in user.\nThis endpoint is used to verify authentication and get user details.\n\nArgs:\n    current_user (User): The authenticated user (injected via JWT dependency).\n\nReturns:\n    UserOut: User profile with id, email, is_active, and created_at.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/users/me \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"\n    \n    Response:\n    {\n        \"id\": 1,\n        \"email\": \"user@example.com\",\n        \"is_active\": true,\n        \"created_at\": \"2024-01-01T00:00:00Z\"\n    }",
+        "operationId": "read_users_me_api_v1_users_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Read Users Me",
+        "tags": [
+          "users"
+        ]
+      },
+      "put": {
+        "description": "Update the current user's profile.\n\nAllows updating email and/or password. Only provided fields\nare updated - omitted fields remain unchanged.\n\nArgs:\n    user_update (UserUpdate): Schema with email and/or password to update.\n    current_user (User): The authenticated user (injected via JWT dependency).\n    db (Session): Database session (injected by FastAPI).\n\nReturns:\n    UserOut: Updated user profile.\n\nRaises:\n    HTTPException 400: If the new email is already in use by another user.\n    HTTPException 404: If user not found (should not happen for authenticated users).\n\nExample:\n    >>> curl -X PUT https://api.taskflow.com/api/v1/users/me \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\" \\\n    ...   -H \"Content-Type: application/json\" \\\n    ...   -d '{\"email\":\"newemail@example.com\"}'",
+        "operationId": "update_current_user_api_v1_users_me_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Current User",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Health check endpoint for monitoring and load balancers.\n\nChecks the status of:\n- Database connection (PostgreSQL)\n- Redis connection (if REDIS_URL is configured)\n- Available disk space\n\nReturns:\n    dict: Status of all system components.\n\nRaises:\n    JSONResponse: Returns 503 if database is not connected.\n\nExample:\n    >>> curl https://api.taskflow.com/health\n    {\n        \"status\": \"healthy\",\n        \"database\": \"connected\",\n        \"redis\": \"connected\",\n        \"disk\": \"1060GB free\"\n    }",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Check"
+      }
+    },
+    "/health/live": {
+      "get": {
+        "description": "Liveness probe: the process is running.",
+        "operationId": "health_live_health_live_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Live"
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "description": "Readiness probe: the API can serve traffic (database reachable).",
+        "operationId": "health_ready_health_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Ready"
+      }
+    }
+  }
+}

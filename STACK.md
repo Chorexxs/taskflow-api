@@ -6,7 +6,7 @@
 
 ### Core
 
-- **Python 3.11** — runtime en Docker/CI.
+- **Python 3.12** — runtime en Docker/CI.
 - **FastAPI** — framework HTTP async, OpenAPI automático.
 - **Uvicorn** — servidor ASGI.
 

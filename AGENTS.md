@@ -17,7 +17,7 @@ TaskFlow es una API REST para gestión de tareas en equipo, con frontend React. 
 
 ### Stack
 
-- **Backend:** Python 3.11, FastAPI, Uvicorn, SQLAlchemy 2, PostgreSQL, Alembic, Pydantic v2.
+- **Backend:** Python 3.12, FastAPI, Uvicorn, SQLAlchemy 2, PostgreSQL, Alembic, Pydantic v2.
 - **Frontend:** React 18, Vite 5, React Router 7, TanStack Query 5, Tailwind CSS 4.
 - **Tests:** pytest (backend), Vitest + Testing Library (frontend).
 - **Deploy:** Render (API), Vercel (frontend), InsForge (PostgreSQL).

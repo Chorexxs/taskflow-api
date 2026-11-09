@@ -2,9 +2,9 @@
 
 API REST para gestión de tareas en equipo con autenticación JWT, equipos, proyectos, tablero Kanban, comentarios, adjuntos, notificaciones y registro de actividad.
 
-[![Tests](https://img.shields.io/badge/backend%20tests-89%20passed-brightgreen)](./tests)
+[![Tests](https://img.shields.io/badge/backend%20tests-94%20passed-brightgreen)](./tests)
 [![Frontend](https://img.shields.io/badge/frontend%20tests-12%20passed-brightgreen)](./frontend/src/test)
-[![Python](https://img.shields.io/badge/Python-3.11-blue)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109%2B-blue)](https://fastapi.tiangolo.com/)
 
 > **Documentación de producto y arquitectura:** [`specs/taskflow/`](./specs/taskflow/). La spec es la fuente de verdad; el código se implementa contra ella.
@@ -19,6 +19,8 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **API** | https://taskflow-api-gkgl.onrender.com/api/v1 | Backend REST |
 | **Swagger** | https://taskflow-api-gkgl.onrender.com/docs | Documentación interactiva |
 | **Health** | https://taskflow-api-gkgl.onrender.com/health | Estado del servidor |
+| **Liveness** | https://taskflow-api-gkgl.onrender.com/health/live | Proceso vivo |
+| **Readiness** | https://taskflow-api-gkgl.onrender.com/health/ready | DB accesible |
 
 ---
 
@@ -42,7 +44,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 
 | Capa | Tecnología |
 |---|---|
-| **Backend** | Python 3.11, FastAPI, Uvicorn |
+| **Backend** | Python 3.12, FastAPI, Uvicorn |
 | **ORM / DB** | SQLAlchemy 2, PostgreSQL 15, Alembic |
 | **Validación** | Pydantic v2, pydantic-settings |
 | **Auth** | JWT (`python-jose`), bcrypt, access 15 min + refresh 7 días |
@@ -51,7 +53,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Frontend** | React 18, Vite 5, React Router 7 |
 | **Datos front** | TanStack React Query 5, `fetch` |
 | **UI** | Tailwind CSS 4, Lucide React, React Hot Toast, `@dnd-kit` |
-| **Tests** | pytest + pytest-cov (89), Vitest + Testing Library (12) |
+| **Tests** | pytest + pytest-cov (94), Vitest + Testing Library (12) |
 | **CI/CD** | GitHub Actions, Render, Vercel, InsForge |
 | **Contenedores** | Docker, docker-compose (PostgreSQL + Redis + API) |
 
@@ -243,7 +245,7 @@ npm run test
 npm run build
 ```
 
-Estado actual: **89 tests backend** y **12 tests frontend**. Los tests de integración usan SQLite en memoria; P6 los migrará a PostgreSQL (ADR-008).
+Estado actual: **94 tests backend** y **12 tests frontend**. Los tests de integración usan SQLite en memoria; P6 los migrará a PostgreSQL (ADR-008).
 
 ---
 

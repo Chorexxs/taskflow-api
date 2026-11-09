@@ -32,6 +32,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Actividad paginada con datos del actor (`actor.email`).
 - Búsqueda de equipo por nombre/título/descripción, con escape de comodines y paginación.
 - Búsqueda del frontend con debounce de 300 ms.
+- Limpieza de tokens expirados al arrancar (best-effort).
+- Endpoints `/health/live` y `/health/ready`.
+- Python 3.12 en Docker/CI, `.python-version`, Docker non-root y HEALTHCHECK.
+- Snapshot OpenAPI versionado y verificado en CI.
 - CORS con allowlist (`CORS_ORIGINS`), sin `*` con credenciales.
 - Sentry usa la integración correcta y no bloquea el arranque si falla.
 - Eliminado `create_all` del arranque; Alembic es la única fuente de esquema.
