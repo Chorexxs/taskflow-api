@@ -302,13 +302,29 @@ def remove_member(
     """
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     member = crud.get_team_member(db, team.id, user_id)
-    
+
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
 
-    # Check permissions: member can remove themselves, admin can remove anyone
-    if member.user_id != current_user.id and member.role != "admin":
-        get_current_team_admin(team_id_or_slug, db, current_user)
+    current_member = crud.get_team_member(db, team.id, current_user.id)
+    if not current_member:
+        raise HTTPException(status_code=403, detail="Not a member of this team")
+
+    is_self = member.user_id == current_user.id
+
+    # A member may leave, but only an admin may remove someone else.
+    if not is_self and current_member.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only team admins can remove other members",
+        )
+
+    # Never leave a team without an administrator.
+    if member.role == "admin" and crud.count_team_admins(db, team.id) <= 1:
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot remove the last admin of the team",
+        )
 
     crud.remove_member(db, team.id, user_id)
 
@@ -357,6 +373,17 @@ def update_member_role(
     # Prevent admin from demoting themselves
     if member.user_id == admin.user_id and role_update.role.value == "member":
         raise HTTPException(status_code=400, detail="Cannot change own admin role")
+
+    # Never leave a team without an administrator.
+    if (
+        member.role == "admin"
+        and role_update.role.value != "admin"
+        and crud.count_team_admins(db, team.id) <= 1
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot demote the last admin of the team",
+        )
 
     old_role = member.role
     updated_member = crud.update_member_role(db, team.id, user_id, role_update.role.value)

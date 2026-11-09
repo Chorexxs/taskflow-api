@@ -87,7 +87,7 @@ export default function Profile() {
       setPassword('')
       setConfirmPassword('')
     } catch (err) {
-      const msg = err.detail || 'Failed to update password'
+      const msg = err.message || 'Failed to update password'
       setError(msg)
       toast.error(msg)
     } finally {

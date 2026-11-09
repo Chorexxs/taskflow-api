@@ -14,16 +14,13 @@ Security features:
 - Token rotation on refresh
 """
 
-from datetime import timedelta
 import os
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from functools import wraps
 
 from app import crud, schemas
 from app.database import get_db
@@ -193,88 +190,106 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
 
 
 @router.post("/refresh", response_model=schemas.Token)
-def refresh(refresh_token: str, db: Session = Depends(get_db)):
+def refresh(
+    payload: schemas.RefreshTokenRequest | None = Body(default=None),
+    refresh_token: str | None = Query(default=None, include_in_schema=False),
+    db: Session = Depends(get_db),
+):
     """
     Refresh access token using a valid refresh token.
     
-    Validates the refresh token, revokes it, and issues new
-    access and refresh tokens. This implements token rotation
-    for improved security.
+    Accepts the refresh token in the JSON body (preferred):
+    ``{"refresh_token": "..."}``.
     
-    Args:
-        refresh_token (str): The refresh token string from the request body.
-        db (Session): Database session (injected by FastAPI).
+    A query-string fallback is kept temporarily for backwards compatibility,
+    but it is deprecated because tokens in URLs can leak through logs.
     
-    Returns:
-        Token: Dictionary with new access_token, refresh_token, and token_type.
+    The old refresh token is revoked and a new pair is issued (rotation).
     
     Raises:
-        HTTPException 401: If refresh token is invalid or expired.
-    
-    Example:
-        >>> curl -X POST https://api.taskflow.com/api/v1/auth/refresh \\
-        ...   -H "Content-Type: application/json" \\
-        ...   -d '{"refresh_token":"eyJhbGc..."}'
-        
-        Response:
-        {
-            "access_token": "new_access_token...",
-            "refresh_token": "new_refresh_token...",
-            "token_type": "bearer"
-        }
+        HTTPException 401: If the refresh token is invalid, expired or revoked.
+        HTTPException 422: If no refresh token is provided.
     """
     from app.auth import get_current_user_from_refresh
-    
+
+    token = payload.refresh_token if payload else None
+    if not token:
+        token = refresh_token
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="refresh_token is required",
+        )
+
     # Validate refresh token and get user
-    user = get_current_user_from_refresh(refresh_token, db)
-    
+    user = get_current_user_from_refresh(token, db)
+
     # Revoke the old refresh token (rotation)
-    revoke_token(db, refresh_token, "refresh")
-    
+    revoke_token(db, token, "refresh")
+
     # Generate new tokens
     new_access_token = create_access_token(data={"sub": user.email})
     new_refresh_token = create_refresh_token(data={"sub": user.email})
-    
+
     return {
         "access_token": new_access_token,
         "refresh_token": new_refresh_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
     }
 
 
-@router.post("/logout")
-def logout(request: Request, db: Session = Depends(get_db), current_user: schemas.UserOut = Depends(crud.get_current_user_from_token)):
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(
+    request: Request,
+    payload: schemas.LogoutRequest | None = Body(default=None),
+    db: Session = Depends(get_db),
+):
     """
-    Logout the current user by revoking their access token.
-    
-    Extracts the access token from the Authorization header and
-    adds it to the revoked tokens list. The user will need to
-    login again to get a new token.
-    
-    Args:
-        request (Request): The incoming HTTP request with Authorization header.
-        db (Session): Database session (injected by FastAPI).
-        current_user (UserOut): The authenticated user (injected via dependency).
-    
-    Returns:
-        dict: Success message.
-    
+    Logout the current user by revoking both tokens.
+
+    The access token comes from the ``Authorization`` header and the refresh
+    token from the JSON body. Logout does not depend on an active session, so
+    repeated calls are idempotent and an expired access token does not block
+    revoking the refresh token.
+
     Example:
         >>> curl -X POST https://api.taskflow.com/api/v1/auth/logout \\
-        ...   -H "Authorization: Bearer eyJhbGc..."
-        
-        Response:
-        {"message": "Successfully logged out"}
+        ...   -H "Authorization: Bearer eyJhbGc..." \\
+        ...   -H "Content-Type: application/json" \\
+        ...   -d '{"refresh_token":"eyJhbGc..."}'
     """
-    # Extract token from Authorization header
     auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header[7:]
+    access_token = auth_header[7:] if auth_header.startswith("Bearer ") else None
+    refresh_token = payload.refresh_token if payload else None
+
+    if not access_token and not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="An access or refresh token is required",
+        )
+
+    access_revoked = False
+    if access_token:
         try:
-            # Revoke the access token
-            revoke_token(db, token, "access")
+            revoke_token(db, access_token, "access")
+            access_revoked = True
         except Exception:
-            # Ignore errors (token might be expired or invalid)
-            pass
-    
-    return {"message": "Successfully logged out"}
+            # Expired/malformed access token: still allow refresh revocation.
+            access_revoked = False
+
+    refresh_revoked = False
+    if refresh_token:
+        try:
+            revoke_token(db, refresh_token, "refresh")
+            refresh_revoked = True
+        except Exception:
+            # Invalid/expired refresh tokens must not break logout.
+            refresh_revoked = False
+
+    if not access_revoked and not refresh_revoked:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No valid token to revoke",
+        )
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

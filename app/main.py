@@ -25,17 +25,13 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
-from app.database import Base
+from app.config import settings
 from app.routers import auth, users, teams, projects, tasks, comments, attachments, notifications
 from app.logging_config import configure_logging, get_logger
 
 # Configure structured logging at module import
 configure_logging()
 logger = get_logger(__name__)
-
-# Global test engine for pytest fixture injection
-_test_engine = None
-
 
 # Rate limiter instance using IP address as key
 # Used to protect endpoints like login from brute force attacks
@@ -68,29 +64,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def set_test_engine(engine):
-    """
-    Set a test database engine for pytest fixtures.
-    
-    This function allows test fixtures to inject a test database engine
-    instead of using the production database.
-    
-    Args:
-        engine (Engine): SQLAlchemy engine instance for testing.
-    
-    Returns:
-        None: This function doesn't return anything.
-    
-    Example:
-        >>> from sqlalchemy import create_engine
-        >>> engine = create_engine("sqlite:///:memory:")
-        >>> set_test_engine(engine)
-    """
-    global _test_engine
-    global _test_app
-    _test_engine = engine
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -113,26 +86,26 @@ async def lifespan(app: FastAPI):
     Example:
         The lifespan is automatically invoked by FastAPI on startup/shutdown.
     """
-    from app.database import get_engine
-    
-    # Initialize Sentry for error tracking if configured
-    sentry_dsn = os.environ.get("SENTRY_DSN")
-    if sentry_dsn:
-        import sentry_sdk
-        sentry_sdk.init(
-            dsn=sentry_dsn,
-            integrations=[
-                sentry_sdk.fastapi.FastApiIntegration(),
-            ],
-            environment=os.environ.get("ENVIRONMENT", "production"),
-        )
-        logger.info("sentry_initialized")
-    
-    # Create tables or use test engine
-    engine = _test_engine if _test_engine else get_engine()
-    if engine is not None:
-        Base.metadata.create_all(bind=engine)
-    
+    # Initialize Sentry for error tracking if configured. Observability is
+    # optional: a misconfigured Sentry instance must not prevent the API from
+    # serving traffic.
+    if settings.SENTRY_DSN:
+        try:
+            import sentry_sdk
+            from sentry_sdk.integrations.fastapi import FastApiIntegration
+
+            sentry_sdk.init(
+                dsn=settings.SENTRY_DSN,
+                integrations=[FastApiIntegration()],
+                environment=settings.ENVIRONMENT,
+                traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+            )
+            logger.info("sentry_initialized")
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.error("sentry_initialization_failed", error=str(exc))
+
+    # Schema creation is owned by Alembic. Tests create their own schema in
+    # tests/conftest.py, so the application must never call create_all.
     logger.info("application_started")
     yield
     logger.info("application_shutdown")
@@ -210,15 +183,17 @@ async def domain_exception_handler(request: Request, exc: Exception):
     )
 
 
-# CORS middleware configuration
-# Allows cross-origin requests from any origin for development
-# In production, restrict allow_origins to specific domains
+# CORS middleware configuration.
+# Origins come from CORS_ORIGINS (comma-separated). Development falls back to
+# localhost; production must configure an explicit allowlist.
+cors_origins = settings.effective_cors_origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=cors_origins,
+    allow_credentials="*" not in cors_origins,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Requested-With"],
+    expose_headers=["X-Request-ID"],
 )
 
 # Custom logging middleware for request/response logging

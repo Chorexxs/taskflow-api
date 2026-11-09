@@ -25,8 +25,9 @@ build/
 htmlcov/
 *.db
 *.sqlite
+uploads/
+frontend/dist/
 /.agents
-AGENTS.md
 skills-lock.json
 /.vscode
 .mcp.json

@@ -197,41 +197,35 @@ export default function ProjectBoard() {
   const updateProjectMutation = useMutation({
     mutationFn: (data) => api.projects.update(token, teamId, projectId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['project', teamId, projectId])
+      queryClient.invalidateQueries({ queryKey: ['project', teamId, projectId] })
       setShowEditProject(false)
       toast.success('Project updated!')
     },
     onError: (error) => {
-      toast.error(error.detail || 'Failed to update project')
+      toast.error(error.message || 'Failed to update project')
     },
   })
 
   const archiveProjectMutation = useMutation({
     mutationFn: () => api.projects.archive(token, teamId, projectId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['projects', teamId])
+      queryClient.invalidateQueries({ queryKey: ['projects', teamId] })
       toast.success('Project archived!')
       navigate(`/teams/${teamId}`)
     },
     onError: (error) => {
-      toast.error(error.detail || 'Failed to archive project')
+      toast.error(error.message || 'Failed to archive project')
     },
   })
 
   const createTaskMutation = useMutation({
-    mutationFn: async (data) => {
-      const response = await api.tasks.create(token, teamId, projectId, data)
-      if (response.detail) {
-        throw new Error(response.detail)
-      }
-      return response
-    },
+    mutationFn: (data) => api.tasks.create(token, teamId, projectId, data),
     onSuccess: (newTask) => {
       setTaskColumns(prev => ({
         ...prev,
         todo: [...prev.todo, newTask]
       }))
-      queryClient.invalidateQueries(['tasks', teamId, projectId])
+      queryClient.invalidateQueries({ queryKey: ['tasks', teamId, projectId] })
       setShowCreateTask(false)
       setNewTask({ title: '', description: '', priority: 'medium', assigned_to: null, due_date: null })
       toast.success('Task created!')
@@ -248,7 +242,7 @@ export default function ProjectBoard() {
       toast.success('Task updated!')
     },
     onError: (error) => {
-      toast.error('Failed to update task')
+      toast.error(error.message || 'Failed to update task')
     },
   })
 

@@ -163,12 +163,11 @@ def test_member_leave_team(client: TestClient):
         data={"username": "leaver@example.com", "password": "password123"}
     ).json()["access_token"]
 
+    # The leaver is the first registered user (id 1); they remove themselves.
     response = client.delete(
-        "/api/v1/teams/team3/members/2",
+        "/api/v1/teams/team3/members/1",
         headers={"Authorization": f"Bearer {member_token}"}
     )
-    if response.status_code != 204:
-        print("ERROR:", response.json())
     assert response.status_code == 204
 
 

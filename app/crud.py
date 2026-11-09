@@ -402,6 +402,22 @@ def get_team_member(db: Session, team_id: int, user_id: int):
     )
 
 
+def count_team_admins(db: Session, team_id: int) -> int:
+    """Return the number of admins in a team.
+
+    Used to enforce the invariant that a team always keeps at least one
+    administrator before removing or demoting a member.
+    """
+    return (
+        db.query(models.TeamMember)
+        .filter(
+            models.TeamMember.team_id == team_id,
+            models.TeamMember.role == "admin",
+        )
+        .count()
+    )
+
+
 def update_member_role(db: Session, team_id: int, user_id: int, role: str):
     """
     Update a member's role in a team.

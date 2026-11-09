@@ -14,23 +14,17 @@ The authentication system uses:
 - Account lockout: After 5 failed attempts, locked for 15 minutes
 """
 
-import os
 import uuid
-import warnings
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 import bcrypt
-from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from pydantic import ConfigDict
-from pydantic_settings import BaseSettings
 from sqlalchemy.orm import Session
 
-load_dotenv()
-
+from app.config import settings
 from app.database import get_db
 
 
@@ -39,33 +33,9 @@ from app.database import get_db
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
-class Settings(BaseSettings):
-    """
-    Application settings loaded from environment variables.
-    
-    Supports loading from .env file via pydantic-settings.
-    All settings are case-insensitive for flexibility.
-    """
-    model_config = ConfigDict(env_file=".env", extra="allow", case_sensitive=False)
-
-    SECRET_KEY: str = ""  # Secret key for JWT signing
-    ALGORITHM: str = "HS256"  # JWT algorithm
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # Access token lifetime
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # Refresh token lifetime
-    MAX_LOGIN_ATTEMPTS: int = 5  # Failed attempts before lockout
-    LOCKOUT_DURATION_MINUTES: int = 15  # Lockout duration
-
-
-# Initialize settings singleton
-settings = Settings()
-
-
-# Get secret key from settings or environment
-# Falls back to temp key in development (with warning)
-SECRET_KEY = settings.SECRET_KEY or os.environ.get("SECRET_KEY")
-if not SECRET_KEY:
-    warnings.warn("SECRET_KEY is not set, using a temporary key for development")
-    SECRET_KEY = "temp-dev-key-do-not-use-in-production"
+# Secret used to sign JWTs. In production `app.config` guarantees it is
+# configured; in development it falls back to a clearly insecure key.
+SECRET_KEY = settings.secret_key
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -224,6 +194,11 @@ def revoke_token(db: Session, token: str, token_type: str = "access") -> None:
         >>> revoke_token(db, old_access_token, "access")
     """
     from app.models import RevokedToken
+
+    # Revocation is idempotent: logging out twice must not fail.
+    if db.query(RevokedToken).filter(RevokedToken.token == token).first():
+        return
+
     payload = jwt.decode(token, SECRET_KEY, algorithms=[settings.ALGORITHM])
     exp = payload.get("exp")
     expires_at = datetime.fromtimestamp(exp, tz=timezone.utc) if exp else datetime.now(timezone.utc) + timedelta(days=7)
@@ -392,12 +367,12 @@ async def get_current_user(
         raise credentials_exception
 
     user = get_user_by_email(db, email=email)
-    if user is None:
+    if user is None or not user.is_active:
         raise credentials_exception
     return user
 
 
-async def get_current_user_from_refresh(
+def get_current_user_from_refresh(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Session = Depends(get_db),
 ) -> "User":
@@ -454,6 +429,6 @@ async def get_current_user_from_refresh(
 
     from app.crud import get_user_by_email
     user = get_user_by_email(db, email=email)
-    if user is None:
+    if user is None or not user.is_active:
         raise credentials_exception
     return user

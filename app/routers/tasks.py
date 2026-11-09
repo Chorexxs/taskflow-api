@@ -120,6 +120,14 @@ def create_task(
     from app.dependencies import get_team_from_id_or_slug
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
+
+    # An assignee must belong to the team, even at creation time.
+    if task.assigned_to is not None and not crud.get_team_member(db, team.id, task.assigned_to):
+        raise HTTPException(
+            status_code=400,
+            detail="Assignee is not a member of this team",
+        )
+
     new_task = crud.create_task(db, task, project.id, current_user.id)
     crud.log_activity(db, "task", new_task.id, "created", current_user.id, None, new_task.title)
     return new_task
@@ -259,9 +267,16 @@ def update_task(
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
     
-    # Check permissions: creator or admin can update
-    if task.created_by != current_user.id and member.role != "admin":
-        raise HTTPException(status_code=403, detail="Only the creator or admin can edit this task")
+    # The creator and team admins can edit every field. Any other team member
+    # may only move the task between Kanban columns (status-only update).
+    is_privileged = task.created_by == current_user.id or member.role == "admin"
+    if not is_privileged:
+        provided_fields = set(task_update.model_dump(exclude_unset=True).keys())
+        if not provided_fields or not provided_fields.issubset({"status"}):
+            raise HTTPException(
+                status_code=403,
+                detail="Only the creator or an admin can edit task fields; members may only change status",
+            )
     
     # Track old values for activity log
     old_values = {}

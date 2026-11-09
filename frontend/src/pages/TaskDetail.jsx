@@ -88,7 +88,7 @@ export default function TaskDetail() {
   const uploadMutation = useMutation({
     mutationFn: (formData) => api.attachments.upload(token, teamId, projectId, taskId, formData),
     onSuccess: () => {
-      queryClient.invalidateQueries(['attachments', teamId, projectId, taskId])
+      queryClient.invalidateQueries({ queryKey: ['attachments', teamId, projectId, taskId] })
       toast.success('File uploaded!')
     },
     onError: () => toast.error('Failed to upload file'),
@@ -97,11 +97,11 @@ export default function TaskDetail() {
   const deleteAttachmentMutation = useMutation({
     mutationFn: (attachmentId) => api.attachments.delete(token, teamId, projectId, taskId, attachmentId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['attachments', teamId, projectId, taskId])
+      queryClient.invalidateQueries({ queryKey: ['attachments', teamId, projectId, taskId] })
       toast.success('File deleted!')
     },
     onError: (err) => {
-      const msg = err.response?.data?.detail || err.message || 'Failed to delete file'
+      const msg = err.message || 'Failed to delete file'
       toast.error(msg)
     },
   })
@@ -117,21 +117,21 @@ export default function TaskDetail() {
   const updateCommentMutation = useMutation({
     mutationFn: ({ commentId, content }) => api.comments.update(token, teamId, projectId, taskId, commentId, { content }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['comments', teamId, projectId, taskId])
+      queryClient.invalidateQueries({ queryKey: ['comments', teamId, projectId, taskId] })
       setEditingCommentId(null)
       setEditingCommentContent('')
       toast.success('Comment updated!')
     },
-    onError: (err) => toast.error(err.response?.data?.detail || 'Failed to update comment'),
+    onError: (err) => toast.error(err.message || 'Failed to update comment'),
   })
 
   const deleteCommentMutation = useMutation({
     mutationFn: (commentId) => api.comments.delete(token, teamId, projectId, taskId, commentId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['comments', teamId, projectId, taskId])
+      queryClient.invalidateQueries({ queryKey: ['comments', teamId, projectId, taskId] })
       toast.success('Comment deleted!')
     },
-    onError: (err) => toast.error(err.response?.data?.detail || 'Failed to delete comment'),
+    onError: (err) => toast.error(err.message || 'Failed to delete comment'),
   })
 
   const handleFileSelect = (e) => {
@@ -163,7 +163,7 @@ export default function TaskDetail() {
   const addCommentMutation = useMutation({
     mutationFn: (content) => api.comments.create(token, teamId, projectId, taskId, { content }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['comments', teamId, projectId, taskId])
+      queryClient.invalidateQueries({ queryKey: ['comments', teamId, projectId, taskId] })
       setNewComment('')
       toast.success('Comment added!')
     },
@@ -173,11 +173,11 @@ export default function TaskDetail() {
   const updateTaskMutation = useMutation({
     mutationFn: (data) => api.tasks.update(token, teamId, projectId, taskId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['task', teamId, projectId, taskId])
+      queryClient.invalidateQueries({ queryKey: ['task', teamId, projectId, taskId] })
       setIsEditing(false)
       toast.success('Task updated!')
     },
-    onError: (err) => toast.error(err.response?.data?.detail || 'Failed to update task'),
+    onError: (err) => toast.error(err.message || 'Failed to update task'),
   })
 
   const canEdit = task?.created_by === currentUserId

@@ -1,369 +1,159 @@
 # TaskFlow API
 
-API REST completa para gestión de tareas en equipo con autenticación JWT, equipos, proyectos y más.
+API REST para gestión de tareas en equipo con autenticación JWT, equipos, proyectos, tablero Kanban, comentarios, adjuntos, notificaciones y registro de actividad.
 
-[![Tests](https://img.shields.io/badge/tests-54%20passed-brightgreen)](https://github.com/anomalyco/taskflow-api/actions)
+[![Tests](https://img.shields.io/badge/backend%20tests-71%20passed-brightgreen)](./tests)
+[![Frontend](https://img.shields.io/badge/frontend%20tests-12%20passed-brightgreen)](./frontend/src/test)
 [![Python](https://img.shields.io/badge/Python-3.11-blue)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-blue)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109%2B-blue)](https://fastapi.tiangolo.com/)
+
+> **Documentación de producto y arquitectura:** [`specs/taskflow/`](./specs/taskflow/). La spec es la fuente de verdad; el código se implementa contra ella.
 
 ---
 
 ## Probar online
 
-| Servicio     | URL                                 | Descripción                  |
-| ------------ | ----------------------------------- | ---------------------------- |
-| **Frontend** | https://taskflow-api-tau.vercel.app | Interfaz de usuario completa |
-| **API**      | https://taskflow-api-gkgl.onrender.com/api/v1 | Backend REST con Swagger |
-| **Health**   | https://taskflow-api-gkgl.onrender.com/health | Estado del servidor |
-
-### Endpoints públicos
-
-- `GET /` - Mensaje de bienvenida
-- `GET /health` - Health check (BD, Redis, disco)
-- `GET /docs` - Documentación Swagger interactiva
+| Servicio | URL | Descripción |
+|---|---|---|
+| **Frontend** | https://taskflow-api-tau.vercel.app | Interfaz React |
+| **API** | https://taskflow-api-gkgl.onrender.com/api/v1 | Backend REST |
+| **Swagger** | https://taskflow-api-gkgl.onrender.com/docs | Documentación interactiva |
+| **Health** | https://taskflow-api-gkgl.onrender.com/health | Estado del servidor |
 
 ---
 
 ## Arquitectura
 
 ```
-┌─────────────────┐      ┌─────────────────────┐      ┌─────────────────┐
-│   Frontend      │ ───▶ │      TaskFlow API   │ ───▶ │   PostgreSQL    │
-│   (Vercel)      │      │      (Render)       │      │   (InsForge)    │
-│                 │      │                     │      │                 │
-│  React + Vite   │      │  FastAPI + JWT      │      │  SQLAlchemy     │
-│  Tailwind CSS   │      │  Pydantic v2        │      │  Alembic        │
-└─────────────────┘      └─────────────────────┘      └─────────────────┘
+┌─────────────────┐      HTTPS/JSON       ┌─────────────────────┐      ┌─────────────────┐
+│   Frontend      │ ────────────────────▶ │   TaskFlow API      │ ───▶ │   PostgreSQL    │
+│   (Vercel)      │ ◀──────────────────── │   (Render)          │      │   (InsForge)    │
+│                 │                       │                     │      │                 │
+│  React + Vite   │                       │  FastAPI + JWT      │      │  SQLAlchemy     │
+│  Tailwind CSS   │                       │  Pydantic v2        │      │  Alembic        │
+└─────────────────┘                       └─────────────────────┘      └─────────────────┘
+                                                  │
+                                                  ├── Redis opcional (rate limiting/cache)
+                                                  ├── Sentry opcional (errores)
+                                                  └── Object storage (P4; hoy disco local)
 ```
 
-### Stack tecnológico
+### Stack
 
-| Capa              | Tecnología           | Justificación                                                                             |
-| ----------------- | -------------------- | ----------------------------------------------------------------------------------------- |
-| **Backend**       | FastAPI              | Alto rendimiento, validación automática con Pydantic, documentación interactiva integrada |
-| **ORM**           | SQLAlchemy 2.0       | Maduro, type-safe con el nuevo API, previene SQL injection                                |
-| **Base de datos** | PostgreSQL           | Robusto, relacional, ideal para datos estructurados de equipos/tareas                     |
-| **Autenticación** | JWT + Refresh Tokens | Sin estado, segura, con rotación de tokens para mayor seguridad                           |
-| **Rate Limiting** | SlowAPI              | Implementación simple de límite por IP                                                    |
-| **Frontend**      | React + Vite         | Carga rápida, HMR, ecosistema maduro                                                      |
-| **Estilos**       | Tailwind CSS         | Utility-first, consistente, rápido de prototipar                                          |
-| **Deployment**    | Render + Vercel + InsForge | CI/CD automático, escalable, free tier generoso |
+| Capa | Tecnología |
+|---|---|
+| **Backend** | Python 3.11, FastAPI, Uvicorn |
+| **ORM / DB** | SQLAlchemy 2, PostgreSQL 15, Alembic |
+| **Validación** | Pydantic v2, pydantic-settings |
+| **Auth** | JWT (`python-jose`), bcrypt, access 15 min + refresh 7 días |
+| **Seguridad** | SlowAPI, headers de seguridad, lockout de cuenta, CORS por allowlist |
+| **Observabilidad** | structlog (JSON + request ID), Sentry opcional |
+| **Frontend** | React 18, Vite 5, React Router 7 |
+| **Datos front** | TanStack React Query 5, `fetch` |
+| **UI** | Tailwind CSS 4, Lucide React, React Hot Toast, `@dnd-kit` |
+| **Tests** | pytest + pytest-cov (71), Vitest + Testing Library (12) |
+| **CI/CD** | GitHub Actions, Render, Vercel, InsForge |
+| **Contenedores** | Docker, docker-compose (PostgreSQL + Redis + API) |
 
 ---
 
 ## Características
 
-### Autenticación y Seguridad
+### Autenticación y seguridad
 
-- JWT con access y refresh tokens con rotación automática
-- Rate limiting por IP (10 requests/minuto en login)
-- Hash de contraseñas con bcrypt
-- Headers de seguridad (X-Content-Type-Options, X-Frame-Options, HSTS)
-- Logging estructurado con structlog y request_id
-- Caching con Redis (degrada gracefully si no está disponible)
-- Integración con Sentry para monitoreo de errores en producción
+- Registro y login con email/contraseña; hash bcrypt.
+- JWT con access token corto y refresh token rotativo.
+- **Refresh operativo vía JSON body** (`{"refresh_token": "..."}`); la rotación revoca el token anterior.
+- **Logout revoca access y refresh** en el servidor.
+- Bloqueo de cuenta tras 5 intentos fallidos durante 15 minutos.
+- Rate limiting por IP en registro/login (5/min y 10/min).
+- CORS con allowlist (`CORS_ORIGINS`), sin `*` con credenciales.
+- Fail-fast en producción si falta `SECRET_KEY` o `DATABASE_URL`.
+- Headers de seguridad: `X-Content-Type-Options`, `X-Frame-Options`, HSTS, XSS.
+- Cambio de contraseña desde el perfil.
+- Logging estructurado con `request_id` y `X-Request-ID`.
 
-### Gestión de Equipos
-
-- Equipos con membresías y roles (admin, member)
-- Búsqueda de proyectos y tareas dentro del equipo
-  - Invite de miembros por email
-  - Actualización de roles y removal de miembros
-
-### Proyectos
-
-- Proyectos dentro de equipos
-- Estados: active, archived
-- Edición de proyectos (solo admins del equipo)
-- Registro de actividad (creación, archival)
-
-### Tareas
-
-- Estados: todo, in_progress, done
-- Prioridades: high, medium, low
-- Asignación a miembros del equipo
-- Fechas de vencimiento
-- Filtros y paginación
-- Registro de actividad completo
-- Edición de tareas (solo creador o admin pueden editar)
-
-### Colaboración
-
-- Comentarios en tareas (muestra email del autor)
-  - Editar comentarios (solo el autor)
-  - Eliminar comentarios (autor o admin del equipo)
-- Adjuntos de archivos (upload, download, delete)
-- Notificaciones en tiempo real
-- Activity log detallado (tareas y proyectos)
-
----
-
-## Decisiones Técnicas
-
-### 1. FastAPI + Pydantic v2
-
-**Decisión:** Usar FastAPI como framework principal con Pydantic v2 para validación.
-
-**Justificación:**
-
-- Validación automática de request/response - reduce bugs y código repetitivo
-- Documentación Swagger/OpenAPI automática - developers pueden probar inmediatamente
-- Alto rendimiento async - ideal para I/O bound operations como API calls
-- Type hints integrados con Python - mejor DX y autocompletado
-
-### 2. SQLAlchemy con joinedload
-
-**Decisión:** Usar `joinedload()` para relaciones eager loading.
-
-**Justificación:**
-
-- Previene el problema N+1 queries - cada tarea con su assignee hace 1 query en lugar de N+1
-- Ejemplo: listar 20 tareas con assignees = 1 query en lugar de 21
-- Mejor rendimiento en producción y menor carga en BD
-
-```python
-# Antes: N+1 queries
-tasks = db.query(Task).filter(...).all()  # 1 query
-for task in tasks:
-    print(task.assignee.email)  # N queries adicionales
-
-# Después: 1 query con join
-tasks = db.query(Task).options(joinedload(Task.assignee)).filter(...).all()
-```
-
-### 3. JWT con refresh tokens y rotación
-
-**Decisión:** Implementar sistema de tokens duales con rotación.
-
-**Justificación:**
-
-- Access tokens cortos (30 min) = menor ventana de vulnerabilidad si roban token
-- Refresh tokens permiten sesión larga sin mantener access token válido
-- Rotación = cada refresh genera nuevos tokens, invalida el anterior
-- Si alguien roba refresh token, se invalida en el próximo uso legítimo
-
-### 4. Rate limiting con SlowAPI
-
-**Decisión:** Limitar requests por IP.
-
-**Justificación:**
-
-- Previene ataques de fuerza bruta en endpoints de login
-- Protege contra DDoS básico
-- Implementado a nivel de aplicación, no requiere infraestructura adicional
-- 10 requests/minuto es restrictivo para usuarios reales pero efectivo contra bots
-
----
-
-## 📡 API Reference
-
-### Autenticación
-
-| Método | Endpoint                | Descripción                            |
-| ------ | ----------------------- | -------------------------------------- |
-| POST   | `/api/v1/auth/register` | Registrar nuevo usuario                |
-| POST   | `/api/v1/auth/login`    | Login (retorna access + refresh token) |
-| POST   | `/api/v1/auth/refresh`  | Refrescar access token                 |
-| POST   | `/api/v1/auth/logout`   | Logout e invalidar refresh token       |
+> El refresco automático en el cliente está planificado en P2. Hoy el endpoint funciona, pero el frontend aún no renueva la sesión por sí solo.
 
 ### Equipos
 
-| Método | Endpoint                               | Descripción                |
-| ------ | -------------------------------------- | -------------------------- |
-| POST   | `/api/v1/teams/`                       | Crear equipo               |
-| GET    | `/api/v1/teams/`                       | Listar equipos del usuario |
-| GET    | `/api/v1/teams/{id}`                   | Ver equipo con miembros    |
-| GET    | `/api/v1/teams/{id}/search`            | Buscar proyectos/tareas    |
-| POST   | `/api/v1/teams/{id}/members`           | Invitar miembro (admin)    |
-| GET    | `/api/v1/teams/{id}/members`           | Listar miembros            |
-| PATCH  | `/api/v1/teams/{id}/members/{user_id}` | Actualizar rol (admin)     |
-| DELETE | `/api/v1/teams/{id}/members/{user_id}` | Remover miembro (admin)    |
+- Crear/listar equipos y consultarlos por **ID o slug**.
+- Miembros con roles `admin` / `member`.
+- Añadir un usuario registrado por email (no es una invitación por correo).
+- Listar miembros, cambiar rol y expulsar.
+- Un miembro puede salir del equipo.
+- **Siempre debe quedar al menos un admin** (guard de último admin).
+- Búsqueda de proyectos y tareas dentro del equipo.
 
 ### Proyectos
 
-| Método | Endpoint                                      | Descripción                 |
-| ------ | --------------------------------------------- | --------------------------- |
-| POST   | `/api/v1/teams/{team}/projects/`              | Crear proyecto              |
-| GET    | `/api/v1/teams/{team}/projects/`              | Listar proyectos            |
-| GET    | `/api/v1/teams/{team}/projects/{id}`          | Ver proyecto                |
-| PATCH  | `/api/v1/teams/{team}/projects/{id}`          | Actualizar proyecto (admin) |
-| DELETE | `/api/v1/teams/{team}/projects/{id}`          | Eliminar proyecto (admin)   |
-| GET    | `/api/v1/teams/{team}/projects/{id}/activity` | Ver actividad del proyecto  |
+- Proyectos dentro de un equipo, con estado `active` / `archived`.
+- Crear (cualquier miembro), editar/archivar (solo admin).
+- `DELETE /projects/{id}` **archiva** el proyecto; no lo borra físicamente.
+- Registro de actividad por proyecto.
 
 ### Tareas
 
-| Método | Endpoint                                                      | Descripción                     |
-| ------ | ------------------------------------------------------------- | ------------------------------- |
-| POST   | `/api/v1/teams/{team}/projects/{project}/tasks/`              | Crear tarea                     |
-| GET    | `/api/v1/teams/{team}/projects/{project}/tasks/`              | Listar tareas (soporta filtros) |
-| GET    | `/api/v1/teams/{team}/projects/{project}/tasks/{id}`          | Ver tarea específica            |
-| PATCH  | `/api/v1/teams/{team}/projects/{project}/tasks/{id}`          | Actualizar tarea                |
-| DELETE | `/api/v1/teams/{team}/projects/{project}/tasks/{id}`          | Eliminar tarea                  |
-| PATCH  | `/api/v1/teams/{team}/projects/{project}/tasks/{id}/assign`   | Asignar tarea (admin)           |
-| GET    | `/api/v1/teams/{team}/projects/{project}/tasks/{id}/activity` | Ver actividad de la tarea       |
+- Título, descripción, estado, prioridad, asignado y fecha límite.
+- Estados: `todo`, `in_progress`, `done`; prioridades: `low`, `medium`, `high`.
+- Crear, listar, ver, editar, eliminar y asignar.
+- **Creador o admin** pueden editar todos los campos.
+- **Cualquier miembro** puede cambiar solo el estado (Kanban).
+- El asignado debe ser miembro del equipo (también al crear).
+- Filtros por estado, prioridad, asignado y rango de fechas.
+- Ordenación y paginación (máx. 100).
+- Referencia por ID o título (el título está deprecado como identificador).
 
-### Filtros de tareas
+### Colaboración
 
-- `status` - todo, in_progress, done
-- `priority` - high, medium, low
-- `assigned_to` - user_id
-- `due_before`, `due_after` - fechas
-- `sort_by` - created_at, title, priority, due_date
-- `page`, `page_size` - paginación
+- **Comentarios**: crear, listar, editar (autor) y borrar (autor o admin).
+- **Adjuntos**: subir, listar, descargar y borrar.
+  - Límite de 10 MB configurable.
+  - Allowlist de extensiones/MIME.
+  - Nombres saneados y claves de almacenamiento únicas (sin path traversal).
+  - Solo el uploader o un admin puede borrar.
+- **Notificaciones** in-app al asignar una tarea o comentar una tarea asignada.
+- Campana con contador de no leídas; refresco cada 30 s (polling; SSE planificado en P4).
+- **Activity log** de tareas, proyectos, comentarios y adjuntos.
 
-### Otros recursos
+### Frontend
 
-- **Comentarios:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/comments/` (list, create, PATCH update, DELETE)
-- **Adjuntos:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/attachments/` (upload, list, download, delete)
-- **Notificaciones:** `/api/v1/notifications/` (list, mark read, mark all read)
-- **Actividad:** `/api/v1/teams/{team}/projects/{project}/tasks/{task}/activity`
-
-> Documentación completa e interactiva disponible en `/docs`
-
----
-
-## Tests
-
-### Backend (pytest)
-
-```bash
-# Ejecutar todos los tests
-pytest -v
-
-# Tests por módulo
-pytest tests/test_auth.py -v
-pytest tests/test_tasks.py -v
-pytest tests/test_teams.py -v
-
-# Con coverage
-pytest --cov=app --cov-report=html
-```
-
-### Frontend (vitest)
-
-```bash
-# Tests interactivos
-npm run test:watch
-
-# Tests una vez
-npm run test
-```
-
-### Cobertura actual: 54 tests
-
-| Módulo        | Tests |
-| ------------- | ----- |
-| Auth          | 8     |
-| Teams         | 8     |
-| Projects      | 7     |
-| Tasks         | 8     |
-| Comments      | 6     |
-| Filters       | 5     |
-| Activity      | 5     |
-| Notifications | 5     |
-| Attachments   | 5     |
+- **Login / Register**.
+- **Dashboard**: equipos, crear equipo.
+- **TeamDetail**: proyectos, miembros, roles, búsqueda, crear/editar proyecto.
+- **ProjectBoard**: Kanban con drag & drop, filtros en URL, búsqueda local, crear tarea, actividad, editar/archivar proyecto.
+- **TaskDetail**: editar tarea, comentarios, adjuntos, actividad.
+- **Profile**: cambio de contraseña.
+- Toasts, skeletons, estados de carga/vacío y 404.
 
 ---
 
-## Frontend
+## API
 
-El frontend es una aplicación React desplegada en Vercel:
+Base: `/api/v1`. Contrato completo en [`specs/taskflow/contracts/api.md`](./specs/taskflow/contracts/api.md).
 
-- **Stack:** React 18 + Vite + Tailwind CSS 4
-- **Estado:** React Query + Context API
-- **Componentes:** Lucide React (icons), React Hot Toast
-- **Drag & Drop:** @dnd-kit
-- **URL:** https://taskflow-api-tau.vercel.app
+| Grupo | Endpoints principales |
+|---|---|
+| **Auth** | `POST /auth/register`, `/login`, `/refresh`, `/logout` |
+| **Users** | `GET /users/me`, `PUT /users/me` |
+| **Teams** | `POST/GET /teams/`, `GET /teams/{id}`, `GET /teams/{id}/search`, `POST/GET/PATCH/DELETE /teams/{id}/members` |
+| **Projects** | `POST/GET /teams/{id}/projects/`, `GET/PATCH/DELETE /teams/{id}/projects/{id}`, `GET .../activity` |
+| **Tasks** | `POST/GET .../tasks/`, `GET/PATCH/DELETE .../tasks/{id}`, `PATCH .../assign`, `GET .../activity` |
+| **Comments** | `POST/GET .../comments/`, `PATCH/DELETE .../comments/{id}` |
+| **Attachments** | `POST/GET .../attachments/`, `GET .../{id}/download`, `DELETE .../{id}` |
+| **Notifications** | `GET /notifications/`, `PATCH /{id}/read`, `PATCH /read-all` |
 
-### Características del Frontend
+Documentación interactiva: `/docs`. OpenAPI: `/openapi.json`.
 
-- **Login/Register**: Autenticación de usuarios
-- **Dashboard**: Vista de equipos con acceso rápido a proyectos
-- **TeamDetail**:
-  - Ver equipo y proyectos
-  - Búsqueda de proyectos y tareas dentro del equipo
-- **ProjectBoard**:
-  - Kanban board con drag-and-drop
-  - Filtros por estado, prioridad y assignee
-  - Crear tareas
-  - Historial de actividad del proyecto
-  - Editar y archivar proyecto (solo admins)
-- **TaskDetail**:
-  - Ver y editar tarea (solo creador/admin)
-  - Comentarios con email del autor
-  - Adjuntos de archivos (upload, download, delete)
-  - Historial de actividad
-- **Profile**:
-  - Cambiar contraseña
+### Errores
 
-### Estructura del frontend
-
-```
-frontend/
-├── src/
-│   ├── api/           # Cliente API (fetch wrapper)
-│   ├── components/    # Componentes reutilizables
-│   ├── context/       # AuthContext, ThemeContext
-│   └── pages/         # Páginas principales
-│       ├── Login.jsx
-│       ├── Register.jsx
-│       ├── Dashboard.jsx
-│       ├── TeamDetail.jsx
-│       ├── ProjectBoard.jsx
-│       └── TaskDetail.jsx
+```json
+{
+  "detail": "Mensaje de error"
+}
 ```
 
-### Variables de entorno
-
-```bash
-VITE_API_URL=https://taskflow-api-gkgl.onrender.com
-```
-
----
-
-## Deployment
-
-### Base de Datos - InsForge
-
-La base de datos PostgreSQL está desplegada en **InsForge** (https://insforge.dev).
-
-**Tablas creadas:** users, teams, team_members, projects, tasks, comments, attachments, activity_logs, notifications, revoked_tokens
-
-### Backend - Render
-
-El backend se despliega en **Render** (https://render.com).
-
-**Variables requeridas:**
-
-```
-DATABASE_URL=postgresql://postgres:xxx@your-db-id.us-east.database.insforge.app:5432/insforge?sslmode=require
-SECRET_KEY=your-secret-key-at-least-32-characters
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
-MAX_LOGIN_ATTEMPTS=5
-LOCKOUT_DURATION_MINUTES=15
-```
-
-**Dockerfile:**
-
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-RUN mkdir -p /uploads
-CMD ["python", "-m", "app.main"]
-```
-
-### Frontend - Vercel
-
-```
-URL: https://taskflow-api-tau.vercel.app
-```
-
-Desplegado desde la carpeta `frontend/` con configuración automática de Vite.
+> P3 unificará los errores en un envelope `{error: {code, message, details, request_id}}`.
 
 ---
 
@@ -372,59 +162,193 @@ Desplegado desde la carpeta `frontend/` con configuración automática de Vite.
 ### Con Docker (recomendado)
 
 ```bash
-# Clonar el repositorio
-git clone https://github.com/anomalyco/taskflow-api.git
-cd taskflow-api
-
-# Iniciar servicios
 docker compose up -d
 
-# La API estará disponible en http://localhost:8000
-# Swagger: http://localhost:8000/docs
-# Frontend: http://localhost:5173
+# API:      http://localhost:8000
+# Swagger:  http://localhost:8000/docs
+# Frontend: cd frontend && npm install && npm run dev
 ```
 
 ### Sin Docker
 
 ```bash
-# Python 3.11+ requerido
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate   # Windows
+# Windows: venv\Scripts\activate
+# Linux/macOS: source venv/bin/activate
 
 pip install -r requirements.txt
 cp .env.example .env
-# Editar .env con tu configuración
+# Editar .env con DATABASE_URL y SECRET_KEY
 
+alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-### Variables de entorno (.env)
+### Frontend
 
 ```bash
-# Requerido
-DATABASE_URL=postgresql://user:password@localhost:5432/taskflow
-SECRET_KEY=your-secret-key-at-least-32-characters-long
+cd frontend
+npm install
+cp .env.example .env.local   # VITE_API_URL=http://localhost:8000
+npm run dev                  # http://localhost:5173
+```
 
-# Opcional
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REDIS_URL=redis://localhost:6379/0
-SENTRY_DSN=
+### Variables de entorno
+
+Ver [`.env.example`](./.env.example). Las críticas:
+
+```bash
+ENVIRONMENT=development
+SECRET_KEY=your-secret-key-at-least-32-characters
+DATABASE_URL=postgresql://user:password@localhost:5432/taskflow
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=7
+CORS_ORIGINS=http://localhost:5173
+```
+
+Opcionales: `REDIS_URL`, `SENTRY_DSN`, `MAX_UPLOAD_SIZE`, `UPLOAD_DIR`, `ALLOWED_UPLOAD_EXTENSIONS`.
+
+---
+
+## Base de datos y migraciones
+
+Alembic es la única fuente de esquema en producción. La aplicación **no** crea tablas al arrancar.
+
+```bash
+alembic upgrade head
+alembic downgrade -1
+alembic revision --autogenerate -m "descripcion"
+```
+
+Modelo actual: `users`, `teams`, `team_members`, `projects`, `tasks`, `comments`, `attachments`, `activity_logs`, `notifications`, `revoked_tokens`.
+
+El modelo objetivo (slugs, storage, sesiones, índices) está en [`specs/taskflow/data-model.md`](./specs/taskflow/data-model.md).
+
+---
+
+## Tests
+
+```bash
+# Backend
+pytest -v
+pytest --cov=app --cov-report=html
+
+# Un archivo / test
+pytest tests/test_auth.py
+pytest tests/test_auth.py::test_register_user
+
+# Frontend
+cd frontend
+npm run test
+npm run build
+```
+
+Estado actual: **71 tests backend** y **12 tests frontend**. Los tests de integración usan SQLite en memoria; P6 los migrará a PostgreSQL (ADR-008).
+
+---
+
+## Deployment
+
+### Backend — Render
+
+- Build: `pip install -r requirements.txt`
+- Start: `python -m app.main` (o `uvicorn app.main:app`)
+- Variables: `DATABASE_URL`, `SECRET_KEY`, `ENVIRONMENT=production`, `CORS_ORIGINS=https://taskflow-api-tau.vercel.app`, opcionales `REDIS_URL`, `SENTRY_DSN`.
+  - Si usas un dominio propio en Vercel, añádelo separado por comas.
+  - Sin `CORS_ORIGINS`, la app **no arranca en producción** (fail-fast).
+- Ejecutar `alembic upgrade head` antes del despliegue. `alembic/env.py` usa `DATABASE_URL`.
+- **Importante:** el disco de Render es efímero; los adjuntos actuales se guardan en `uploads/`. La migración a object storage está en P4.
+
+### Frontend — Vercel
+
+- Directorio: `frontend/`
+- Variable: `VITE_API_URL=https://taskflow-api-gkgl.onrender.com`
+- `vercel.json` reescribe rutas SPA a `/`.
+
+### Base de datos — InsForge
+
+PostgreSQL gestionado. Guardar backups y probar restore (ver `specs/taskflow/data-model.md`).
+
+---
+
+## Estructura del proyecto
+
+```
+app/
+├── main.py              # App FastAPI, CORS, middleware, health, routers
+├── config.py            # Configuración central validada (fail-fast)
+├── auth.py              # JWT, bcrypt, lockout, revocación
+├── database.py          # Engine, sesión, dependencia get_db
+├── models.py            # Modelos SQLAlchemy
+├── schemas.py           # Schemas Pydantic
+├── crud.py              # Acceso a datos
+├── dependencies.py      # Resolución de equipo y permisos
+├── exceptions.py        # Excepciones de dominio
+├── cache.py             # Redis opcional
+├── logging_config.py    # structlog
+├── middleware.py        # Request ID y logging
+└── routers/
+    ├── auth.py
+    ├── users.py
+    ├── teams.py
+    ├── projects.py
+    ├── tasks.py
+    ├── comments.py
+    ├── attachments.py
+    └── notifications.py
+
+frontend/src/
+├── api/index.js         # Cliente API único (fetch + errores tipados)
+├── components/          # Layout, TaskCard, NotificationsBell, Skeleton
+├── context/             # AuthContext, ThemeContext
+├── pages/               # Login, Register, Dashboard, TeamDetail,
+│                        # ProjectBoard, TaskDetail, Profile, NotFound
+├── App.jsx
+└── main.jsx
+
+specs/taskflow/          # SDD: constitución, baseline, spec, plan, tasks, datos, API
+tests/                   # pytest
+alembic/                 # migraciones
 ```
 
 ---
 
-## Licencia
+## Documentación SDD
 
-MIT License - ver [LICENSE](LICENSE) para más detalles.
+| Documento | Contenido |
+|---|---|
+| [`constitution.md`](./specs/taskflow/constitution.md) | Principios y quality gates |
+| [`baseline.md`](./specs/taskflow/baseline.md) | Auditoría as-is y hallazgos |
+| [`spec.md`](./specs/taskflow/spec.md) | Requisitos funcionales/no funcionales y permisos |
+| [`plan.md`](./specs/taskflow/plan.md) | Arquitectura objetivo, ADRs y fases |
+| [`tasks.md`](./specs/taskflow/tasks.md) | Backlog accionable |
+| [`data-model.md`](./specs/taskflow/data-model.md) | Modelo actual/objetivo y migraciones |
+| [`contracts/api.md`](./specs/taskflow/contracts/api.md) | Contrato HTTP |
+
+---
+
+## Limitaciones conocidas y próximos pasos
+
+- Auto-refresh de sesión en el frontend (P2).
+- Migración a cookies `httpOnly` o decisión formal (ADR-001).
+- Adjuntos en object storage S3-compatible (P4).
+- Notificaciones en tiempo real con SSE (P4).
+- Paginación uniforme, envelope de errores y permisos por endpoint (P3).
+- Tests de integración contra PostgreSQL y CI de frontend (P6).
+- Tema claro/oscuro: hoy solo oscuro; el `ThemeContext` está sin montar (P5).
+
+El detalle y el orden están en [`specs/taskflow/tasks.md`](./specs/taskflow/tasks.md).
 
 ---
 
 ## Contributing
 
-1. Fork el repositorio
-2. Crear branch para feature (`git checkout -b feature/amazing`)
-3. Commit cambios (`git commit -m 'Add amazing feature'`)
-4. Push al branch (`git push origin feature/amazing`)
-5. Crear Pull Request
+1. Lee [`specs/taskflow/constitution.md`](./specs/taskflow/constitution.md).
+2. Toma una tarea `T-###` del backlog.
+3. Crea una rama `feature/T-###-descripcion`.
+4. Añade tests y actualiza la spec/contrato si cambia el comportamiento.
+5. Abre un PR referenciando `T-###` y los `FR-###`/`BL-##` cubiertos.
+
+## Licencia
+
+MIT — ver [`LICENSE`](./LICENSE).

@@ -25,10 +25,8 @@ TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_eng
 def setup_database():
     Base.metadata.drop_all(bind=test_engine)
     Base.metadata.create_all(bind=test_engine)
-    main.set_test_engine(test_engine)
     yield
     Base.metadata.drop_all(bind=test_engine)
-    main.set_test_engine(None)
     main.app.state.limiter.enabled = True
 
 

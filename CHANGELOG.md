@@ -1,0 +1,51 @@
+# Changelog
+
+Todas las cambios relevantes del proyecto se documentan aquí.
+El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado semántico.
+
+## [Unreleased]
+
+### Añadido
+
+- Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.
+- Configuración central en `app/config.py` con validación y fail-fast en producción.
+- Tests de regresión para refresh, logout, permisos de equipo, Kanban, asignación y uploads (`tests/test_p1_hardening.py`).
+- Tests frontend con Vitest + jsdom y configuración de `vite.config.js`.
+- Job de frontend y verificación de migraciones en GitHub Actions.
+- `LICENSE` MIT, `.env.example` actualizado y `frontend/.env.example`.
+- `CHANGELOG.md`.
+
+### Cambiado
+
+- `POST /auth/refresh` acepta `{"refresh_token": "..."}` en el body y rota el token.
+- `POST /auth/logout` revoca access y refresh, y es idempotente.
+- Autenticación: comprobación de usuario activo y revocación idempotente.
+- Auto-refresh proactivo en el frontend 60 s antes de expirar el access token.
+- `AuthContext` expone `refreshToken` y limpia la sesión si el refresh falla.
+- CORS con allowlist (`CORS_ORIGINS`), sin `*` con credenciales.
+- Sentry usa la integración correcta y no bloquea el arranque si falla.
+- Eliminado `create_all` del arranque; Alembic es la única fuente de esquema.
+- Migración de lockout idempotente; `alembic upgrade head` funciona en DB limpia.
+- `alembic/env.py` usa `DATABASE_URL` en lugar de `temp.db`.
+- Uploads: nombre saneado, clave única, límite en streaming y allowlist de extensiones/MIME.
+- `AttachmentOut` ya no expone `file_path`.
+- Permisos de equipo: un miembro no puede expulsar a un admin y no se puede dejar el equipo sin admin.
+- Tareas: cualquier miembro puede cambiar solo el estado; el creador/admin edita el resto.
+- Validación de asignado al crear tarea.
+- Cliente API frontend reescrito con errores tipados y `r.ok`; assign envía `user_id`.
+- Invalidaciones de React Query migradas a la sintaxis v5.
+- Documentación (`README`, `AGENTS`, `STACK`, `DECISIONS`) alineada con el estado real.
+
+### Eliminado
+
+- `schema.sql` (esquema duplicado y desactualizado).
+- Dependencia de `create_all` en producción.
+- Código muerto de configuración duplicada en `app/auth.py` y `app/database.py`.
+
+### Pendiente
+
+- P2: auto-refresh, cookies/ADR-001, rate limit Redis, limpieza de tokens.
+- P3: IDs/slugs, paginación uniforme, envelope de errores, permisos por endpoint.
+- P4: object storage, notificaciones SSE.
+- P5: accesibilidad, tema y tests de flujos.
+- P6: ruff/mypy, lockfiles, Docker non-root, CI completo.

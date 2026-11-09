@@ -50,7 +50,7 @@ export default function NotificationsBell() {
   const markReadMutation = useMutation({
     mutationFn: (id) => api.notifications.markRead(token, id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['notifications']);
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 
@@ -60,7 +60,7 @@ export default function NotificationsBell() {
   const markAllReadMutation = useMutation({
     mutationFn: () => api.notifications.markAllRead(token),
     onSuccess: () => {
-      queryClient.invalidateQueries(['notifications']);
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('All notifications marked as read');
     },
   });

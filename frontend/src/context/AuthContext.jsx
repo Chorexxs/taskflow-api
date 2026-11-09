@@ -34,6 +34,26 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../api';
 
 /**
+ * Read the `exp` claim (milliseconds) from a JWT without verifying it.
+ * Verification is the server's job; the client only uses this to schedule a
+ * proactive refresh.
+ */
+export function getJwtExpiry(token) {
+  try {
+    const payload = token.split('.')[1];
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(
+      normalized.length + ((4 - (normalized.length % 4)) % 4),
+      '=',
+    );
+    const decoded = JSON.parse(atob(padded));
+    return decoded.exp ? decoded.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Authentication context - provides auth state and methods
  * @type {React.Context<null>}
  */
@@ -112,6 +132,23 @@ export function AuthProvider({ children }) {
   }, [refreshToken]);
 
   /**
+   * Effect: Keep tabs in sync. Refresh rotation invalidates the previous
+   * token, so every tab must adopt the newest pair written by whichever tab
+   * refreshed first.
+   */
+  useEffect(() => {
+    const syncSession = (event) => {
+      if (event.storageArea && event.storageArea !== localStorage) return;
+      if (event.key === 'access_token') setAccessToken(event.newValue);
+      if (event.key === 'refresh_token') setRefreshToken(event.newValue);
+      if (event.key === 'user_id' && !event.newValue) setUser(null);
+    };
+
+    window.addEventListener('storage', syncSession);
+    return () => window.removeEventListener('storage', syncSession);
+  }, []);
+
+  /**
    * Login user with email and password.
    * 
    * @async
@@ -138,7 +175,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem('user_id', String(user.id));
       return user;
     }
-    throw new Error(data.detail || 'Login failed');
+    throw new Error(data?.detail || 'Login failed');
   };
 
   /**
@@ -163,7 +200,7 @@ export function AuthProvider({ children }) {
     if (data.id) {
       return login(email, password);
     }
-    throw new Error(data.detail || 'Registration failed');
+    throw new Error(data?.detail || 'Registration failed');
   };
 
   /**
@@ -176,13 +213,67 @@ export function AuthProvider({ children }) {
    */
   const logout = () => {
     if (accessToken) {
-      api.auth.logout(accessToken).catch(() => {});
+      // Revoke both tokens server-side. The local session is cleared even if
+      // the network call fails, so logout always works for the user.
+      api.auth.logout(accessToken, refreshToken).catch(() => {});
     }
     setUser(null);
     setAccessToken(null);
     setRefreshToken(null);
     localStorage.removeItem('user_id');
   };
+
+  /**
+   * Proactively refresh the session shortly before the access token expires.
+   * This keeps the user logged in without waiting for a 401. Refresh tokens
+   * are single-use: the API rotates them on every call.
+   */
+  useEffect(() => {
+    if (!accessToken || !refreshToken) return undefined;
+
+    const expiresAt = getJwtExpiry(accessToken);
+    if (!expiresAt) return undefined;
+
+    const delay = Math.max(expiresAt - Date.now() - 60_000, 5_000);
+    const timer = setTimeout(async () => {
+      const performRefresh = async () => {
+        // Another tab may have refreshed while this one waited for the lock.
+        const currentAccess = localStorage.getItem('access_token');
+        const currentRefresh = localStorage.getItem('refresh_token');
+
+        if (currentAccess && currentAccess !== accessToken && currentRefresh) {
+          setAccessToken(currentAccess);
+          setRefreshToken(currentRefresh);
+          return;
+        }
+
+        if (!currentRefresh) {
+          logout();
+          return;
+        }
+
+        const data = await api.auth.refresh(currentRefresh);
+        setAccessToken(data.access_token);
+        setRefreshToken(data.refresh_token);
+      };
+
+      try {
+        // Web Locks serializes refresh across tabs. Without it, the
+        // localStorage comparison above still prevents most duplicate calls.
+        if (typeof navigator !== 'undefined' && navigator.locks?.request) {
+          await navigator.locks.request('taskflow-auth-refresh', performRefresh);
+        } else {
+          await performRefresh();
+        }
+      } catch {
+        logout();
+      }
+    }, delay);
+
+    return () => clearTimeout(timer);
+    // `logout` is stable enough for this timer; it only reads current tokens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken, refreshToken]);
 
   /**
    * Get Authorization header object for API requests.
@@ -196,7 +287,7 @@ export function AuthProvider({ children }) {
   const getAuthHeader = () => ({ Authorization: `Bearer ${accessToken}` });
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, login, register, logout, getAuthHeader }}>
+    <AuthContext.Provider value={{ user, accessToken, refreshToken, loading, login, register, logout, getAuthHeader }}>
       {children}
     </AuthContext.Provider>
   );

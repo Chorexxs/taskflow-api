@@ -15,43 +15,20 @@ The module supports:
 - Search path configuration for PostgreSQL
 """
 
-import os
 import warnings
 from typing import Generator
 from contextlib import contextmanager
 
-from dotenv import load_dotenv
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from pydantic import ConfigDict
-from pydantic_settings import BaseSettings
 
-load_dotenv()
+from app.config import settings
 
 
-class Settings(BaseSettings):
-    """
-    Database settings loaded from environment variables.
-    
-    Supports loading from .env file via pydantic-settings.
-    All settings are case-insensitive for flexibility.
-    """
-    model_config = ConfigDict(env_file=".env", extra="allow", case_sensitive=False)
-
-    DATABASE_URL: str = ""  # PostgreSQL connection string
-    POOL_SIZE: int = 10  # Connection pool size
-    MAX_OVERFLOW: int = 20  # Additional connections when pool is full
-    POOL_PRE_PING: bool = True  # Verify connections before use
-
-
-# Initialize settings singleton
-settings = Settings()
-
-
-# Get database URL from settings or environment
-# Warns if not configured (database features will be unavailable)
-DATABASE_URL = settings.DATABASE_URL or os.environ.get("DATABASE_URL")
+# Database URL comes from the single configuration module.
+# Warns if not configured (database features will be unavailable).
+DATABASE_URL = settings.DATABASE_URL
 if not DATABASE_URL:
     warnings.warn("DATABASE_URL is not set, database functionality will be unavailable")
 

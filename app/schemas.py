@@ -46,7 +46,7 @@ Utility:
 
 import re
 from enum import Enum
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 from datetime import datetime
 
 # Pattern to match control characters that should be removed from input
@@ -113,8 +113,7 @@ class UserMini(BaseModel):
     id: int
     email: EmailStr
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserCreate(UserBase):
@@ -147,8 +146,7 @@ class UserUpdate(BaseModel):
     email: EmailStr | None = None
     password: str | None = None
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserOut(UserBase):
@@ -171,8 +169,7 @@ class UserOut(UserBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Token(BaseModel):
@@ -201,6 +198,26 @@ class TokenData(BaseModel):
         email (str | None): User email from token "sub" claim
     """
     email: str | None = None
+
+
+class RefreshTokenRequest(BaseModel):
+    """Request body for token refresh.
+
+    Refresh tokens must travel in the request body, never in a query string
+    or URL, so they cannot leak through logs or browser history.
+    """
+
+    refresh_token: str
+
+
+class LogoutRequest(BaseModel):
+    """Request body for logout.
+
+    The refresh token is optional for backwards compatibility, but clients
+    should always send it so the server can revoke the whole session.
+    """
+
+    refresh_token: str | None = None
 
 
 class TeamCreate(BaseModel):
@@ -254,8 +271,7 @@ class TeamOut(BaseModel):
     created_by: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TeamMemberOut(BaseModel):
@@ -280,8 +296,7 @@ class TeamMemberOut(BaseModel):
     joined_at: datetime
     user: UserOut
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TeamMemberUpdate(BaseModel):
@@ -401,8 +416,7 @@ class ProjectOut(BaseModel):
     created_by: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TaskStatus(str, Enum):
@@ -559,8 +573,7 @@ class TaskOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CommentCreate(BaseModel):
@@ -635,8 +648,7 @@ class CommentOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ActivityLogOut(BaseModel):
@@ -667,8 +679,7 @@ class ActivityLogOut(BaseModel):
     new_value: str | None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PaginatedTaskResponse(BaseModel):
@@ -734,7 +745,6 @@ class AttachmentOut(BaseModel):
         task_id (int): Task the attachment belongs to
         uploaded_by (int): User who uploaded the file
         filename (str): Original filename
-        file_path (str): Path to file on disk
         file_size (int): File size in bytes
         mime_type (str): MIME type of the file
         created_at (datetime): Upload timestamp
@@ -746,13 +756,11 @@ class AttachmentOut(BaseModel):
     task_id: int
     uploaded_by: int
     filename: str
-    file_path: str
     file_size: int
     mime_type: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class NotificationOut(BaseModel):
@@ -783,8 +791,7 @@ class NotificationOut(BaseModel):
     is_read: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class NotificationUpdate(BaseModel):

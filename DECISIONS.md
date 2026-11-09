@@ -1,54 +1,103 @@
-# DECISIONS.md - Decisiones Técnicas
+# Decisiones técnicas — TaskFlow
 
-Este documento explica las decisiones técnicas más relevantes del proyecto.
+> Las decisiones completas, con contexto, opciones y consecuencias, viven en [`specs/taskflow/plan.md`](./specs/taskflow/plan.md) §ADRs. Este documento es un resumen histórico y un índice.
+
+## Índice de ADRs
+
+| ADR | Decisión | Estado |
+|---|---|---|
+| ADR-001 | Transporte de tokens: Bearer + auto-refresh y evaluación de cookies `httpOnly` | Propuesto |
+| ADR-002 | Tiempo real con SSE para notificaciones (fallback polling) | Propuesto |
+| ADR-003 | Adjuntos en object storage S3-compatible (InsForge) | Propuesto |
+| ADR-004 | Alembic como única fuente de esquema; sin `create_all` en producción | Aceptado |
+| ADR-005 | Envelope de errores `{error:{code,message,details,request_id}}` | Aceptado |
+| ADR-006 | Solo tema oscuro + UI en inglés en este ciclo | Propuesto |
+| ADR-007 | “Invitar” se renombra a “añadir miembro existente” | Propuesto |
+| ADR-008 | Tests de integración contra PostgreSQL | Aceptado |
+| ADR-009 | Dependencias fijadas + Renovate/Dependabot; Python 3.12 | Aceptado |
+| ADR-010 | Rate limiting con Redis para múltiples instancias | Aceptado |
+| ADR-011 | Identificadores `id`/`slug`; nombres/títulos deprecados | Aceptado |
+
+---
 
 ## ¿Por qué PostgreSQL?
 
-- **Confiabilidad**: PostgreSQL es una base de datos relacional robusta y probada en producción
-- **Características**: Soporta tipos avanzados, índices compuestos, transacciones ACID
-- **Escalabilidad**: Railway proporciona PostgreSQL gestionado con alta disponibilidad
-- **Ecosistema**: Amplia documentación y soporte comunitario
+- Integridad relacional, transacciones ACID e índices compuestos.
+- InsForge ofrece PostgreSQL gestionado con backups.
+- SQLAlchemy 2 + Alembic dan portabilidad y migraciones versionadas.
 
-## ¿Por qué refresh tokens con rotación?
+**Corrección histórica:** la documentación anterior mencionaba Railway. El despliegue actual es **Render (API) + InsForge (DB) + Vercel (frontend)**.
 
-- **Seguridad**: Los access tokens de corta duración (15 min) limitan el daño si son comprometidos
-- **UX**: Los usuarios no necesitan login frecuentemente gracias al refresh token
-- **Rotación**: Cada uso del refresh token genera uno nuevo, invalidando el anterior
-- **Revocación**: Posibilidad de invalidar tokens en logout o por sospecha de compromiso
+---
 
-## ¿Por qué paginación con cursor en lugar de offset?
+## ¿Por qué JWT con refresh y rotación?
 
-- **Rendimiento**: offset es lento en tablas grandes porque salta filas
-- **Consistencia**: Cursor-based pagination es más estable cuando hay datos nuevos entre páginas
-- **Estandar cursor**: Usamos el ID de la última tarea como cursor
+- Access token corto (15 min) reduce la ventana de exposición.
+- Refresh token (7 días) mantiene la sesión sin pedir credenciales.
+- Rotación: cada refresh invalida el anterior.
+- Revocación en DB para logout y refresh reutilizado.
+- **Pendiente P2:** auto-refresh en el cliente y migración/decidir cookies `httpOnly`.
 
-## ¿Por qué structlog para logging?
+---
 
-- **Formato estructurado**: JSON con campos definidos (request_id, método, ruta, duración)
-- **Trazabilidad**: Cada request tiene un request_id único para hacer tracking
-- **Integración**: Funciona bien con Sentry y sistemas de log централизованный
+## ¿Por qué paginación por página y no cursor?
 
-## ¿Por qué rate limiting con slowapi?
+- El estado actual usa `page`/`page_size` en tareas.
+- La paginación por cursor queda como evolución para listas grandes (notificaciones/actividad).
+- Decisión documentada en `specs/taskflow/contracts/api.md`.
+- **Corrección:** la documentación anterior afirmaba que había paginación por cursor; no era cierto. `CursorPaginatedResponse` existe pero no se usa.
 
-- **Facilidad**: Integración nativa con FastAPI
-- **Flexibilidad**: Límites por IP y por endpoint configurables
-- **UX**: Respuestas claras con código 429 cuando se excede el límite
+---
 
-## ¿Por qué Railway?
+## ¿Por qué structlog?
 
-- **Gestionado**: No necesitamos gestionar infraestructura
-- **PostgreSQL + Redis**: Soporte nativo para ambos
-- **Deploy automático**: Integración con GitHub
-- **Variables de entorno**: Configuración segura sin código
+- Logs JSON con `request_id`, método, ruta, status y duración.
+- Facilita trazabilidad y correlación con Sentry.
+- No se registran secretos ni PII sensible.
 
-## ¿Por qué división CRUD/Servicios?
+---
 
-- **Separación de responsabilidades**: CRUD solo acceso a datos, servicios orquestan lógica
-- **Testabilidad**: Más fácil testear lógica de negocio aislada
-- **Mantenibilidad**: Cambios en reglas de negocio no tocan código de DB
+## ¿Por qué slowapi?
 
-## ¿Por qué versionado API con /api/v1/?
+- Integración sencilla con FastAPI.
+- Límites por IP en auth (5/min registro, 10/min login).
+- **Pendiente P2:** storage Redis para consistencia multi-instancia y límites en más endpoints.
 
-- **Futuro**: Permite mantener múltiples versiones concurrently
-- **Breaking changes**: Nueva versión sin afectar clientes existentes
-- **Claridad**: Endpoints claramente diferenciados por versión
+---
+
+## ¿Por qué Render + InsForge + Vercel?
+
+- Render: despliegue del backend desde el repositorio.
+- InsForge: PostgreSQL gestionado.
+- Vercel: frontend estático/SPA con previews.
+- Docker Compose replica el entorno local con PostgreSQL + Redis.
+
+**Corrección histórica:** Railway ya no es el proveedor de despliegue.
+
+---
+
+## ¿Por qué separar CRUD y routers?
+
+- Los routers validan HTTP, autorización y orquestación.
+- `crud.py` concentra acceso a datos.
+- La capa de servicios se introduce solo para flujos con múltiples pasos (auth/sesión, borrados con storage, notificaciones), según `plan.md` §2.
+
+---
+
+## ¿Por qué versionar `/api/v1`?
+
+- Permite evolucionar sin romper clientes.
+- Los cambios incompatibles requieren `/api/v2` o deprecación documentada.
+- El contrato vive en `specs/taskflow/contracts/api.md` y OpenAPI.
+
+---
+
+## Decisiones pendientes
+
+1. **ADR-001:** cookies `httpOnly` vs Bearer + localStorage.
+2. **ADR-002:** SSE vs WebSockets vs polling.
+3. **ADR-003:** proveedor de object storage.
+4. **ADR-006:** tema claro/oscuro y idioma de UI.
+5. **ADR-007:** invitaciones reales por email o renombrar la feature.
+
+Para cambiar una decisión: actualizar el ADR, la spec y el plan antes de implementar.

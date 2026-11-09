@@ -46,7 +46,7 @@ export default function Dashboard() {
   const createTeamMutation = useMutation({
     mutationFn: (data) => api.teams.create(localStorage.getItem('access_token'), data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['teams']);
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
       setShowCreateTeam(false);
       setNewTeam({ name: '', slug: '', description: '' });
       toast.success('Team created!');

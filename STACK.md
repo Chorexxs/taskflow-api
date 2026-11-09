@@ -1,82 +1,116 @@
-# TaskFlow API - Stack Tecnológico
+# TaskFlow — Stack tecnológico
+
+> Documento de referencia rápida. La fuente de verdad es [`specs/taskflow/plan.md`](./specs/taskflow/plan.md) (arquitectura y ADRs) y [`specs/taskflow/spec.md`](./specs/taskflow/spec.md) (requisitos).
 
 ## Backend
 
 ### Core
-- **FastAPI** - Framework web moderno y rápido (async/ready)
-- **Uvicorn** - Servidor ASGI de alto rendimiento
 
-### Base de Datos
-- **PostgreSQL** - Base de datos relacional
-- **SQLAlchemy** - ORM para Python
-- **Alembic** - Migraciones de base de datos
-- **psycopg2-binary** - Driver PostgreSQL para Python
+- **Python 3.11** — runtime en Docker/CI.
+- **FastAPI** — framework HTTP async, OpenAPI automático.
+- **Uvicorn** — servidor ASGI.
 
-### Autenticación & Seguridad
-- **python-jose** - JWT (JSON Web Tokens)
-- **bcrypt** - Hashing de contraseñas
-- **email-validator** - Validación de emails
+### Datos
 
-### Validación & Configuración
-- **Pydantic** - Validación de datos
-- **pydantic-settings** - Configuración desde variables de entorno
-- **python-dotenv** - Carga de variables de entorno
+- **PostgreSQL 15** — base de datos relacional (InsForge en producción).
+- **SQLAlchemy 2** — ORM y sesiones.
+- **Alembic** — migraciones; única fuente de esquema en producción.
+- **psycopg2-binary** — driver PostgreSQL.
 
-### APIs & HTTP
-- **httpx** - Cliente HTTP async
+### Validación y configuración
 
-### Testing
-- **pytest** - Framework de testing
-- **pytest-asyncio** - Testing async
-- **pytest-cov** - Cobertura de código
+- **Pydantic v2** — schemas request/response.
+- **pydantic-settings** — configuración desde entorno y `.env`.
+- **python-dotenv** — carga de `.env` en desarrollo.
+
+### Autenticación y seguridad
+
+- **python-jose[cryptography]** — JWT HS256.
+- **bcrypt** — hashing de contraseñas.
+- **email-validator** — validación de emails.
+- **slowapi** — rate limiting por IP.
+- **Headers de seguridad** — middleware propio (HSTS, nosniff, X-Frame-Options, XSS).
+
+### Observabilidad
+
+- **structlog** — logs JSON con `request_id`.
+- **sentry-sdk[fastapi]** — errores (opcional).
+- **Redis** — cache/rate limiting cuando está disponible (degradación controlada).
 
 ### Utilidades
-- **python-multipart** - Manejo de form-data y archivos
-- **slowapi** - Rate limiting
-- **redis** - Cache y almacenamiento en memoria
-- **aiofiles** - Operaciones de archivo async
-- **structlog** - Logging estructurado
-- **sentry-sdk** - Error tracking y monitoring
+
+- **python-multipart** — uploads.
+- **aiofiles** — operaciones de archivo async.
+- **httpx** — cliente HTTP async (tests).
+
+### Testing
+
+- **pytest**, **pytest-cov**, **pytest-asyncio**.
+- Tests de integración con `TestClient` y SQLite en memoria (P6: PostgreSQL).
 
 ---
 
 ## Frontend
 
 ### Core
-- **React 18** - Biblioteca de UI
-- **React Router DOM** - Navegación y routing
-- **Vite** - Build tool y dev server
 
-### Estado & Datos
-- **TanStack React Query** - Fetching, caching y sincronización de datos
-- **Axios** - Cliente HTTP
+- **React 18** — UI.
+- **React Router 7** — routing SPA.
+- **Vite 5** — dev server y build.
 
-### UI & Componentes
-- **Tailwind CSS 4** - Framework de estilado
-- **Lucide React** - Iconos
-- **React Hot Toast** - Notificaciones toast
+### Estado y datos
 
-### Drag & Drop
-- **@dnd-kit/core** - drag and drop core
-- **@dnd-kit/sortable** - componentes ordenables
-- **@dnd-kit/utilities** - utilities para drag & drop
+- **TanStack React Query 5** — fetching, caché y mutaciones.
+- **fetch nativo** — cliente centralizado en `src/api/index.js` (axios no se usa).
 
-### Desarrollo
-- **ESLint** - Linting y code quality
-- **Tailwind Vite** - Plugin de Tailwind para Vite
+### UI
 
----
+- **Tailwind CSS 4** — estilos utility-first.
+- **Lucide React** — iconos.
+- **React Hot Toast** — toasts.
+- **@dnd-kit/core / sortable / utilities** — Kanban drag & drop.
 
-## Infraestructura & Deployment
+### Testing
 
-### Railway
-- **Docker** - Contenedores
-- **PostgreSQL** - Database gestionada
+- **Vitest**, **Testing Library**, **jsdom**.
+- 6 tests de componentes/flujos.
 
 ---
 
-## Herramientas de Desarrollo
-- **Git** - Control de versiones
-- **GitHub Actions** - CI/CD
-- **Pytest** - Testing backend
-- **ESLint** - Linting frontend
+## Infraestructura
+
+| Servicio | Uso |
+|---|---|
+| **Render** | Backend FastAPI |
+| **Vercel** | Frontend React |
+| **InsForge** | PostgreSQL gestionado |
+| **GitHub Actions** | Tests backend + Codecov |
+| **Docker / docker-compose** | PostgreSQL + Redis + API local |
+
+### Variables clave
+
+```bash
+ENVIRONMENT=development
+SECRET_KEY=...
+DATABASE_URL=postgresql://...
+CORS_ORIGINS=http://localhost:5173
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=7
+REDIS_URL=redis://localhost:6379/0        # opcional
+SENTRY_DSN=...                            # opcional
+MAX_UPLOAD_SIZE=10485760
+UPLOAD_DIR=uploads
+```
+
+---
+
+## Deuda técnica conocida
+
+- Migrar tests de integración a PostgreSQL.
+- Auto-refresh de sesión en el frontend.
+- Object storage para adjuntos (hoy disco local).
+- Paginación uniforme y envelope de errores.
+- Ruff/mypy/pre-commit y lockfiles.
+- SSE para notificaciones (hoy polling).
+
+Ver [`specs/taskflow/baseline.md`](./specs/taskflow/baseline.md) y [`specs/taskflow/tasks.md`](./specs/taskflow/tasks.md).

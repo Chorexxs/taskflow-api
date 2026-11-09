@@ -1,5 +1,3 @@
-from logging.config import fileConfig
-
 import os
 import sys
 from logging.config import fileConfig
@@ -8,11 +6,10 @@ from alembic import context
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-os.environ.pop("DATABASE_URL", None)
-
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
+from app.config import settings
 from app.database import Base
 from app.models import User, Team, TeamMember, Project, Task, Comment, Attachment, ActivityLog, Notification, RevokedToken
 
@@ -20,6 +17,16 @@ config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# In production `DATABASE_URL` is the source of truth. Fall back to
+# alembic.ini only when it is not configured (local SQLite workflows).
+database_url = os.environ.get("DATABASE_URL") or settings.DATABASE_URL
+if database_url:
+    # SQLAlchemy expects `postgresql://`, while some providers still emit
+    # `postgres://`. Escape `%` because Alembic uses ConfigParser interpolation.
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 target_metadata = Base.metadata
 

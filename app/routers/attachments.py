@@ -11,23 +11,85 @@ File uploads are limited to 10MB. Files are stored on disk with
 metadata in the database.
 """
 
+import mimetypes
 import os
+import re
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app import crud, models, schemas
 from app.auth import get_current_user
-from app.dependencies import get_current_team_admin, get_current_team_member
+from app.dependencies import get_current_team_member
 
 router = APIRouter()
 
-# Maximum file size: 10MB
-MAX_FILE_SIZE = 10 * 1024 * 1024
+# Upload limits and storage location come from central configuration.
+MAX_FILE_SIZE = settings.MAX_UPLOAD_SIZE
+UPLOAD_DIR = settings.UPLOAD_DIR
+CHUNK_SIZE = 1024 * 1024
+HTTP_413_TOO_LARGE = getattr(status, "HTTP_413_CONTENT_TOO_LARGE", 413)
 
-# Directory for uploaded files
-UPLOAD_DIR = "uploads"
+# Only allow a conservative, explicit set of characters in filenames.
+_UNSAFE_FILENAME_CHARS = re.compile(r"[^A-Za-z0-9._-]+")
+
+
+def sanitize_filename(filename: str | None) -> str:
+    """Return a safe, human-readable filename.
+
+    The client-supplied filename is never trusted: path separators are
+    stripped, control characters removed and everything outside a small
+    allowlist collapsed to underscores.
+    """
+    candidate = (filename or "").replace("\\", "/")
+    candidate = os.path.basename(candidate).replace("\x00", "").strip()
+    if candidate in {"", ".", ".."}:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    candidate = _UNSAFE_FILENAME_CHARS.sub("_", candidate)
+    candidate = re.sub(r"_+", "_", candidate).strip("._")
+    if not candidate:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    if len(candidate) > 255:
+        stem, extension = os.path.splitext(candidate)
+        candidate = f"{stem[: 255 - len(extension)]}{extension}"
+
+    return candidate
+
+
+def validate_upload_type(filename: str, content_type: str | None) -> tuple[str, str]:
+    """Validate the extension and return ``(extension, mime_type)``.
+
+    The extension allowlist is the primary control; the MIME type is derived
+    from the extension when possible and only falls back to the client value
+    for generic/unknown types.
+    """
+    extension = os.path.splitext(filename)[1].lower()
+    normalized_extension = extension.lstrip(".")
+    if normalized_extension not in settings.allowed_upload_extensions:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"File type '{extension or 'unknown'}' is not allowed",
+        )
+
+    guessed_type, _ = mimetypes.guess_type(filename)
+    mime_type = guessed_type or content_type or "application/octet-stream"
+    return extension, mime_type[:100]
+
+
+def _task_upload_dir(task_id: int) -> str:
+    """Resolve and create a task upload directory inside the base directory."""
+    base_dir = os.path.realpath(UPLOAD_DIR)
+    task_dir = os.path.realpath(os.path.join(base_dir, str(task_id)))
+    if os.path.commonpath([base_dir, task_dir]) != base_dir:
+        raise HTTPException(status_code=400, detail="Invalid upload path")
+    os.makedirs(task_dir, exist_ok=True)
+    return task_dir
 
 
 def get_task_from_params(db: Session, team_id_or_slug: str, project_id_or_name: str, task_id_or_title: str):
@@ -90,36 +152,69 @@ async def upload_attachment(
         ...   -H "Authorization: Bearer eyJhbGc..." \\
         ...   -F "file=@document.pdf"
     """
-    # Check file size
+    original_filename = sanitize_filename(file.filename)
+    extension, mime_type = validate_upload_type(original_filename, file.content_type)
+
+    # An early check avoids obvious oversized uploads, but the streaming loop
+    # below is the authoritative limit because file.size can be missing or lie.
     if file.size and file.size > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB.")
-    
+        raise HTTPException(
+            status_code=HTTP_413_TOO_LARGE,
+            detail="File too large. Maximum size is 10MB.",
+        )
+
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
-    
-    # Create task-specific upload directory
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    task_dir = os.path.join(UPLOAD_DIR, str(task.id))
-    os.makedirs(task_dir, exist_ok=True)
-    
-    # Save file to disk
-    file_path = os.path.join(task_dir, file.filename)
-    contents = await file.read()
-    await file.close()
-    
-    with open(file_path, "wb") as f:
-        f.write(contents)
-    
-    # Determine MIME type
-    mime_type = file.content_type or "application/octet-stream"
-    
-    # Create attachment record in database
-    attachment = crud.create_attachment(
-        db, task.id, current_user.id, file.filename, file_path, len(contents), mime_type
+    task_dir = _task_upload_dir(task.id)
+
+    # Never use the client filename on disk: generate an opaque, unique key.
+    storage_name = f"{uuid.uuid4().hex}{extension}"
+    file_path = os.path.join(task_dir, storage_name)
+
+    written = 0
+    try:
+        with open(file_path, "wb") as destination:
+            while True:
+                chunk = await file.read(CHUNK_SIZE)
+                if not chunk:
+                    break
+                written += len(chunk)
+                if written > MAX_FILE_SIZE:
+                    raise HTTPException(
+                        status_code=HTTP_413_TOO_LARGE,
+                        detail="File too large. Maximum size is 10MB.",
+                    )
+                destination.write(chunk)
+
+        if written == 0:
+            raise HTTPException(status_code=400, detail="Empty files are not allowed")
+
+        attachment = crud.create_attachment(
+            db,
+            task.id,
+            current_user.id,
+            original_filename,
+            file_path,
+            written,
+            mime_type,
+        )
+    except Exception:
+        # Remove partial files on validation or database failures.
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise
+    finally:
+        await file.close()
+
+    crud.log_activity(
+        db,
+        "attachment",
+        attachment.id,
+        "uploaded",
+        current_user.id,
+        None,
+        original_filename,
     )
-    
-    # Log activity
-    crud.log_activity(db, "attachment", attachment.id, "uploaded", current_user.id, None, file.filename)
-    
+
     return attachment
 
 

@@ -89,8 +89,8 @@ export default function TeamDetail() {
   const inviteMutation = useMutation({
     mutationFn: ({ email, role }) => api.teams.addMember(token, teamId, email, role),
     onSuccess: () => {
-      queryClient.invalidateQueries(['team', teamId])
-      queryClient.invalidateQueries(['team-members', teamId])
+      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
+      queryClient.invalidateQueries({ queryKey: ['team-members', teamId] })
       setShowInvite(false)
       setInviteEmail('')
       toast.success('Invitation sent!')
@@ -101,7 +101,7 @@ export default function TeamDetail() {
   const createProjectMutation = useMutation({
     mutationFn: (data) => api.projects.create(token, teamId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['projects', teamId])
+      queryClient.invalidateQueries({ queryKey: ['projects', teamId] })
       setShowCreateProject(false)
       setNewProject({ name: '', description: '' })
       toast.success('Project created!')
@@ -112,7 +112,7 @@ export default function TeamDetail() {
   const updateProjectMutation = useMutation({
     mutationFn: ({ projectId, data }) => api.projects.update(token, teamId, projectId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['projects', teamId])
+      queryClient.invalidateQueries({ queryKey: ['projects', teamId] })
       setShowEditProject(false)
       setEditingProject(null)
       setEditProjectForm({ name: '', description: '' })
@@ -137,7 +137,7 @@ export default function TeamDetail() {
   const updateRoleMutation = useMutation({
     mutationFn: ({ userId, role }) => api.teams.updateMemberRole(token, teamId, userId, role),
     onSuccess: () => {
-      queryClient.invalidateQueries(['team-members', teamId])
+      queryClient.invalidateQueries({ queryKey: ['team-members', teamId] })
       toast.success('Role updated!')
     },
     onError: () => toast.error('Failed to update role'),
@@ -146,7 +146,7 @@ export default function TeamDetail() {
   const removeMemberMutation = useMutation({
     mutationFn: (userId) => api.teams.removeMember(token, teamId, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['team-members', teamId])
+      queryClient.invalidateQueries({ queryKey: ['team-members', teamId] })
       toast.success('Member removed!')
     },
     onError: () => toast.error('Failed to remove member'),
