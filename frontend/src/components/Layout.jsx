@@ -75,6 +75,7 @@ export default function Layout({ children, hideNav }) {
               {/* Settings link */}
               <Link 
                 to="/profile"
+                aria-label="Profile settings"
                 className="p-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-all"
               >
                 <Settings className="w-5 h-5" />
@@ -83,6 +84,7 @@ export default function Layout({ children, hideNav }) {
               {/* Logout button */}
               <button
                 onClick={handleLogout}
+                aria-label="Log out"
                 className="p-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-priority-high)] transition-all"
               >
                 <LogOut className="w-5 h-5" />

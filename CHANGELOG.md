@@ -45,6 +45,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - CSP, `Referrer-Policy` y `Permissions-Policy` en todas las respuestas.
 - `DB_SSLMODE` configurable (`prefer` local, `require` InsForge).
 - Documentados los bloqueos de despliegue de InsForge/Vercel/Render en `specs/taskflow/blockers.md`.
+- Mejoras de accesibilidad: focus visible, reduced motion, `aria-label` en iconos y roles de diálogo.
 - CORS con allowlist (`CORS_ORIGINS`), sin `*` con credenciales.
 - Sentry usa la integración correcta y no bloquea el arranque si falla.
 - Eliminado `create_all` del arranque; Alembic es la única fuente de esquema.

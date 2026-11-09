@@ -103,6 +103,8 @@ export default function NotificationsBell() {
       {/* Bell button with unread badge */}
       <button
         onClick={() => setShowPanel(!showPanel)}
+        aria-label="Notifications"
+        aria-expanded={showPanel}
         className="relative p-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-all"
       >
         <Bell className="w-5 h-5" />
@@ -121,6 +123,7 @@ export default function NotificationsBell() {
             <h3 className="text-sm font-medium text-[var(--color-text-primary)]">Notifications</h3>
             <button
               onClick={() => setShowPanel(false)}
+              aria-label="Close notifications"
               className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               <X className="w-4 h-4" />

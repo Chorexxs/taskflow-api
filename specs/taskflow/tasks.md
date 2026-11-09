@@ -26,6 +26,8 @@
 
 **Parcial (P6):** `T-074` (`pyproject.toml` con config de ruff/mypy; falta instalar/enforcing en CI).
 
+**Parcial (P5):** `T-066` (focus visible, reduced motion, `aria-label` en iconos y roles de diálogo; falta auditoría WCAG completa).
+
 **Completadas (P5):** `T-065` (decisión dark-only), `T-070` (eliminados axios y ThemeContext muerto).
 
 **Completadas (P4):** `T-052` (menciones), `T-053` (backend de almacenamiento configurable), `T-056` (limpieza de adjuntos locales al borrar tarea).
