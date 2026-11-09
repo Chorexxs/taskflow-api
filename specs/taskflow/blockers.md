@@ -60,9 +60,22 @@ npx vercel whoami
 > Logged out.
 ```
 
+También se intentó un despliegue temporal:
+
+```bash
+npx vercel deploy --temporary --yes --build-env VITE_API_URL=https://taskflow-api-gkgl.onrender.com
+```
+
+**Salida:**
+
+```text
+> Temporary deployments aren't available for this attempt. Log in to continue.
+> No existing credentials found. Starting login flow...
+```
+
 **Qué necesito:** ejecutar `vercel login` o proporcionar un `VERCEL_TOKEN` con acceso al proyecto `chorexxs-projects/taskflow-api`.
 
-**Impacto:** no se puede desplegar el frontend actualizado en el proyecto existente de Vercel.
+**Impacto:** no se puede desplegar el frontend actualizado en el proyecto existente de Vercel ni verificar el deploy real.
 
 ---
 
@@ -105,7 +118,7 @@ Docker Desktop no está iniciado, así que la imagen no se pudo construir localm
 
 ## Lo que sí está verificado
 
-- `pytest -q` → **101 tests passed**.
+- `pytest -q` → **101 tests passed** (última ejecución completa).
 - `npm run test` → **12 tests passed**.
 - `npm run build` → correcto.
 - `alembic upgrade head` + `downgrade base` sobre SQLite temporal → correcto.
