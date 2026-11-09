@@ -63,6 +63,9 @@ class User(Base):
     is_blocked = Column(Boolean, default=False)
     failed_login_attempts = Column(Integer, default=0)
     locked_until = Column(DateTime(timezone=True), nullable=True)
+    # Incremented when credentials change; tokens carry this value so every
+    # existing session can be invalidated at once.
+    token_version = Column(Integer, nullable=False, default=0, server_default="0")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

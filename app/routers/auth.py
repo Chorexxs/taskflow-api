@@ -178,9 +178,10 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
     # Successful login - reset failed attempts
     reset_failed_login(db, user)
     
-    # Generate tokens
-    access_token = create_access_token(data={"sub": user.email})
-    refresh_token = create_refresh_token(data={"sub": user.email})
+    # Generate tokens. `ver` lets a password change invalidate every session.
+    token_data = {"sub": user.email, "ver": user.token_version or 0}
+    access_token = create_access_token(data=token_data)
+    refresh_token = create_refresh_token(data=token_data)
     
     return {
         "access_token": access_token,
@@ -227,9 +228,10 @@ def refresh(
     # Revoke the old refresh token (rotation)
     revoke_token(db, token, "refresh")
 
-    # Generate new tokens
-    new_access_token = create_access_token(data={"sub": user.email})
-    new_refresh_token = create_refresh_token(data={"sub": user.email})
+    # Generate new tokens with the current token version.
+    token_data = {"sub": user.email, "ver": user.token_version or 0}
+    new_access_token = create_access_token(data=token_data)
+    new_refresh_token = create_refresh_token(data=token_data)
 
     return {
         "access_token": new_access_token,

@@ -52,6 +52,20 @@ from datetime import datetime
 # Pattern to match control characters that should be removed from input
 CONTROL_CHARS_PATTERN = re.compile(r'[\x00-\x1f\x7f-\x9f]')
 
+PASSWORD_MIN_LENGTH = 8
+PASSWORD_MAX_LENGTH = 128
+
+
+def validate_password(password: str) -> str:
+    """Validate password length without altering the secret."""
+    if not isinstance(password, str):
+        raise ValueError("password must be a string")
+    if len(password) < PASSWORD_MIN_LENGTH:
+        raise ValueError(f"password must be at least {PASSWORD_MIN_LENGTH} characters")
+    if len(password) > PASSWORD_MAX_LENGTH:
+        raise ValueError(f"password must be at most {PASSWORD_MAX_LENGTH} characters")
+    return password
+
 
 def sanitize_text(text: str) -> str:
     """
@@ -95,6 +109,12 @@ class UserBase(BaseModel):
     """
     email: EmailStr
 
+    @field_validator("email", mode="after")
+    @classmethod
+    def normalize_email(cls, value: EmailStr) -> str:
+        """Store emails in lowercase so uniqueness is predictable."""
+        return str(value).strip().lower()
+
 
 class UserMini(BaseModel):
     """
@@ -128,6 +148,13 @@ class UserCreate(UserBase):
     """
     password: str
 
+    @field_validator("password", mode="before")
+    @classmethod
+    def check_password_strength(cls, value):
+        if isinstance(value, str):
+            return validate_password(value)
+        return value
+
 
 class UserUpdate(BaseModel):
     """
@@ -135,16 +162,31 @@ class UserUpdate(BaseModel):
     
     Used in PUT /users/me endpoint.
     Both email and password are optional - only provided fields are updated.
+    Changing either requires the current password.
     
     Attributes:
         email (Optional[EmailStr]): New email address
         password (Optional[str]): New password (will be hashed)
+        current_password (Optional[str]): Current password for verification
     
     Config:
         from_attributes: Allows creation from ORM objects
     """
     email: EmailStr | None = None
     password: str | None = None
+    current_password: str | None = None
+
+    @field_validator("email", mode="after")
+    @classmethod
+    def normalize_optional_email(cls, value):
+        return str(value).strip().lower() if value is not None else value
+
+    @field_validator("password", mode="before")
+    @classmethod
+    def check_optional_password_strength(cls, value):
+        if isinstance(value, str):
+            return validate_password(value)
+        return value
     
     model_config = ConfigDict(from_attributes=True)
 

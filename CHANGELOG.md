@@ -22,6 +22,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Autenticación: comprobación de usuario activo y revocación idempotente.
 - Auto-refresh proactivo en el frontend 60 s antes de expirar el access token.
 - `AuthContext` expone `refreshToken` y limpia la sesión si el refresh falla.
+- Política de contraseñas de 8–128 caracteres y `token_version` para revocar todas las sesiones al cambiar credenciales.
+- El cambio de contraseña exige la contraseña actual y obliga a iniciar sesión de nuevo.
 - CORS con allowlist (`CORS_ORIGINS`), sin `*` con credenciales.
 - Sentry usa la integración correcta y no bloquea el arranque si falla.
 - Eliminado `create_all` del arranque; Alembic es la única fuente de esquema.

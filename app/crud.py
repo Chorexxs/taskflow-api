@@ -149,8 +149,11 @@ def update_user(db: Session, user_id: int, user_update: schemas.UserUpdate):
         return None
     if user_update.password:
         db_user.hashed_password = get_password_hash(user_update.password)
+        # Invalidate every existing session (access and refresh tokens).
+        db_user.token_version = (db_user.token_version or 0) + 1
     if user_update.email:
         db_user.email = user_update.email
+        db_user.token_version = (db_user.token_version or 0) + 1
     db.commit()
     db.refresh(db_user)
     return db_user

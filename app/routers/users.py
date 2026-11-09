@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app import crud, schemas
 from app.database import get_db
 from app.models import User
-from app.auth import get_current_user
+from app.auth import get_current_user, verify_password
 
 router = APIRouter()
 
@@ -78,6 +78,21 @@ def update_current_user(
         ...   -H "Content-Type: application/json" \\
         ...   -d '{"email":"newemail@example.com"}'
     """
+    changing_credentials = user_update.email is not None or user_update.password is not None
+
+    if changing_credentials:
+        # Never allow an email/password change with a stolen access token.
+        if not user_update.current_password:
+            raise HTTPException(
+                status_code=400,
+                detail="current_password is required to change credentials",
+            )
+        if not verify_password(user_update.current_password, current_user.hashed_password):
+            raise HTTPException(
+                status_code=400,
+                detail="Current password is incorrect",
+            )
+
     # Check if email is being changed and if it's already taken
     if user_update.email:
         existing_user = crud.get_user_by_email(db, email=user_update.email)

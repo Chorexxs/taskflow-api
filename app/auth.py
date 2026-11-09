@@ -369,6 +369,11 @@ async def get_current_user(
     user = get_user_by_email(db, email=email)
     if user is None or not user.is_active:
         raise credentials_exception
+
+    # A password change increments token_version, invalidating every old token.
+    if int(payload.get("ver", 0)) != int(user.token_version or 0):
+        raise credentials_exception
+
     return user
 
 
@@ -431,4 +436,8 @@ def get_current_user_from_refresh(
     user = get_user_by_email(db, email=email)
     if user is None or not user.is_active:
         raise credentials_exception
+
+    if int(payload.get("ver", 0)) != int(user.token_version or 0):
+        raise credentials_exception
+
     return user

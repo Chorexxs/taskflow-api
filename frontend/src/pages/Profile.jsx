@@ -42,6 +42,7 @@ import { LogOut, User, Shield, Loader2 } from 'lucide-react'
 export default function Profile() {
   const { user, accessToken, logout } = useAuth()
   const navigate = useNavigate()
+  const [currentPassword, setCurrentPassword] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -65,13 +66,13 @@ export default function Profile() {
   const handlePasswordUpdate = async () => {
     setError('')
     
-    if (!password || !confirmPassword) {
-      setError('Please fill in both password fields')
+    if (!currentPassword || !password || !confirmPassword) {
+      setError('Please fill in all password fields')
       return
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters')
       return
     }
 
@@ -82,10 +83,14 @@ export default function Profile() {
 
     setLoading(true)
     try {
-      await api.users.update(accessToken, { password })
-      toast.success('Password updated successfully')
-      setPassword('')
-      setConfirmPassword('')
+      await api.users.update(accessToken, {
+        current_password: currentPassword,
+        password,
+      })
+      // Changing the password invalidates every session, including this one.
+      toast.success('Password updated. Please log in again.')
+      logout()
+      navigate('/login')
     } catch (err) {
       const msg = err.message || 'Failed to update password'
       setError(msg)
@@ -139,6 +144,18 @@ export default function Profile() {
               
               <div className="space-y-3 ">
                 <div className="space-y-1">
+                  <label className="block text-xs  font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Current Password</label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => { setCurrentPassword(e.target.value); setError(''); }}
+                    placeholder="Enter current password"
+                    className="input-field"
+                    autoComplete="current-password"
+                  />
+                </div>
+
+                <div className="space-y-1">
                   <label className="block text-xs  font-medium text-[var(--color-text-muted)] uppercase tracking-wider">New Password</label>
                   <input
                     type="password"
@@ -146,7 +163,8 @@ export default function Profile() {
                     onChange={(e) => { setPassword(e.target.value); setError(''); }}
                     placeholder="Enter new password"
                     className="input-field"
-                    minLength={6}
+                    minLength={8}
+                    autoComplete="new-password"
                   />
                 </div>
 
@@ -158,7 +176,8 @@ export default function Profile() {
                     onChange={(e) => { setConfirmPassword(e.target.value); setError(''); }}
                     placeholder="Confirm new password"
                     className="input-field"
-                    minLength={6}
+                    minLength={8}
+                    autoComplete="new-password"
                   />
                 </div>
 
