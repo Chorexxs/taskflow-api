@@ -328,6 +328,8 @@ alembic/                 # migraciones
 | [`tasks.md`](./specs/taskflow/tasks.md) | Backlog accionable |
 | [`data-model.md`](./specs/taskflow/data-model.md) | Modelo actual/objetivo y migraciones |
 | [`contracts/api.md`](./specs/taskflow/contracts/api.md) | Contrato HTTP |
+| [`contracts/openapi.json`](./specs/taskflow/contracts/openapi.json) | Snapshot OpenAPI verificado en CI |
+| [`blockers.md`](./specs/taskflow/blockers.md) | Bloqueos de despliegue y credenciales |
 
 ---
 

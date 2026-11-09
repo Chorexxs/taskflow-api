@@ -67,9 +67,11 @@ def get_engine():
             warnings.warn("DATABASE_URL is not set, returning None engine")
             return None
         
-        # Configure PostgreSQL-specific settings
+        # Configure PostgreSQL-specific settings. Managed providers such as
+        # InsForge require TLS; "prefer" also works with local Postgres.
         connect_args = {}
         if DATABASE_URL.startswith("postgresql"):
+            connect_args["sslmode"] = settings.DB_SSLMODE
             @event.listens_for(Engine, "connect")
             def set_search_path(dbapi_conn, connection_record):
                 """

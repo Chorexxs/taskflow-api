@@ -46,6 +46,9 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = ""
+    # "prefer" works for local Postgres and most managed providers; use
+    # "require" for InsForge/production.
+    DB_SSLMODE: str = "prefer"
     POOL_SIZE: int = 10
     MAX_OVERFLOW: int = 20
     POOL_PRE_PING: bool = True
