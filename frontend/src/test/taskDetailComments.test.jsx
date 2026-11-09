@@ -20,13 +20,19 @@ vi.mock('../api', async () => {
         created_by: 1,
         assignee: null,
       })),
-      getActivity: vi.fn(() => Promise.resolve([])),
+      getActivity: vi.fn(() => Promise.resolve({ items: [], total: 0, page: 1, pages: 0, has_next: false })),
     },
     comments: {
-      list: vi.fn(() => Promise.resolve([
-        { id: 1, content: 'First comment', author_id: 1, author: { email: 'user1@test.com' }, created_at: '2024-01-01T00:00:00Z' },
-        { id: 2, content: 'Second comment', author_id: 2, author: { email: 'user2@test.com' }, created_at: '2024-01-01T00:00:00Z' },
-      ])),
+      list: vi.fn(() => Promise.resolve({
+        items: [
+          { id: 1, content: 'First comment', author_id: 1, author: { email: 'user1@test.com' }, created_at: '2024-01-01T00:00:00Z' },
+          { id: 2, content: 'Second comment', author_id: 2, author: { email: 'user2@test.com' }, created_at: '2024-01-01T00:00:00Z' },
+        ],
+        total: 2,
+        page: 1,
+        pages: 1,
+        has_next: false,
+      })),
       create: vi.fn(() => Promise.resolve({ id: 3, content: 'New comment' })),
       update: vi.fn(() => Promise.resolve({ id: 1, content: 'Updated content' })),
       delete: vi.fn(() => Promise.resolve()),

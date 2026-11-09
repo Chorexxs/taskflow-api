@@ -70,20 +70,22 @@ export default function TaskDetail() {
     queryFn: () => api.tasks.get(token, teamId, projectId, taskId),
   })
 
-  const { data: comments } = useQuery({
+  const { data: commentsPage } = useQuery({
     queryKey: ['comments', teamId, projectId, taskId],
     queryFn: () => api.comments.list(token, teamId, projectId, taskId),
   })
+  const comments = commentsPage?.items ?? []
 
   const { data: attachments } = useQuery({
     queryKey: ['attachments', teamId, projectId, taskId],
     queryFn: () => api.attachments.list(token, teamId, projectId, taskId),
   })
 
-  const { data: activity } = useQuery({
+  const { data: activityPage } = useQuery({
     queryKey: ['task-activity', teamId, projectId, taskId],
     queryFn: () => api.tasks.getActivity(token, teamId, projectId, taskId),
   })
+  const activity = activityPage?.items ?? []
 
   const uploadMutation = useMutation({
     mutationFn: (formData) => api.attachments.upload(token, teamId, projectId, taskId, formData),

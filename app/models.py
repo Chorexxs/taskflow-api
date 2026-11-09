@@ -354,6 +354,11 @@ class ActivityLog(Base):
 
     user = relationship("User")
 
+    @property
+    def actor(self):
+        """Alias used by the API to expose the user who made the change."""
+        return self.user
+
 
 class Notification(Base):
     """

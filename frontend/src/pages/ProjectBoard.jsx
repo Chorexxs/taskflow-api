@@ -713,9 +713,9 @@ export default function ProjectBoard() {
               </button>
             </div>
             <div className="p-4 overflow-y-auto max-h-[60vh]">
-              {projectActivity && projectActivity.length > 0 ? (
+              {projectActivity?.items?.length > 0 ? (
                 <div className="space-y-3">
-                  {projectActivity.map(log => {
+                  {projectActivity.items.map(log => {
                     const actionLabel = log.action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
                     return (
                       <div key={log.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded-lg text-sm">

@@ -28,6 +28,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Edición de equipos (nombre/descripción) para admins.
 - Endpoints explícitos de archivar/restaurar proyecto y filtro `include_archived`.
 - Borrado de tareas con limpieza de archivos adjuntos y auditoría.
+- Comentarios paginados y validación de pertenencia al equipo al editar.
+- Actividad paginada con datos del actor (`actor.email`).
 - CORS con allowlist (`CORS_ORIGINS`), sin `*` con credenciales.
 - Sentry usa la integración correcta y no bloquea el arranque si falla.
 - Eliminado `create_all` del arranque; Alembic es la única fuente de esquema.

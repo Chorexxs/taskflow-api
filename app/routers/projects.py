@@ -270,10 +270,12 @@ def restore_project_endpoint(
     return project
 
 
-@router.get("/{project_id_or_slug}/activity", response_model=list[schemas.ActivityLogOut])
+@router.get("/{project_id_or_slug}/activity", response_model=schemas.PaginatedActivityResponse)
 def get_project_activity(
     team_id_or_slug: str,
     project_id_or_slug: str,
+    page: int = 1,
+    page_size: int = 20,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
@@ -292,13 +294,15 @@ def get_project_activity(
         member (TeamMember): Team membership check (injected via dependency).
     
     Returns:
-        list[ActivityLogOut]: List of activity logs for the project.
+        PaginatedActivityResponse: Page of activity logs plus metadata.
     
     Example:
         >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/projects/1/activity \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
     from app.dependencies import get_team_from_id_or_slug
+    page = max(page, 1)
+    page_size = min(max(page_size, 1), 100)
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_slug(db, project_id_or_slug, team.id)
-    return crud.get_activity_by_project(db, project.id)
+    return crud.get_activity_by_project(db, project.id, page, page_size)

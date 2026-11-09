@@ -707,6 +707,16 @@ class CommentOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PaginatedCommentResponse(BaseModel):
+    """Paginated list of comments."""
+
+    items: list[CommentOut]
+    total: int
+    page: int
+    pages: int
+    has_next: bool
+
+
 class ActivityLogOut(BaseModel):
     """
     Schema for activity log response.
@@ -731,11 +741,22 @@ class ActivityLogOut(BaseModel):
     entity_id: int
     action: str
     changed_by: int
+    actor: UserMini | None = None
     old_value: str | None
     new_value: str | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PaginatedActivityResponse(BaseModel):
+    """Paginated list of activity entries."""
+
+    items: list[ActivityLogOut]
+    total: int
+    page: int
+    pages: int
+    has_next: bool
 
 
 class PaginatedTaskResponse(BaseModel):

@@ -895,26 +895,31 @@ def get_comment_by_id(db: Session, comment_id: int):
     return db.query(models.Comment).filter(models.Comment.id == comment_id).first()
 
 
-def get_comments_by_task(db: Session, task_id: int):
+def get_comments_by_task(db: Session, task_id: int, page: int = 1, page_size: int = 20):
     """
-    Get all comments for a task, ordered by creation (newest first).
+    Get a page of comments for a task, ordered newest first.
     
-    Args:
-        db (Session): SQLAlchemy database session.
-        task_id (int): ID of the task.
-    
-    Returns:
-        list[Comment]: List of comments for the task.
-    
-    Example:
-        >>> comments = get_comments_by_task(db, task_id=1)
+    Returns a pagination envelope compatible with the rest of the API.
     """
     from sqlalchemy.orm import selectinload
-    return db.query(models.Comment).options(
-        selectinload(models.Comment.author)
-    ).filter(
-        models.Comment.task_id == task_id
-    ).order_by(models.Comment.created_at.desc()).all()
+
+    query = db.query(models.Comment).filter(models.Comment.task_id == task_id)
+    total = query.count()
+    pages = (total + page_size - 1) // page_size if total else 0
+    items = (
+        query.options(selectinload(models.Comment.author))
+        .order_by(models.Comment.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "pages": pages,
+        "has_next": page < pages,
+    }
 
 
 def update_comment(db: Session, comment_id: int, content: str):
@@ -1003,44 +1008,44 @@ def log_activity(db: Session, entity_type: str, entity_id: int, action: str, use
     return db_activity
 
 
-def get_activity_by_task(db: Session, task_id: int):
-    """
-    Get all activity logs for a task, ordered by creation (newest first).
-    
-    Args:
-        db (Session): SQLAlchemy database session.
-        task_id (int): ID of the task.
-    
-    Returns:
-        list[ActivityLog]: List of activity logs for the task.
-    
-    Example:
-        >>> logs = get_activity_by_task(db, task_id=1)
-    """
-    return db.query(models.ActivityLog).filter(
+def _paginate_activity(query, page: int, page_size: int):
+    total = query.count()
+    pages = (total + page_size - 1) // page_size if total else 0
+    items = (
+        query.order_by(models.ActivityLog.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "pages": pages,
+        "has_next": page < pages,
+    }
+
+
+def get_activity_by_task(db: Session, task_id: int, page: int = 1, page_size: int = 20):
+    """Get a page of activity logs for a task, newest first."""
+    from sqlalchemy.orm import selectinload
+
+    query = db.query(models.ActivityLog).options(selectinload(models.ActivityLog.user)).filter(
         models.ActivityLog.entity_type == "task",
-        models.ActivityLog.entity_id == task_id
-    ).order_by(models.ActivityLog.created_at.desc()).all()
+        models.ActivityLog.entity_id == task_id,
+    )
+    return _paginate_activity(query, page, page_size)
 
 
-def get_activity_by_project(db: Session, project_id: int):
-    """
-    Get all activity logs for a project, ordered by creation (newest first).
-    
-    Args:
-        db (Session): SQLAlchemy database session.
-        project_id (int): ID of the project.
-    
-    Returns:
-        list[ActivityLog]: List of activity logs for the project.
-    
-    Example:
-        >>> logs = get_activity_by_project(db, project_id=1)
-    """
-    return db.query(models.ActivityLog).filter(
+def get_activity_by_project(db: Session, project_id: int, page: int = 1, page_size: int = 20):
+    """Get a page of activity logs for a project, newest first."""
+    from sqlalchemy.orm import selectinload
+
+    query = db.query(models.ActivityLog).options(selectinload(models.ActivityLog.user)).filter(
         models.ActivityLog.entity_type == "project",
-        models.ActivityLog.entity_id == project_id
-    ).order_by(models.ActivityLog.created_at.desc()).all()
+        models.ActivityLog.entity_id == project_id,
+    )
+    return _paginate_activity(query, page, page_size)
 
 
 def search_in_team(db: Session, team_id: int, query: str):

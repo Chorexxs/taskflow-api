@@ -387,7 +387,7 @@ Leyenda de permisos: **Público**, **Auth** (cualquier autenticado), **Member**,
 | Método | Ruta | Permiso | Request | Response | Status |
 |---|---|---|---|---|---|
 | POST | `.../tasks/{task}/comments/` | Member | `{content}` | `CommentOut` | 201, 422 |
-| GET | `.../tasks/{task}/comments/` | Member | `page,page_size,order` | `Paginated<CommentOut>` | 200 |
+| GET | `.../tasks/{task}/comments/` | Member | `page,page_size` | `Paginated<CommentOut>` | 200 |
 | PATCH | `.../tasks/{task}/comments/{comment}` | Author (miembro) | `{content}` | `CommentOut` | 200, 403, 404 |
 | DELETE | `.../tasks/{task}/comments/{comment}` | Author/Admin | — | — | 204, 403, 404 |
 

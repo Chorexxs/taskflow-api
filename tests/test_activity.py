@@ -21,7 +21,7 @@ def test_task_creation_logs_activity(client: TestClient):
         headers={"Authorization": f"Bearer {owner_token}"}
     )
     assert response.status_code == 200
-    activities = response.json()
+    activities = response.json()["items"]
     assert len(activities) >= 1
     assert activities[0]["entity_type"] == "task"
     assert activities[0]["action"] == "created"
@@ -40,7 +40,7 @@ def test_task_status_change_logs_activity(client: TestClient):
         "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/activity",
         headers={"Authorization": f"Bearer {owner_token}"}
     )
-    activities = response.json()
+    activities = response.json()["items"]
     status_activities = [a for a in activities if "status" in a["action"]]
     assert len(status_activities) >= 1
 
@@ -65,7 +65,7 @@ def test_task_assignment_logs_activity(client: TestClient):
         "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/activity",
         headers={"Authorization": f"Bearer {owner_token}"}
     )
-    activities = response.json()
+    activities = response.json()["items"]
     assigned_activities = [a for a in activities if a["action"] == "assigned"]
     assert len(assigned_activities) >= 1
 
@@ -82,10 +82,13 @@ def test_project_creation_logs_activity(client: TestClient):
         headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 200
-    activities = response.json()
+    body = response.json()
+    activities = body["items"]
+    assert body["total"] >= 1
     assert len(activities) >= 1
     assert activities[0]["entity_type"] == "project"
     assert activities[0]["action"] == "created"
+    assert activities[0]["actor"]["email"] == "projlog@example.com"
 
 
 def test_role_change_logs_activity(client: TestClient):

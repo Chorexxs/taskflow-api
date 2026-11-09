@@ -38,7 +38,71 @@ def test_list_comments(client: TestClient):
         headers={"Authorization": f"Bearer {owner_token}"}
     )
     assert response.status_code == 200
-    assert len(response.json()) == 2
+    body = response.json()
+    assert body["total"] == 2
+    assert len(body["items"]) == 2
+    assert set(body) == {"items", "total", "page", "pages", "has_next"}
+
+
+def test_comments_pagination(client: TestClient):
+    owner_token = setup_full_hierarchy_with_task(client, "commentpage@example.com")
+
+    for index in range(3):
+        client.post(
+            "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/comments/",
+            json={"content": f"Comment {index}"},
+            headers={"Authorization": f"Bearer {owner_token}"},
+        )
+
+    response = client.get(
+        "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/comments/?page=2&page_size=2",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 3
+    assert body["page"] == 2
+    assert body["pages"] == 2
+    assert len(body["items"]) == 1
+    assert body["has_next"] is False
+
+
+def test_removed_member_cannot_edit_comment(client: TestClient):
+    client.post("/api/v1/auth/register", json={"email": "exmember@example.com", "password": "password123"})
+    owner_token = setup_full_hierarchy_with_task(client, "commentowner4@example.com")
+    exmember_token = client.post(
+        "/api/v1/auth/login",
+        data={"username": "exmember@example.com", "password": "password123"},
+    ).json()["access_token"]
+    client.post(
+        "/api/v1/teams/test-team/members",
+        json={"email": "exmember@example.com", "role": "member"},
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+
+    comment = client.post(
+        "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/comments/",
+        json={"content": "Old member comment"},
+        headers={"Authorization": f"Bearer {exmember_token}"},
+    ).json()
+
+    # The ex-member leaves voluntarily.
+    members = client.get(
+        "/api/v1/teams/test-team/members",
+        headers={"Authorization": f"Bearer {exmember_token}"},
+    ).json()
+    member_id = next(m["user_id"] for m in members if m["user"]["email"] == "exmember@example.com")
+    assert client.delete(
+        f"/api/v1/teams/test-team/members/{member_id}",
+        headers={"Authorization": f"Bearer {exmember_token}"},
+    ).status_code == 204
+
+    response = client.patch(
+        f"/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/comments/{comment['id']}",
+        json={"content": "Should not work"},
+        headers={"Authorization": f"Bearer {exmember_token}"},
+    )
+    assert response.status_code == 403
 
 
 def test_update_own_comment(client: TestClient):

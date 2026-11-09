@@ -101,11 +101,13 @@ def create_comment(
     return new_comment
 
 
-@router.get("/", response_model=list[schemas.CommentOut])
+@router.get("/", response_model=schemas.PaginatedCommentResponse)
 def list_comments(
     team_id_or_slug: str,
     project_id_or_name: str,
     task_id_or_title: str,
+    page: int = 1,
+    page_size: int = 20,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
@@ -125,22 +127,28 @@ def list_comments(
         member (TeamMember): Team membership check (injected via dependency).
     
     Returns:
-        list[CommentOut]: List of comments for the task.
+        PaginatedCommentResponse: Page of comments plus metadata.
     
     Example:
         >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/projects/1/tasks/1/comments/ \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
+    page = max(page, 1)
+    page_size = min(max(page_size, 1), 100)
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
-    return crud.get_comments_by_task(db, task.id)
+    return crud.get_comments_by_task(db, task.id, page, page_size)
 
 
 @router.patch("/{comment_id}", response_model=schemas.CommentOut)
 def update_comment(
+    team_id_or_slug: str,
+    project_id_or_name: str,
+    task_id_or_title: str,
     comment_id: int,
     comment_update: schemas.CommentUpdate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
+    member: models.TeamMember = Depends(get_current_team_member),
 ):
     """
     Update a comment's content.
@@ -168,6 +176,12 @@ def update_comment(
     """
     comment = crud.get_comment_by_id(db, comment_id)
     if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+
+    # Verify the comment belongs to the task in the URL and that the caller
+    # is still a member of the team.
+    task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
+    if comment.task_id != task.id:
         raise HTTPException(status_code=404, detail="Comment not found")
     
     # Check if user is the author

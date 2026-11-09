@@ -417,11 +417,13 @@ def assign_task(
     return updated_task
 
 
-@router.get("/{task_id_or_title}/activity", response_model=list[schemas.ActivityLogOut])
+@router.get("/{task_id_or_title}/activity", response_model=schemas.PaginatedActivityResponse)
 def get_task_activity(
     team_id_or_slug: str,
     project_id_or_name: str,
     task_id_or_title: str,
+    page: int = 1,
+    page_size: int = 20,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
@@ -441,10 +443,12 @@ def get_task_activity(
         member (TeamMember): Team membership check (injected via dependency).
     
     Returns:
-        list[ActivityLogOut]: List of activity logs for the task.
+        PaginatedActivityResponse: Page of activity logs plus metadata.
     """
     from app.dependencies import get_team_from_id_or_slug
+    page = max(page, 1)
+    page_size = min(max(page_size, 1), 100)
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
-    return crud.get_activity_by_task(db, task.id)
+    return crud.get_activity_by_task(db, task.id, page, page_size)
