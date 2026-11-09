@@ -1115,7 +1115,16 @@ def search_in_team(
     }
 
 
-def create_attachment(db: Session, task_id: int, user_id: int, filename: str, file_path: str, file_size: int, mime_type: str):
+def create_attachment(
+    db: Session,
+    task_id: int,
+    user_id: int,
+    filename: str,
+    file_path: str | None,
+    file_size: int,
+    mime_type: str,
+    content: bytes | None = None,
+):
     """
     Create an attachment record for an uploaded file.
     
@@ -1148,6 +1157,7 @@ def create_attachment(db: Session, task_id: int, user_id: int, filename: str, fi
         uploaded_by=user_id,
         filename=filename,
         file_path=file_path,
+        content=content,
         file_size=file_size,
         mime_type=mime_type,
     )

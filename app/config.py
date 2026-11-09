@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     SENTRY_TRACES_SAMPLE_RATE: float = 0.0
 
     # Uploads
+    # "database" keeps files in PostgreSQL, which survives ephemeral disks.
+    # "local" writes to UPLOAD_DIR and is intended for development/tests.
+    STORAGE_BACKEND: str = "database"
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024
     UPLOAD_DIR: str = "uploads"
     ALLOWED_UPLOAD_EXTENSIONS: str = (
@@ -105,6 +108,14 @@ class Settings(BaseSettings):
         if self.is_production:
             raise RuntimeError("CORS_ORIGINS must be set in production")
         return list(DEFAULT_DEV_ORIGINS)
+
+    @property
+    def storage_backend(self) -> str:
+        """Return the normalized attachment storage backend."""
+        backend = self.STORAGE_BACKEND.strip().lower()
+        if backend not in {"database", "local"}:
+            raise RuntimeError("STORAGE_BACKEND must be 'database' or 'local'")
+        return backend
 
     @property
     def allowed_upload_extensions(self) -> set[str]:

@@ -57,6 +57,8 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **CI/CD** | GitHub Actions, Render, Vercel, InsForge |
 | **Contenedores** | Docker, docker-compose (PostgreSQL + Redis + API) |
 
+Los adjuntos se guardan por defecto en PostgreSQL (`STORAGE_BACKEND=database`) para sobrevivir a los discos efímeros de Render. En desarrollo se puede usar `STORAGE_BACKEND=local`.
+
 ---
 
 ## Características
@@ -259,7 +261,7 @@ Estado actual: **94 tests backend** y **12 tests frontend**. Los tests de integr
   - Si usas un dominio propio en Vercel, añádelo separado por comas.
   - Sin `CORS_ORIGINS`, la app **no arranca en producción** (fail-fast).
 - Ejecutar `alembic upgrade head` antes del despliegue. `alembic/env.py` usa `DATABASE_URL`.
-- **Importante:** el disco de Render es efímero; los adjuntos actuales se guardan en `uploads/`. La migración a object storage está en P4.
+- Los adjuntos se guardan en PostgreSQL por defecto (`STORAGE_BACKEND=database`), por lo que sobreviven a los redeploys. Cambiar a `local` solo para desarrollo.
 
 ### Frontend — Vercel
 

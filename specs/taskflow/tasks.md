@@ -20,11 +20,13 @@
 
 **Completadas (P3):** `T-041` (edición de equipo), `T-044` (borrado de tarea con limpieza de adjuntos), `T-046` (archivar/restaurar proyecto), `T-047` (actividad con actor y paginación), `T-048` (comentarios paginados y pertenencia al equipo), `T-049` (búsqueda con escape, descripciones y paginación).
 
-**Parcial (P4):** `T-062` (búsqueda con debounce; controles de paginación en UI pendientes).
+**Parcial (P4):** `T-062` (búsqueda con debounce; controles de paginación en UI pendientes), `T-054` (se implementó almacenamiento persistente en PostgreSQL en lugar de S3 por falta de credenciales), `T-055` (validación MIME/tamaño; checksum pendiente).
 
 **Completadas (P6):** `T-073` (Python 3.12), `T-075` (Docker non-root + HEALTHCHECK), `T-078` (snapshot OpenAPI + check en CI), `T-079` (health live/ready).
 
 **Completadas (P5):** `T-065` (decisión dark-only), `T-070` (eliminados axios y ThemeContext muerto).
+
+**Completadas (P4):** `T-053` (backend de almacenamiento configurable), `T-056` (limpieza de adjuntos locales al borrar tarea).
 
 **Completadas (P4):** `T-057` (notificaciones paginadas y contador de no leídas).
 
@@ -32,7 +34,7 @@
 
 **Pendientes de P0:** `T-003` (labels/milestones), `T-004` (aceptación formal de ADRs), `T-007` (pre-commit completo), `T-009` (staging), `T-010` (política de release).
 
-Verificación actual: `pytest -q` → **94 passed**; `npm run test` → **12 passed**; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto.
+Verificación actual: `pytest -q` → **95 passed**; `npm run test` → **12 passed**; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto.
 
 ---
 

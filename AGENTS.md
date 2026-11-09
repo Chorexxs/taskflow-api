@@ -269,10 +269,10 @@ Reglas:
 4. **Nunca** llamar `create_all` fuera de tests.
 5. React Query 5: `invalidateQueries({ queryKey: [...] })`, no `invalidateQueries([...])`.
 6. El payload de assign es `{user_id}`, no `{assigned_to}`.
-7. Access token expirado: el refresh debe ir en body; el frontend aún no lo renueva automáticamente (P2).
-8. El `DELETE` de proyectos archiva; no borra.
-9. Los adjuntos en disco local se pierden en Render; P4 los migra a object storage.
-10. El tema claro/oscuro no está montado; la app es solo oscura.
+7. Access token expirado: el refresh va en body y el frontend lo renueva proactivamente 60 s antes de expirar.
+8. El `DELETE` de proyectos archiva; usa `/archive` y `/restore` para la semántica explícita.
+9. Los adjuntos usan PostgreSQL por defecto (`STORAGE_BACKEND=database`); `local` solo para desarrollo.
+10. La UI es solo oscura (ADR-006); no hay `ThemeContext`.
 
 ---
 

@@ -263,9 +263,11 @@ def test_task_creation_rejects_non_member_assignee(client: TestClient):
 
 @pytest.fixture()
 def upload_dir(tmp_path, monkeypatch):
+    from app.config import settings
     from app.routers import attachments as attachments_module
 
     monkeypatch.setattr(attachments_module, "UPLOAD_DIR", str(tmp_path))
+    monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
     return tmp_path
 
 
@@ -328,6 +330,38 @@ def test_upload_enforces_streaming_size_limit(client: TestClient, upload_dir, mo
 
     assert response.status_code == 413
     assert not [path for path in upload_dir.rglob("*") if path.is_file()]
+
+
+def test_database_storage_roundtrip_and_delete(client: TestClient, db_session, tmp_path, monkeypatch):
+    from app import models
+    from app.config import settings
+    from app.routers import attachments as attachments_module
+
+    monkeypatch.setattr(settings, "STORAGE_BACKEND", "database")
+    monkeypatch.setattr(attachments_module, "UPLOAD_DIR", str(tmp_path))
+    owner, _, _, _, _ = _create_hierarchy(client, owner_email="dbstorage@example.com")
+
+    upload = client.post(
+        _attachments_url(),
+        files={"file": ("stored.txt", b"database-backed", "text/plain")},
+        headers=_headers(owner["access_token"]),
+    )
+    assert upload.status_code == 201, upload.text
+    attachment_id = upload.json()["id"]
+
+    # No file is written to disk with the database backend.
+    assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
+
+    download = client.get(
+        f"/api/v1/teams/secure-team/projects/Secure Project/tasks/Secure Task/attachments/{attachment_id}/download",
+        headers=_headers(owner["access_token"]),
+    )
+    assert download.status_code == 200
+    assert download.content == b"database-backed"
+
+    stored = db_session.query(models.Attachment).filter(models.Attachment.id == attachment_id).one()
+    assert stored.content == b"database-backed"
+    assert stored.file_path is None
 
 
 def test_duplicate_filenames_get_distinct_storage_keys(client: TestClient, upload_dir):

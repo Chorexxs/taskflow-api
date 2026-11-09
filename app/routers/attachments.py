@@ -16,7 +16,7 @@ import os
 import re
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Response, status, UploadFile, File
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -164,46 +164,56 @@ async def upload_attachment(
         )
 
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
-    task_dir = _task_upload_dir(task.id)
 
-    # Never use the client filename on disk: generate an opaque, unique key.
-    storage_name = f"{uuid.uuid4().hex}{extension}"
-    file_path = os.path.join(task_dir, storage_name)
-
-    written = 0
+    # Read in bounded chunks. The limit is authoritative even when the client
+    # omits file.size or sends an incorrect Content-Length.
+    contents = bytearray()
     try:
+        while True:
+            chunk = await file.read(CHUNK_SIZE)
+            if not chunk:
+                break
+            contents.extend(chunk)
+            if len(contents) > MAX_FILE_SIZE:
+                raise HTTPException(
+                    status_code=HTTP_413_TOO_LARGE,
+                    detail="File too large. Maximum size is 10MB.",
+                )
+    finally:
+        await file.close()
+
+    if not contents:
+        raise HTTPException(status_code=400, detail="Empty files are not allowed")
+
+    file_path = None
+    content = None
+
+    if settings.storage_backend == "database":
+        # Persistent backend: the bytes live in PostgreSQL and survive
+        # ephemeral filesystems such as Render's.
+        content = bytes(contents)
+    else:
+        task_dir = _task_upload_dir(task.id)
+        storage_name = f"{uuid.uuid4().hex}{extension}"
+        file_path = os.path.join(task_dir, storage_name)
         with open(file_path, "wb") as destination:
-            while True:
-                chunk = await file.read(CHUNK_SIZE)
-                if not chunk:
-                    break
-                written += len(chunk)
-                if written > MAX_FILE_SIZE:
-                    raise HTTPException(
-                        status_code=HTTP_413_TOO_LARGE,
-                        detail="File too large. Maximum size is 10MB.",
-                    )
-                destination.write(chunk)
+            destination.write(contents)
 
-        if written == 0:
-            raise HTTPException(status_code=400, detail="Empty files are not allowed")
-
+    try:
         attachment = crud.create_attachment(
             db,
             task.id,
             current_user.id,
             original_filename,
             file_path,
-            written,
+            len(contents),
             mime_type,
+            content=content,
         )
     except Exception:
-        # Remove partial files on validation or database failures.
-        if os.path.exists(file_path):
+        if file_path and os.path.exists(file_path):
             os.remove(file_path)
         raise
-    finally:
-        await file.close()
 
     crud.log_activity(
         db,
@@ -290,8 +300,8 @@ def delete_attachment(
     if attachment.uploaded_by != current_user.id and member.role != "admin":
         raise HTTPException(status_code=403, detail="Only the uploader or team admin can delete this attachment")
     
-    # Remove file from disk
-    if os.path.exists(attachment.file_path):
+    # Remove the local file when this attachment uses the filesystem backend.
+    if attachment.file_path and os.path.exists(attachment.file_path):
         os.remove(attachment.file_path)
     
     # Log and delete
@@ -336,7 +346,15 @@ def download_attachment(
     if not attachment or attachment.task_id != task.id:
         raise HTTPException(status_code=404, detail="Attachment not found")
     
-    if not os.path.exists(attachment.file_path):
+    if attachment.content is not None:
+        safe_name = attachment.filename.replace('"', "")
+        return Response(
+            content=attachment.content,
+            media_type=attachment.mime_type,
+            headers={"Content-Disposition": f'attachment; filename="{safe_name}"'},
+        )
+
+    if not attachment.file_path or not os.path.exists(attachment.file_path):
         raise HTTPException(status_code=404, detail="File not found")
     
     return FileResponse(

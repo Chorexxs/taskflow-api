@@ -28,7 +28,7 @@ Relationships:
 - User 1:N RevokedToken
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Index
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Index, LargeBinary
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -300,7 +300,8 @@ class Attachment(Base):
     task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
     uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     filename = Column(String(255), nullable=False)
-    file_path = Column(String(500), nullable=False)
+    file_path = Column(String(500), nullable=True)
+    content = Column(LargeBinary, nullable=True)
     file_size = Column(Integer, nullable=False)
     mime_type = Column(String(100), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
