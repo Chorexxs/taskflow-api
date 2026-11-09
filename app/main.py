@@ -18,8 +18,11 @@ The application uses:
 import os
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from contextlib import asynccontextmanager
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -27,7 +30,7 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.config import settings
 from app.routers import auth, users, teams, projects, tasks, comments, attachments, notifications
-from app.logging_config import configure_logging, get_logger
+from app.logging_config import configure_logging, get_logger, request_id_context
 
 # Configure structured logging at module import
 configure_logging()
@@ -136,30 +139,69 @@ app = FastAPI(
 app.state.limiter = limiter
 
 
+_STATUS_ERROR_CODES = {
+    400: "BAD_REQUEST",
+    401: "UNAUTHORIZED",
+    403: "FORBIDDEN",
+    404: "NOT_FOUND",
+    409: "CONFLICT",
+    413: "FILE_TOO_LARGE",
+    415: "UNSUPPORTED_MEDIA_TYPE",
+    422: "VALIDATION_ERROR",
+    423: "ACCOUNT_LOCKED",
+    429: "RATE_LIMITED",
+    500: "INTERNAL_ERROR",
+}
+
+
+def _error_response(
+    status_code: int,
+    message: str,
+    *,
+    code: str | None = None,
+    details=None,
+    headers: dict | None = None,
+) -> JSONResponse:
+    """Build the consistent error envelope while keeping `detail` for legacy clients."""
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "detail": message,
+            "error": {
+                "code": code or _STATUS_ERROR_CODES.get(status_code, "HTTP_ERROR"),
+                "message": message,
+                "details": details,
+                "request_id": request_id_context.get(),
+            },
+        },
+        headers=headers,
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Return HTTP errors with a stable machine-readable envelope."""
+    return _error_response(
+        exc.status_code,
+        str(exc.detail),
+        headers=exc.headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Return Pydantic validation errors in the same envelope."""
+    return _error_response(
+        422,
+        "Validation error",
+        details=jsonable_encoder(exc.errors()),
+    )
+
+
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    """
-    Handle rate limit exceeded errors.
-    
-    Returns a 429 Too Many Requests response when the user exceeds
-    the rate limit for an endpoint.
-    
-    Args:
-        request (Request): The incoming HTTP request that triggered the limit.
-        exc (RateLimitExceeded): The exception containing limit details.
-    
-    Returns:
-        JSONResponse: 429 status with error message.
-    
-    Example:
-        When a user makes more than 10 login attempts per minute:
-        HTTP/1.1 429 Too Many Requests
-        {"detail": "Too many requests"}
-    """
-    return JSONResponse(
-        status_code=429,
-        content={"detail": "Too many requests"}
-    )
+    """Handle rate limit exceeded errors with a consistent envelope."""
+    return _error_response(429, "Too many requests")
 
 
 @app.exception_handler(Exception)
@@ -186,15 +228,10 @@ async def domain_exception_handler(request: Request, exc: Exception):
     """
     from app.exceptions import DomainException
     if isinstance(exc, DomainException):
-        return JSONResponse(
-            status_code=400,
-            content={"error": exc.code, "detail": exc.message}
-        )
+        return _error_response(400, exc.message, code=exc.code)
+
     logger.error("unhandled_exception", error=str(exc), exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"}
-    )
+    return _error_response(500, "Internal server error")
 
 
 # CORS middleware configuration.

@@ -20,7 +20,9 @@ Implementado en P1:
 - Asignación con `{user_id}` (no `{assigned_to}`).
 - Cliente frontend con errores tipados (`ApiError`) y comprobación de `r.ok`.
 
-Pendiente (P2–P3): envelope `{error:...}`, paginación uniforme, IDs/slugs, rate limit Redis, cookies/ADR-001 y SSE.
+Implementado: envelope `{error:...}` (manteniendo `detail`), paginación en tareas/comentarios/actividad/notificaciones/búsqueda, IDs/slugs en equipos y proyectos, notificaciones con contador.
+
+Pendiente (P2–P4): rate limit Redis, cookies/ADR-001, SSE, paginación en equipos/miembros/proyectos/adjuntos y IDs/slugs estrictos.
 
 ---
 

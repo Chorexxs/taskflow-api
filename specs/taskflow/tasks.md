@@ -18,7 +18,7 @@
 
 **Completadas (P2):** `T-025` (auto-refresh proactivo con single-flight entre pestañas), `T-027` (política de contraseñas), `T-028` (cambio de contraseña con verificación y revocación global de sesiones), `T-029` (limpieza de tokens expirados al arrancar).
 
-**Completadas (P3):** `T-041` (edición de equipo), `T-044` (borrado de tarea con limpieza de adjuntos), `T-046` (archivar/restaurar proyecto), `T-047` (actividad con actor y paginación), `T-048` (comentarios paginados y pertenencia al equipo), `T-049` (búsqueda con escape, descripciones y paginación).
+**Completadas (P3):** `T-039` (envelope de errores con `detail` compatible), `T-041` (edición de equipo), `T-044` (borrado de tarea con limpieza de adjuntos), `T-046` (archivar/restaurar proyecto), `T-047` (actividad con actor y paginación), `T-048` (comentarios paginados y pertenencia al equipo), `T-049` (búsqueda con escape, descripciones y paginación).
 
 **Parcial (P4):** `T-062` (búsqueda con debounce; controles de paginación en UI pendientes), `T-054` (se implementó almacenamiento persistente en PostgreSQL en lugar de S3 por falta de credenciales), `T-055` (validación MIME/tamaño; checksum pendiente).
 
@@ -36,7 +36,7 @@
 
 **Pendientes de P0:** `T-003` (labels/milestones), `T-004` (aceptación formal de ADRs), `T-007` (pre-commit completo), `T-009` (staging), `T-010` (política de release).
 
-Verificación actual: `pytest -q` → **95 passed**; `npm run test` → **12 passed**; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto.
+Verificación actual: `pytest -q` → **98 passed**; `npm run test` → **12 passed**; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto.
 
 ---
 
