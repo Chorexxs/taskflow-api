@@ -137,6 +137,57 @@ def test_mark_all_notifications_read(client: TestClient):
     assert count.json() == {"count": 0}
 
 
+def test_mention_creates_notification_for_team_member(client: TestClient):
+    owner_token, member_token = setup_user_with_notification_check(
+        client,
+        "mention-owner@example.com",
+        "mentioned@example.com",
+    )
+
+    comment = client.post(
+        "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/comments/",
+        json={"content": "Please review this @mentioned@example.com"},
+        headers=_headers(owner_token),
+    )
+    assert comment.status_code == 201, comment.text
+
+    notifications = client.get(
+        "/api/v1/notifications/",
+        headers=_headers(member_token),
+    ).json()
+    assert notifications["total"] == 1
+    assert notifications["items"][0]["type"] == "mentioned"
+
+
+def test_mention_outside_team_is_ignored(client: TestClient):
+    owner_token, member_token = setup_user_with_notification_check(
+        client,
+        "mention-owner2@example.com",
+        "mentioned2@example.com",
+    )
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "outsider-mention@example.com", "password": "password123"},
+    )
+    outsider_token = client.post(
+        "/api/v1/auth/login",
+        data={"username": "outsider-mention@example.com", "password": "password123"},
+    ).json()["access_token"]
+
+    client.post(
+        "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/comments/",
+        json={"content": "Ping @outsider-mention@example.com"},
+        headers=_headers(owner_token),
+    )
+
+    outsider_notifications = client.get(
+        "/api/v1/notifications/",
+        headers=_headers(outsider_token),
+    ).json()
+    assert outsider_notifications["total"] == 0
+    assert member_token
+
+
 def test_notifications_are_private_to_their_owner(client: TestClient):
     owner_token, member_token = setup_user_with_notification_check(
         client,

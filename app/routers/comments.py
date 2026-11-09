@@ -12,13 +12,21 @@ edit and delete their own comments, while team admins can delete
 any comment.
 """
 
+import re
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import crud, models, schemas
 from app.auth import get_current_user
-from app.dependencies import get_current_team_admin, get_current_team_member
+from app.dependencies import (
+    get_current_team_admin,
+    get_current_team_member,
+    get_team_from_id_or_slug,
+)
+
+_MENTION_PATTERN = re.compile(r"@([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})")
 
 router = APIRouter()
 
@@ -86,8 +94,10 @@ def create_comment(
     """
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
     new_comment = crud.create_comment(db, comment, task.id, current_user.id)
-    
-    # Notify assignee if different from comment author
+
+    notified_user_ids: set[int] = set()
+
+    # Notify the assignee if different from the comment author.
     if task.assigned_to and task.assigned_to != current_user.id:
         crud.create_notification(
             db,
@@ -95,9 +105,31 @@ def create_comment(
             notification_type="commented",
             entity_type="task",
             entity_id=task.id,
-            message=f"New comment on task: {task.title}"
+            message=f"New comment on task: {task.title}",
         )
-    
+        notified_user_ids.add(task.assigned_to)
+
+    # Notify mentioned team members. Mentions outside the team are ignored.
+    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    for email in set(_MENTION_PATTERN.findall(comment.content)):
+        mentioned_user = crud.get_user_by_email(db, email)
+        if not mentioned_user or mentioned_user.id == current_user.id:
+            continue
+        if mentioned_user.id in notified_user_ids:
+            continue
+        if not crud.get_team_member(db, team.id, mentioned_user.id):
+            continue
+
+        crud.create_notification(
+            db,
+            user_id=mentioned_user.id,
+            notification_type="mentioned",
+            entity_type="task",
+            entity_id=task.id,
+            message=f"You were mentioned in a comment on task: {task.title}",
+        )
+        notified_user_ids.add(mentioned_user.id)
+
     return new_comment
 
 

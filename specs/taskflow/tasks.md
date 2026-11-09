@@ -28,7 +28,7 @@
 
 **Completadas (P5):** `T-065` (decisión dark-only), `T-070` (eliminados axios y ThemeContext muerto).
 
-**Completadas (P4):** `T-053` (backend de almacenamiento configurable), `T-056` (limpieza de adjuntos locales al borrar tarea).
+**Completadas (P4):** `T-052` (menciones), `T-053` (backend de almacenamiento configurable), `T-056` (limpieza de adjuntos locales al borrar tarea).
 
 **Completadas (P4):** `T-057` (notificaciones paginadas y contador de no leídas).
 
@@ -36,7 +36,7 @@
 
 **Pendientes de P0:** `T-003` (labels/milestones), `T-004` (aceptación formal de ADRs), `T-007` (pre-commit completo), `T-009` (staging), `T-010` (política de release).
 
-Verificación actual: `pytest -q` → **98 passed**; `npm run test` → **12 passed**; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto.
+Verificación actual: `pytest -q` → **100 passed**; `npm run test` → **12 passed**; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto.
 
 ---
 
