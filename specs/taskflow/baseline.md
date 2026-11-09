@@ -14,7 +14,7 @@ Parciales: `BL-01` (refresh y logout corregidos; auto-refresh del cliente pendie
 
 Pendientes: el resto de hallazgos S1/S2/S3 según `tasks.md` (P2–P6).
 
-Verificación actual: **100 tests backend**, **12 tests frontend**, build de producción correcto y `alembic upgrade head` + `downgrade base` correctos.
+Verificación actual: **101 tests backend**, **12 tests frontend**, build de producción correcto y `alembic upgrade head` + `downgrade base` correctos.
 
 ---
 

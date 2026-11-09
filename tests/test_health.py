@@ -15,6 +15,15 @@ def test_root_endpoint(client: TestClient):
     assert response.json() == {"message": "TaskFlow API"}
 
 
+def test_security_headers_are_present(client: TestClient):
+    response = client.get("/")
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+    assert "default-src 'self'" in response.headers["Content-Security-Policy"]
+    assert response.headers["Permissions-Policy"]
+
+
 def test_readiness_probe_ready(client: TestClient, monkeypatch):
     class FakeConnection:
         def __enter__(self):

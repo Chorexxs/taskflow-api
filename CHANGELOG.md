@@ -42,6 +42,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `pyproject.toml` con configuración de pytest/ruff/mypy.
 - Envelope de errores estable (`error.code/message/details/request_id`) manteniendo `detail` para clientes existentes.
 - Menciones `@email` en comentarios con notificación solo a miembros del equipo.
+- CSP, `Referrer-Policy` y `Permissions-Policy` en todas las respuestas.
 - CORS con allowlist (`CORS_ORIGINS`), sin `*` con credenciales.
 - Sentry usa la integración correcta y no bloquea el arranque si falla.
 - Eliminado `create_all` del arranque; Alembic es la única fuente de esquema.
