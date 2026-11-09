@@ -322,7 +322,7 @@ Leyenda de permisos: **Público**, **Auth** (cualquier autenticado), **Member**,
 | GET | `/teams/` | Auth | `page,page_size` | `Paginated<TeamOut>` | 200 |
 | GET | `/teams/{team}` | Member | — | `TeamOut` | 200, 403, 404 |
 | PATCH | `/teams/{team}` | Admin | `{name?,description?}` | `TeamOut` | 200, 400, 403, 404 |
-| GET | `/teams/{team}/search` | Member | `q,page,page_size` | `{projects,tasks}` | 200, 422 |
+| GET | `/teams/{team}/search` | Member | `q,page,page_size` | `{projects:{items,...},tasks:{items,...}}` | 200, 422 |
 | POST | `/teams/{team}/members` | Admin | `{email, role}` | `TeamMemberOut` | 201, 404, 409 |
 | GET | `/teams/{team}/members` | Member | `page,page_size` | `Paginated<TeamMemberOut>` | 200, 403 |
 | PATCH | `/teams/{team}/members/{user_id}` | Admin | `{role}` | `TeamMemberOut` | 200, 403, 404, 409 |

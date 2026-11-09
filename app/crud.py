@@ -1048,45 +1048,71 @@ def get_activity_by_project(db: Session, project_id: int, page: int = 1, page_si
     return _paginate_activity(query, page, page_size)
 
 
-def search_in_team(db: Session, team_id: int, query: str):
+def _like_pattern(query: str) -> str:
+    """Build a safe LIKE pattern by escaping user wildcards."""
+    escaped = (
+        query.replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+    )
+    return f"%{escaped}%"
+
+
+def _paginate_query(query, page: int, page_size: int):
+    total = query.count()
+    pages = (total + page_size - 1) // page_size if total else 0
+    items = query.offset((page - 1) * page_size).limit(page_size).all()
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "pages": pages,
+        "has_next": page < pages,
+    }
+
+
+def search_in_team(
+    db: Session,
+    team_id: int,
+    query: str,
+    page: int = 1,
+    page_size: int = 10,
+):
     """
-    Search for projects and tasks in a team by name/title.
-    
-    Performs case-insensitive search using LIKE. Searches project names
-    first, then finds tasks in those projects.
-    
-    Args:
-        db (Session): SQLAlchemy database session.
-        team_id (int): ID of the team to search in.
-        query (str): Search term.
-    
-    Returns:
-        dict: Dictionary with "projects" and "tasks" lists.
-    
-    Example:
-        >>> results = search_in_team(db, team_id=1, query="website")
-        >>> print(f"Found {len(results['projects'])} projects")
-        >>> print(f"Found {len(results['tasks'])} tasks")
+    Search projects and tasks in a team by name/title/description.
+
+    The search is case-insensitive, escapes LIKE wildcards and returns
+    independent pagination envelopes for projects and tasks.
     """
-    # Search projects
-    projects = db.query(models.Project).filter(
+    from sqlalchemy import or_
+
+    pattern = _like_pattern(query)
+
+    project_query = db.query(models.Project).filter(
         models.Project.team_id == team_id,
         models.Project.status == "active",
-        models.Project.name.ilike(f"%{query}%")
-    ).all()
-    
-    # Get project IDs for task search
-    project_ids = [p.id for p in projects]
-    
-    # Search tasks in found projects
-    tasks = []
-    if project_ids:
-        tasks = db.query(models.Task).filter(
-            models.Task.project_id.in_(project_ids),
-            models.Task.title.ilike(f"%{query}%")
-        ).all()
-    
-    return {"projects": projects, "tasks": tasks}
+        or_(
+            models.Project.name.ilike(pattern, escape="\\"),
+            models.Project.description.ilike(pattern, escape="\\"),
+        ),
+    )
+    task_query = (
+        db.query(models.Task)
+        .join(models.Project, models.Task.project_id == models.Project.id)
+        .filter(
+            models.Project.team_id == team_id,
+            models.Project.status == "active",
+            or_(
+                models.Task.title.ilike(pattern, escape="\\"),
+                models.Task.description.ilike(pattern, escape="\\"),
+            ),
+        )
+    )
+
+    return {
+        "projects": _paginate_query(project_query, page, page_size),
+        "tasks": _paginate_query(task_query, page, page_size),
+    }
 
 
 def create_attachment(db: Session, task_id: int, user_id: int, filename: str, file_path: str, file_size: int, mime_type: str):

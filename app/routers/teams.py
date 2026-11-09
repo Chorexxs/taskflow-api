@@ -119,10 +119,12 @@ def get_teams(
     return crud.get_teams_by_user(db, current_user.id)
 
 
-@router.get("/{team_id_or_slug}/search")
+@router.get("/{team_id_or_slug}/search", response_model=schemas.SearchResult)
 def search_in_team(
     team_id_or_slug: str,
     q: str,
+    page: int = 1,
+    page_size: int = 10,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
@@ -153,8 +155,17 @@ def search_in_team(
             "tasks": [...]
         }
     """
+    q = q.strip()
+    if len(q) < 2:
+        raise HTTPException(
+            status_code=422,
+            detail="Search query must be at least 2 characters",
+        )
+
+    page = max(page, 1)
+    page_size = min(max(page_size, 1), 100)
     team = get_team_from_id_or_slug(db, team_id_or_slug)
-    return crud.search_in_team(db, team.id, q)
+    return crud.search_in_team(db, team.id, q, page, page_size)
 
 
 @router.get("/{team_id_or_slug}", response_model=schemas.TeamOut)

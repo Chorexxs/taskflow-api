@@ -797,18 +797,21 @@ class CursorPaginatedResponse(BaseModel):
     has_more: bool = False
 
 
+class PaginatedProjectResponse(BaseModel):
+    """Paginated list of projects."""
+
+    items: list[ProjectOut]
+    total: int
+    page: int
+    pages: int
+    has_next: bool
+
+
 class SearchResult(BaseModel):
-    """
-    Schema for search results.
-    
-    Used in team search endpoint.
-    
-    Attributes:
-        projects (list[ProjectOut]): Matching projects
-        tasks (list[TaskOut]): Matching tasks
-    """
-    projects: list[ProjectOut]
-    tasks: list[TaskOut]
+    """Paginated search results for projects and tasks."""
+
+    projects: PaginatedProjectResponse
+    tasks: PaginatedTaskResponse
 
 
 class AttachmentOut(BaseModel):

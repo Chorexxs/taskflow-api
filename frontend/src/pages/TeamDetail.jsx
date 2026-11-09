@@ -17,7 +17,7 @@
  * @requires lucide-react - For icons
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
@@ -186,19 +186,23 @@ export default function TeamDetail() {
     retry: 0,
   })
 
-  const handleSearch = async (query) => {
-    setSearchQuery(query)
+  useEffect(() => {
+    const query = searchQuery.trim()
     if (query.length < 2) {
       setSearchResults(null)
-      return
+      return undefined
     }
-    try {
-      const results = await api.teams.search(token, teamId, query)
-      setSearchResults(results)
-    } catch {
-      toast.error('Search failed')
-    }
-  }
+
+    const timer = setTimeout(async () => {
+      try {
+        setSearchResults(await api.teams.search(token, teamId, query))
+      } catch {
+        toast.error('Search failed')
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery, teamId, token])
 
   /**
    * Handles the invite member form submission
@@ -270,16 +274,16 @@ export default function TeamDetail() {
                   type="text"
                   placeholder="Search..."
                   value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="input-field w-full py-1.5 text-sm"
                 />
               </div>
               {searchResults && (
                 <div className="absolute top-full mt-2 w-full max-w-md bg-[var(--color-bg-secondary)] border border-subtle rounded-xl shadow-elevated overflow-hidden z-50">
-                  {searchResults.projects?.length > 0 && (
+                  {searchResults.projects?.items?.length > 0 && (
                     <div className="p-2">
                       <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase px-2 py-1">Projects</p>
-                      {searchResults.projects.slice(0, 3).map(p => (
+                      {searchResults.projects.items.slice(0, 3).map(p => (
                         <button
                           key={p.id}
                           onClick={() => { navigate(`/teams/${teamId}/projects/${p.id}`); setSearchResults(null); setSearchQuery(''); }}
@@ -290,10 +294,10 @@ export default function TeamDetail() {
                       ))}
                     </div>
                   )}
-                  {searchResults.tasks?.length > 0 && (
+                  {searchResults.tasks?.items?.length > 0 && (
                     <div className="p-2 border-t border-subtle">
                       <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase px-2 py-1">Tasks</p>
-                      {searchResults.tasks.slice(0, 3).map(t => (
+                      {searchResults.tasks.items.slice(0, 3).map(t => (
                         <button
                           key={t.id}
                           onClick={() => { navigate(`/teams/${teamId}/projects/${t.project_id}/tasks/${t.id}`); setSearchResults(null); setSearchQuery(''); }}
@@ -304,7 +308,7 @@ export default function TeamDetail() {
                       ))}
                     </div>
                   )}
-                  {searchResults.projects?.length === 0 && searchResults.tasks?.length === 0 && (
+                  {searchResults.projects?.items?.length === 0 && searchResults.tasks?.items?.length === 0 && (
                     <p className="p-4 text-sm text-[var(--color-text-muted)] text-center">No results found</p>
                   )}
                 </div>
