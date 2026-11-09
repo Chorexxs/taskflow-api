@@ -1187,26 +1187,49 @@ def create_notification(db: Session, user_id: int, notification_type: str, entit
     return db_notification
 
 
-def get_notifications_by_user(db: Session, user_id: int, is_read: bool = None):
+def get_notifications_by_user(
+    db: Session,
+    user_id: int,
+    is_read: bool = None,
+    page: int = 1,
+    page_size: int = 20,
+):
     """
-    Get notifications for a user, optionally filtered by read status.
+    Get a page of notifications for a user, optionally filtered by read status.
     
-    Args:
-        db (Session): SQLAlchemy database session.
-        user_id (int): ID of the user.
-        is_read (bool | None): Filter by read status. None = all, True = read, False = unread.
-    
-    Returns:
-        list[Notification]: List of notifications ordered by creation (newest first).
-    
-    Example:
-        >>> all = get_notifications_by_user(db, user_id=1)
-        >>> unread = get_notifications_by_user(db, user_id=1, is_read=False)
+    Returns a pagination envelope compatible with the rest of the API.
     """
     query = db.query(models.Notification).filter(models.Notification.user_id == user_id)
     if is_read is not None:
         query = query.filter(models.Notification.is_read == is_read)
-    return query.order_by(models.Notification.created_at.desc()).all()
+
+    total = query.count()
+    pages = (total + page_size - 1) // page_size if total else 0
+    items = (
+        query.order_by(models.Notification.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "pages": pages,
+        "has_next": page < pages,
+    }
+
+
+def count_unread_notifications(db: Session, user_id: int) -> int:
+    """Return the number of unread notifications for a user."""
+    return (
+        db.query(models.Notification)
+        .filter(
+            models.Notification.user_id == user_id,
+            models.Notification.is_read.is_(False),
+        )
+        .count()
+    )
 
 
 def get_notification_by_id(db: Session, notification_id: int):

@@ -38,11 +38,19 @@ export default function NotificationsBell() {
    * Fetch notifications from API.
    * Auto-refreshes every 30 seconds.
    */
-  const { data: notifications, isLoading } = useQuery({
+  const { data: notificationPage, isLoading } = useQuery({
     queryKey: ['notifications'],
-    queryFn: () => api.notifications.list(token),
+    queryFn: () => api.notifications.list(token, { page: 1, page_size: 20 }),
     refetchInterval: 30000, // 30 seconds
   });
+
+  const { data: unreadData } = useQuery({
+    queryKey: ['notifications-unread'],
+    queryFn: () => api.notifications.unreadCount(token),
+    refetchInterval: 30000,
+  });
+
+  const notifications = notificationPage?.items ?? [];
 
   /**
    * Mark a single notification as read.
@@ -51,6 +59,7 @@ export default function NotificationsBell() {
     mutationFn: (id) => api.notifications.markRead(token, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
     },
   });
 
@@ -61,12 +70,12 @@ export default function NotificationsBell() {
     mutationFn: () => api.notifications.markAllRead(token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
       toast.success('All notifications marked as read');
     },
   });
 
-  // Count unread notifications
-  const unreadCount = notifications?.filter(n => !n.is_read)?.length || 0;
+  const unreadCount = unreadData?.count ?? 0;
 
   /**
    * Format timestamp as relative time.

@@ -405,6 +405,7 @@ Leyenda de permisos: **Público**, **Auth** (cualquier autenticado), **Member**,
 |---|---|---|---|---|---|
 | GET | `/notifications/` | Owner | `is_read,page,page_size` | `Paginated<NotificationOut>` | 200 |
 | GET | `/notifications/unread-count` | Owner | — | `{count}` | 200 |
+
 | PATCH | `/notifications/{id}/read` | Owner | — | `NotificationOut` | 200, 403, 404 |
 | PATCH | `/notifications/read-all` | Owner | — | — | 204 |
 | GET | `/notifications/stream` | Owner | — | `text/event-stream` | 200 (P4) |

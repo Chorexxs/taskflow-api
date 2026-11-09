@@ -24,6 +24,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `AuthContext` expone `refreshToken` y limpia la sesión si el refresh falla.
 - Política de contraseñas de 8–128 caracteres y `token_version` para revocar todas las sesiones al cambiar credenciales.
 - El cambio de contraseña exige la contraseña actual y obliga a iniciar sesión de nuevo.
+- Notificaciones paginadas (`items/total/page/pages/has_next`) y endpoint `/notifications/unread-count`.
 - CORS con allowlist (`CORS_ORIGINS`), sin `*` con credenciales.
 - Sentry usa la integración correcta y no bloquea el arranque si falla.
 - Eliminado `create_all` del arranque; Alembic es la única fuente de esquema.

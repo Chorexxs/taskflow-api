@@ -846,3 +846,13 @@ class NotificationUpdate(BaseModel):
         is_read (bool): New read status
     """
     is_read: bool
+
+
+class PaginatedNotificationResponse(BaseModel):
+    """Paginated list of notifications."""
+
+    items: list[NotificationOut]
+    total: int
+    page: int
+    pages: int
+    has_next: bool

@@ -21,11 +21,13 @@ from app.auth import get_current_user
 router = APIRouter()
 
 
-@router.get("/", response_model=list[schemas.NotificationOut])
+@router.get("/", response_model=schemas.PaginatedNotificationResponse)
 def get_notifications(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     is_read: Optional[bool] = None,
+    page: int = 1,
+    page_size: int = 20,
 ):
     """
     Get notifications for the current user.
@@ -40,7 +42,7 @@ def get_notifications(
         is_read (bool | None): Filter by read status. None returns all.
     
     Returns:
-        list[NotificationOut]: List of notifications.
+        PaginatedNotificationResponse: Page of notifications plus metadata.
     
     Example:
         >>> # Get all notifications
@@ -51,7 +53,18 @@ def get_notifications(
         >>> curl "https://api.taskflow.com/api/v1/notifications/?is_read=false" \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
-    return crud.get_notifications_by_user(db, current_user.id, is_read)
+    page = max(page, 1)
+    page_size = min(max(page_size, 1), 100)
+    return crud.get_notifications_by_user(db, current_user.id, is_read, page, page_size)
+
+
+@router.get("/unread-count")
+def get_unread_count(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Return the number of unread notifications for the current user."""
+    return {"count": crud.count_unread_notifications(db, current_user.id)}
 
 
 @router.patch("/{notification_id}/read", response_model=schemas.NotificationOut)
