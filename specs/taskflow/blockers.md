@@ -71,9 +71,17 @@ npx vercel deploy --temporary --yes --build-env VITE_API_URL=https://taskflow-ap
 > No existing credentials found. Starting login flow...
 ```
 
-**Qué necesito:** ejecutar `vercel login` o proporcionar un `VERCEL_TOKEN` con acceso al proyecto `chorexxs-projects/taskflow-api`.
+**Workaround verificado:** el despliegue vía InsForge sí funciona y publicó un preview en:
 
-**Impacto:** no se puede desplegar el frontend actualizado en el proyecto existente de Vercel ni verificar el deploy real.
+```text
+https://wrm6rjkp.insforge.site
+```
+
+El deployment de Vercel quedó `READY` (id `2b6e8f98-...`), pero pertenece a un proyecto Vercel gestionado por InsForge, no al proyecto `chorexxs-projects/taskflow-api`.
+
+**Qué necesito:** ejecutar `vercel login` o proporcionar un `VERCEL_TOKEN` con acceso al proyecto `chorexxs-projects/taskflow-api` si se quiere actualizar ese proyecto concreto.
+
+**Impacto:** el preview de InsForge está online, pero la URL `taskflow-api-tau.vercel.app` sigue sirviendo el build anterior hasta que se autentique Vercel.
 
 ---
 
@@ -84,15 +92,17 @@ El backend necesita, en el servicio de Render:
 ```bash
 ENVIRONMENT=production
 SECRET_KEY=<32+ caracteres>
-DATABASE_URL=<connection string de InsForge>
+DATABASE_URL=postgresql://postgres:<db-password>@wrm6rjkp.eu-central.database.insforge.app:5432/insforge?sslmode=require
 DB_SSLMODE=require
-CORS_ORIGINS=https://taskflow-api-tau.vercel.app
+CORS_ORIGINS=https://taskflow-api-tau.vercel.app,https://wrm6rjkp.insforge.site
 STORAGE_BACKEND=database
 ```
 
+La `db-password` real (32 caracteres) está en `.env` y se obtiene de `GET https://wrm6rjkp.eu-central.insforge.app/api/metadata/database-password`.
+
 Sin `CORS_ORIGINS`, la app falla al arrancar por diseño (fail-fast).
 
-**Impacto:** no se puede verificar el despliegue real de la API.
+**Impacto:** Render sigue con la URL anterior y responde `503`; el preview nuevo no puede cargar datos hasta actualizar estas variables y redeployar.
 
 ---
 

@@ -16,13 +16,14 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | Servicio | URL | Descripción |
 |---|---|---|
 | **Frontend** | https://taskflow-api-tau.vercel.app | Interfaz React |
+| **Preview InsForge** | https://wrm6rjkp.insforge.site | Último build desplegado vía InsForge/Vercel |
 | **API** | https://taskflow-api-gkgl.onrender.com/api/v1 | Backend REST |
 | **Swagger** | https://taskflow-api-gkgl.onrender.com/docs | Documentación interactiva |
 | **Health** | https://taskflow-api-gkgl.onrender.com/health | Estado del servidor |
 | **Liveness** | https://taskflow-api-gkgl.onrender.com/health/live | Proceso vivo |
 | **Readiness** | https://taskflow-api-gkgl.onrender.com/health/ready | DB accesible |
 
-> **Estado de despliegue:** frontend de Vercel online. La base de datos de InsForge ya está migrada y verificada con un smoke test real (12/12). La API de Render sigue respondiendo `503` hasta que se actualice su `DATABASE_URL` y se redepliegue. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
+> **Estado de despliegue:** la base de datos de InsForge ya está migrada y verificada con un smoke test real (12/12). El frontend actualizado está publicado en `https://wrm6rjkp.insforge.site` (deployment gestionado por InsForge/Vercel). La API de Render sigue respondiendo `503` hasta que se actualice su `DATABASE_URL` y se redepliegue. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
 
 ---
 
@@ -290,6 +291,14 @@ Además se ejecutó un **smoke test end-to-end contra InsForge real**: 12/12 com
 - Directorio: `frontend/`
 - Variable: `VITE_API_URL=https://taskflow-api-gkgl.onrender.com`
 - `vercel.json` reescribe rutas SPA a `/`.
+- Preview desplegado vía InsForge: `https://wrm6rjkp.insforge.site`.
+
+```bash
+npx @insforge/cli deployments deploy ./frontend \
+  --env '{"VITE_API_URL":"https://<backend-url>"}'
+```
+
+El proyecto Vercel `chorexxs-projects/taskflow-api` requiere `vercel login` o un `VERCEL_TOKEN` para actualizarse directamente.
 
 ### Base de datos — InsForge
 
