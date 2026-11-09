@@ -61,7 +61,7 @@
 ### Estado y datos
 
 - **TanStack React Query 5** — fetching, caché y mutaciones.
-- **fetch nativo** — cliente centralizado en `src/api/index.js` (axios no se usa).
+- **fetch nativo** — cliente centralizado en `src/api/index.js` (sin axios).
 
 ### UI
 

@@ -123,7 +123,7 @@ app/
 frontend/src/
 ├── api/index.js         # Cliente fetch centralizado y errores tipados
 ├── components/          # Layout, TaskCard, NotificationsBell, Skeleton
-├── context/             # AuthContext, ThemeContext
+├── context/             # AuthContext
 ├── pages/               # Login, Register, Dashboard, TeamDetail,
 │                        # ProjectBoard, TaskDetail, Profile, NotFound
 ├── test/                # Setup y tests Vitest

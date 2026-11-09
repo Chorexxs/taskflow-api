@@ -24,6 +24,8 @@
 
 **Completadas (P6):** `T-073` (Python 3.12), `T-075` (Docker non-root + HEALTHCHECK), `T-078` (snapshot OpenAPI + check en CI), `T-079` (health live/ready).
 
+**Completadas (P5):** `T-065` (decisión dark-only), `T-070` (eliminados axios y ThemeContext muerto).
+
 **Completadas (P4):** `T-057` (notificaciones paginadas y contador de no leídas).
 
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).

@@ -302,7 +302,7 @@ app/
 frontend/src/
 ├── api/index.js         # Cliente API único (fetch + errores tipados)
 ├── components/          # Layout, TaskCard, NotificationsBell, Skeleton
-├── context/             # AuthContext, ThemeContext
+├── context/             # AuthContext
 ├── pages/               # Login, Register, Dashboard, TeamDetail,
 │                        # ProjectBoard, TaskDetail, Profile, NotFound
 ├── App.jsx
@@ -337,7 +337,7 @@ alembic/                 # migraciones
 - Notificaciones en tiempo real con SSE (P4).
 - Paginación uniforme, envelope de errores y permisos por endpoint (P3).
 - Tests de integración contra PostgreSQL y CI de frontend (P6).
-- Tema claro/oscuro: hoy solo oscuro; el `ThemeContext` está sin montar (P5).
+- Tema: solo oscuro en este ciclo; el `ThemeContext` muerto se eliminó (ADR-006).
 
 El detalle y el orden están en [`specs/taskflow/tasks.md`](./specs/taskflow/tasks.md).
 
