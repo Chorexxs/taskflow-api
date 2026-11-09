@@ -22,7 +22,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Liveness** | https://taskflow-api-gkgl.onrender.com/health/live | Proceso vivo |
 | **Readiness** | https://taskflow-api-gkgl.onrender.com/health/ready | DB accesible |
 
-> **Estado de despliegue:** el frontend de Vercel está online. La API de Render responde `503` en readiness hasta que se configure la base de datos de InsForge del proyecto nuevo. Los detalles y las credenciales necesarias están en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
+> **Estado de despliegue:** frontend de Vercel online. La base de datos de InsForge ya está migrada y verificada con un smoke test real (12/12). La API de Render sigue respondiendo `503` hasta que se actualice su `DATABASE_URL` y se redepliegue. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
 
 ---
 
@@ -268,6 +268,8 @@ npm run build
 
 Estado actual: **101 tests backend** y **12 tests frontend**. Los tests de integración usan SQLite en memoria; P6 los migrará a PostgreSQL (ADR-008).
 
+Además se ejecutó un **smoke test end-to-end contra InsForge real**: 12/12 comprobaciones (health, registro, login, equipo, proyecto, tarea, comentario, adjunto en PostgreSQL, descarga, búsqueda, notificaciones y error envelope).
+
 ---
 
 ## Deployment
@@ -293,17 +295,28 @@ Estado actual: **101 tests backend** y **12 tests frontend**. Los tests de integ
 
 PostgreSQL gestionado. Proyecto nuevo: `c7578dc0-d532-4463-88f1-09c6e54356f7`.
 
+- **URL del proyecto:** `https://wrm6rjkp.eu-central.insforge.app`
+- **DB host:** `wrm6rjkp.eu-central.database.insforge.app`
+- **Región:** `eu-central`
+- **Estado:** esquema migrado a `d4e5f6a7b8c9` (11 tablas).
+
 ```bash
-# Con un user API key (uak_) o login interactivo:
+# Project API key (ik_) + URL del proyecto:
+npx @insforge/cli link \
+  --api-base-url https://wrm6rjkp.eu-central.insforge.app \
+  --api-key ik_...
+
+# La contraseña real de la DB:
+curl -H "Authorization: Bearer $INSFORGE_API_KEY" \
+  https://wrm6rjkp.eu-central.insforge.app/api/metadata/database-password
+```
+
+Con un **user API key** (`uak_`) también se puede usar el flujo de plataforma:
+
+```bash
 npx @insforge/cli login --user-api-key uak_...
 npx @insforge/cli link --project-id c7578dc0-d532-4463-88f1-09c6e54356f7
 npx @insforge/cli db connection-string
-```
-
-Si solo tienes la **project API key** (`ik_...`), necesitas además la URL del proyecto:
-
-```bash
-npx @insforge/cli link --api-base-url https://<app-key>.<region>.insforge.app --api-key ik_...
 ```
 
 Guardar backups y probar restore (ver `specs/taskflow/data-model.md`).
@@ -370,7 +383,7 @@ alembic/                 # migraciones
 
 ## Limitaciones conocidas y próximos pasos
 
-- **Despliegue bloqueado:** falta una `uak_` o la URL del proyecto InsForge para obtener la `DATABASE_URL`; Vercel CLI está deslogueado. Ver [`blockers.md`](./specs/taskflow/blockers.md).
+- **Despliegue pendiente:** la DB de InsForge ya está migrada y verificada, pero Render necesita la nueva `DATABASE_URL`/`DB_SSLMODE=require` y un redeploy. Vercel CLI sigue deslogueado. Ver [`blockers.md`](./specs/taskflow/blockers.md).
 - Migración a cookies `httpOnly` o decisión formal (ADR-001).
 - Adjuntos en object storage S3-compatible (la alternativa actual es PostgreSQL) (P4).
 - Notificaciones en tiempo real con SSE (P4); hoy polling cada 30 s.

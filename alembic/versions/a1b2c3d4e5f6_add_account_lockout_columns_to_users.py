@@ -28,7 +28,18 @@ def _user_columns() -> set[str]:
 
 
 def upgrade() -> None:
-    """Add lockout columns only when they are missing."""
+    """Add lockout columns only when they are missing.
+
+    PostgreSQL gets idempotent DDL so this revision can also be rendered in
+    Alembic offline mode (`upgrade head --sql`). SQLite falls back to the
+    inspector-based path used by local tests.
+    """
+    if op.get_context().dialect.name == "postgresql":
+        op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT false")
+        op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER DEFAULT 0")
+        op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP WITH TIME ZONE")
+        return
+
     columns = _user_columns()
 
     if "is_blocked" not in columns:
@@ -50,6 +61,12 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Drop lockout columns only when they exist."""
+    if op.get_context().dialect.name == "postgresql":
+        op.execute("ALTER TABLE users DROP COLUMN IF EXISTS locked_until")
+        op.execute("ALTER TABLE users DROP COLUMN IF EXISTS failed_login_attempts")
+        op.execute("ALTER TABLE users DROP COLUMN IF EXISTS is_blocked")
+        return
+
     columns = _user_columns()
 
     if "locked_until" in columns:

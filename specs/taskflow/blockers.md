@@ -6,65 +6,41 @@ Estos bloqueos requieren credenciales o acciones manuales que no están disponib
 
 ---
 
-## B-01 — InsForge: API key inválida/revocada
+## B-01 — InsForge: RESUELTO
 
-**Objetivo:** enlazar el proyecto `c7578dc0-d532-4463-88f1-09c6e54356f7` y obtener su `DATABASE_URL`.
+**Proyecto:** `c7578dc0-d532-4463-88f1-09c6e54356f7`
+**URL:** `https://wrm6rjkp.eu-central.insforge.app`
+**DB host:** `wrm6rjkp.eu-central.database.insforge.app`
+**Región:** `eu-central`
 
-**Comando ejecutado:**
-
-```bash
-npx @insforge/cli --yes link --project-id c7578dc0-d532-4463-88f1-09c6e54356f7
-```
-
-**Salida:**
-
-```text
-Error: API key is invalid or revoked. Run `npx @insforge/cli login --user-api-key <new-key>` again.
-```
-
-La clave proporcionada empieza por `ik_`, pero el login del CLI exige una **user API key** `uak_`:
-
-```text
-Error: Invalid API key — must start with "uak_".
-```
-
-`ik_` es la **project API key** (admin del proyecto), no una credencial de usuario del CLI. Para usarla directamente hace falta la URL del proyecto:
+La `ik_` key es una **project API key**, no una `uak_` de usuario. Se enlazó correctamente con:
 
 ```bash
 npx @insforge/cli link \
-  --api-base-url https://<app-key>.<region>.insforge.app \
+  --api-base-url https://wrm6rjkp.eu-central.insforge.app \
   --api-key ik_...
 ```
 
-Se probó el candidato `https://c7578dc0.us-east.insforge.app`; `db query "SELECT 1"` responde `OSS request failed: 503`. Los hosts conocidos (`m9f56tky.us-east.insforge.app`, demos públicos) también devuelven `503`, por lo que puede ser además una caída temporal del gateway.
-
-El CLI sigue apuntando al proyecto antiguo `ac9e6df1-…` (appkey `m9f56tky`), cuya conexión PostgreSQL también falla:
+`db connection-string` devolvía una URL con una contraseña enmascarada/placeholder (8 caracteres). La contraseña real (32 caracteres) se obtiene de:
 
 ```text
-psycopg2.OperationalError: connection to server at "m9f56tky.us-east.database.insforge.app", port 5432 failed: SSL connection has been closed unexpectedly
+GET /api/metadata/database-password
 ```
 
-**Qué necesito (una de estas opciones):**
+y se inserta en la URL de:
 
-1. Un **user API key** de InsForge (`uak_...`, Profile → API Keys) y ejecutar:
-   ```bash
-   npx @insforge/cli login --user-api-key uak_...
-   npx @insforge/cli link --project-id c7578dc0-d532-4463-88f1-09c6e54356f7
-   npx @insforge/cli db connection-string
-   ```
-2. O la **URL pública del proyecto InsForge** (`https://<app-key>.<region>.insforge.app`) para usar la `ik_...` que ya compartiste:
-   ```bash
-   npx @insforge/cli link --api-base-url https://<app-key>.<region>.insforge.app --api-key ik_...
-   npx @insforge/cli db connection-string
-   ```
-3. O directamente la `DATABASE_URL` del proyecto `c7578dc0-d532-4463-88f1-09c6e54356f7`.
-
-Después de obtenerla, ejecutar:
-```bash
-DB_SSLMODE=require alembic upgrade head
+```text
+GET /api/metadata/database-connection-string
 ```
 
-**Impacto:** no se pueden aplicar las migraciones nuevas (`token_version`, `attachments.content`) contra la base de datos de producción ni verificar el arranque real con PostgreSQL.
+**Estado verificado:**
+
+- `alembic current` → `d4e5f6a7b8c9 (head)`.
+- 11 tablas creadas (`users`, `teams`, `team_members`, `projects`, `tasks`, `comments`, `attachments`, `activity_logs`, `notifications`, `revoked_tokens`, `alembic_version`).
+- Smoke test real contra InsForge: **12/12 checks** (health, registro, login, equipo, proyecto, tarea, comentario, subida/descarga de adjunto, búsqueda, notificaciones, error envelope).
+- La app puede conectarse con SQLAlchemy usando `DB_SSLMODE=require`.
+
+**Nota:** la `DATABASE_URL` real está en `.env` (ignorado por git) y debe configurarse en Render.
 
 ---
 

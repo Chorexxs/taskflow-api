@@ -45,6 +45,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - CSP, `Referrer-Policy` y `Permissions-Policy` en todas las respuestas.
 - `DB_SSLMODE` configurable (`prefer` local, `require` InsForge).
 - Documentados los bloqueos de despliegue de InsForge/Vercel/Render en `specs/taskflow/blockers.md`.
+- Migración offline compatible con PostgreSQL (`alembic upgrade head --sql`).
+- Base de datos de InsForge enlazada, migrada a `d4e5f6a7b8c9` y verificada con smoke test real 12/12.
 - Mejoras de accesibilidad: focus visible, reduced motion, `aria-label` en iconos y roles de diálogo.
 - CORS con allowlist (`CORS_ORIGINS`), sin `*` con credenciales.
 - Sentry usa la integración correcta y no bloquea el arranque si falla.

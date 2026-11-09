@@ -38,7 +38,7 @@
 
 **Pendientes de P0:** `T-003` (labels/milestones), `T-004` (aceptación formal de ADRs), `T-007` (pre-commit completo), `T-009` (staging), `T-010` (política de release).
 
-Verificación actual: `pytest -q` → **101 passed**; `npm run test` → **12 passed**; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto.
+Verificación actual: `pytest -q` → **101 passed**; `npm run test` → **12 passed**; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge real migrado a `d4e5f6a7b8c9` con smoke test **12/12**.
 
 ---
 
