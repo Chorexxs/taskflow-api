@@ -22,25 +22,47 @@ npx @insforge/cli --yes link --project-id c7578dc0-d532-4463-88f1-09c6e54356f7
 Error: API key is invalid or revoked. Run `npx @insforge/cli login --user-api-key <new-key>` again.
 ```
 
+La clave proporcionada empieza por `ik_`, pero el login del CLI exige una **user API key** `uak_`:
+
+```text
+Error: Invalid API key — must start with "uak_".
+```
+
+`ik_` es la **project API key** (admin del proyecto), no una credencial de usuario del CLI. Para usarla directamente hace falta la URL del proyecto:
+
+```bash
+npx @insforge/cli link \
+  --api-base-url https://<app-key>.<region>.insforge.app \
+  --api-key ik_...
+```
+
+Se probó el candidato `https://c7578dc0.us-east.insforge.app`; `db query "SELECT 1"` responde `OSS request failed: 503`. Los hosts conocidos (`m9f56tky.us-east.insforge.app`, demos públicos) también devuelven `503`, por lo que puede ser además una caída temporal del gateway.
+
 El CLI sigue apuntando al proyecto antiguo `ac9e6df1-…` (appkey `m9f56tky`), cuya conexión PostgreSQL también falla:
 
 ```text
 psycopg2.OperationalError: connection to server at "m9f56tky.us-east.database.insforge.app", port 5432 failed: SSL connection has been closed unexpectedly
 ```
 
-**Qué necesito:**
+**Qué necesito (una de estas opciones):**
 
-1. Un **user API key válido** de InsForge, o ejecutar en tu máquina:
+1. Un **user API key** de InsForge (`uak_...`, Profile → API Keys) y ejecutar:
    ```bash
-   npx @insforge/cli login --user-api-key <USER_API_KEY>
+   npx @insforge/cli login --user-api-key uak_...
    npx @insforge/cli link --project-id c7578dc0-d532-4463-88f1-09c6e54356f7
    npx @insforge/cli db connection-string
    ```
-2. Compartir la `DATABASE_URL` resultante (o configurarla en Render) y ejecutar:
+2. O la **URL pública del proyecto InsForge** (`https://<app-key>.<region>.insforge.app`) para usar la `ik_...` que ya compartiste:
    ```bash
-   alembic upgrade head
+   npx @insforge/cli link --api-base-url https://<app-key>.<region>.insforge.app --api-key ik_...
+   npx @insforge/cli db connection-string
    ```
-   con `DB_SSLMODE=require`.
+3. O directamente la `DATABASE_URL` del proyecto `c7578dc0-d532-4463-88f1-09c6e54356f7`.
+
+Después de obtenerla, ejecutar:
+```bash
+DB_SSLMODE=require alembic upgrade head
+```
 
 **Impacto:** no se pueden aplicar las migraciones nuevas (`token_version`, `attachments.content`) contra la base de datos de producción ni verificar el arranque real con PostgreSQL.
 
