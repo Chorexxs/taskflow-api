@@ -16,6 +16,8 @@ and optional due dates.
 """
 
 from datetime import datetime
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -334,7 +336,17 @@ def delete_task(
     # Check permissions: creator or admin can delete
     if task.created_by != current_user.id and member.role != "admin":
         raise HTTPException(status_code=403, detail="Only the creator or admin can delete this task")
-    
+
+    # Remove attachment files before the DB cascade deletes their rows.
+    for attachment in crud.get_attachments_by_task(db, task.id):
+        try:
+            if attachment.file_path and os.path.exists(attachment.file_path):
+                os.remove(attachment.file_path)
+        except OSError:
+            # A missing/unremovable file must not block task deletion.
+            pass
+
+    crud.log_activity(db, "task", task.id, "deleted", current_user.id, task.title, None)
     crud.delete_task(db, task.id)
 
 

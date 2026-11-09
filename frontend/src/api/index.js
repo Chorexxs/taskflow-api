@@ -154,6 +154,8 @@ export const api = {
       request(`/api/v1/teams/${teamId}/members${buildQuery(params)}`, { token }),
     create: (token, data) =>
       request('/api/v1/teams/', { method: 'POST', token, body: data }),
+    update: (token, teamId, data) =>
+      request(`/api/v1/teams/${teamId}`, { method: 'PATCH', token, body: data }),
     addMember: (token, teamId, email, role) =>
       request(`/api/v1/teams/${teamId}/members`, {
         method: 'POST',
@@ -201,8 +203,13 @@ export const api = {
         token,
       }),
     archive: (token, teamId, projectId) =>
-      request(`/api/v1/teams/${teamId}/projects/${projectId}`, {
-        method: 'DELETE',
+      request(`/api/v1/teams/${teamId}/projects/${projectId}/archive`, {
+        method: 'POST',
+        token,
+      }),
+    restore: (token, teamId, projectId) =>
+      request(`/api/v1/teams/${teamId}/projects/${projectId}/restore`, {
+        method: 'POST',
         token,
       }),
     getActivity: (token, teamId, projectId, params = {}) =>

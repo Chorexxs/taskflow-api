@@ -65,6 +65,9 @@ export default function TeamDetail() {
   const [showEditProject, setShowEditProject] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
   const [editProjectForm, setEditProjectForm] = useState({ name: '', description: '' })
+  const [showEditTeam, setShowEditTeam] = useState(false)
+  const [teamForm, setTeamForm] = useState({ name: '', description: '' })
+  const [showArchived, setShowArchived] = useState(false)
 
   const token = localStorage.getItem('access_token')
   const currentUserId = parseInt(localStorage.getItem('user_id') || '0')
@@ -75,8 +78,8 @@ export default function TeamDetail() {
   })
 
   const { data: projects, isLoading: projectsLoading } = useQuery({
-    queryKey: ['projects', teamId],
-    queryFn: () => api.projects.list(token, teamId),
+    queryKey: ['projects', teamId, showArchived],
+    queryFn: () => api.projects.list(token, teamId, { include_archived: showArchived }),
   })
 
   const { data: members } = useQuery({
@@ -119,6 +122,36 @@ export default function TeamDetail() {
       toast.success('Project updated!')
     },
     onError: () => toast.error('Failed to update project'),
+  })
+
+  const updateTeamMutation = useMutation({
+    mutationFn: (data) => api.teams.update(token, teamId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      setShowEditTeam(false)
+      toast.success('Team updated!')
+    },
+    onError: (error) => toast.error(error.message || 'Failed to update team'),
+  })
+
+  const handleStartEditTeam = () => {
+    setTeamForm({ name: team?.name || '', description: team?.description || '' })
+    setShowEditTeam(true)
+  }
+
+  const handleSaveTeam = (e) => {
+    e.preventDefault()
+    updateTeamMutation.mutate(teamForm)
+  }
+
+  const restoreProjectMutation = useMutation({
+    mutationFn: (projectId) => api.projects.restore(token, teamId, projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects', teamId] })
+      toast.success('Project restored!')
+    },
+    onError: (error) => toast.error(error.message || 'Failed to restore project'),
   })
 
   const myMember = members?.find(m => m.user_id === currentUserId)
@@ -220,6 +253,16 @@ export default function TeamDetail() {
                 </span>
               </div>
               <h1 className="text-xl font-medium text-[var(--color-text-primary)]">{team?.name}</h1>
+              {isAdmin && (
+                <button
+                  onClick={handleStartEditTeam}
+                  className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-tertiary)] transition-all"
+                  title="Edit team"
+                  aria-label="Edit team"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
             <div className="flex-1 max-w-md ml-auto">
               <div className="relative">
@@ -272,12 +315,52 @@ export default function TeamDetail() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {showEditTeam && (
+          <div className="mb-6 card p-4">
+            <form onSubmit={handleSaveTeam} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Team Name</label>
+                <input
+                  className="input-field"
+                  value={teamForm.name}
+                  onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Description</label>
+                <textarea
+                  className="input-field"
+                  rows={2}
+                  value={teamForm.description}
+                  onChange={(e) => setTeamForm({ ...teamForm, description: e.target.value })}
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button type="button" onClick={() => setShowEditTeam(false)} className="btn-secondary text-sm">Cancel</button>
+                <button type="submit" disabled={updateTeamMutation.isPending} className="btn-primary text-sm flex items-center gap-1.5">
+                  <Save className="w-4 h-4" />
+                  {updateTeamMutation.isPending ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-xl font-medium text-[var(--color-text-primary)] mb-1">Projects</h2>
                 <p className="text-sm text-[var(--color-text-muted)]">{projects?.length || 0} projects</p>
+                <label className="mt-2 inline-flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+                  <input
+                    type="checkbox"
+                    checked={showArchived}
+                    onChange={(e) => setShowArchived(e.target.checked)}
+                  />
+                  Show archived
+                </label>
               </div>
               <button
                 onClick={() => setShowCreateProject(true)}
@@ -321,7 +404,16 @@ export default function TeamDetail() {
                         <FolderOpen className="w-5 h-5 text-[var(--color-bg-primary)]" />
                       </div>
                       <div className="flex items-center gap-1">
-                        {isAdmin && (
+                        {isAdmin && project.status === 'archived' && (
+                          <button
+                            onClick={(e) => { e.preventDefault(); restoreProjectMutation.mutate(project.id); }}
+                            className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-secondary)] rounded transition-all"
+                            title="Restore project"
+                          >
+                            <FolderOpen className="w-4 h-4" />
+                          </button>
+                        )}
+                        {isAdmin && project.status !== 'archived' && (
                           <button
                             onClick={(e) => { e.preventDefault(); handleStartEditProject(project); }}
                             className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-secondary)] rounded transition-all"

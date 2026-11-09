@@ -289,6 +289,20 @@ class TeamCreate(BaseModel):
         return v
 
 
+class TeamUpdate(BaseModel):
+    """Editable team fields. Only admins may change them."""
+
+    name: str | None = None
+    description: str | None = None
+
+    @field_validator("name", "description", mode="before")
+    @classmethod
+    def sanitize_input(cls, v):
+        if isinstance(v, str):
+            return sanitize_text(v)
+        return v
+
+
 class TeamOut(BaseModel):
     """
     Schema for team response data.

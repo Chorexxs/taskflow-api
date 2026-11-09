@@ -233,6 +233,23 @@ def create_team(db: Session, team: schemas.TeamCreate, user_id: int):
     return db_team
 
 
+def update_team(db: Session, team_id: int, team_update: schemas.TeamUpdate):
+    """Update a team's editable fields.
+
+    The slug is intentionally immutable so existing URLs keep working.
+    """
+    db_team = get_team_by_id(db, team_id)
+    if not db_team:
+        return None
+    if team_update.name is not None:
+        db_team.name = team_update.name
+    if team_update.description is not None:
+        db_team.description = team_update.description
+    db.commit()
+    db.refresh(db_team)
+    return db_team
+
+
 def get_team_by_id(db: Session, team_id: int):
     """
     Retrieve a team by its numeric ID.
@@ -574,6 +591,18 @@ def archive_project(db: Session, project_id: int):
     db_project = get_project_by_id(db, project_id)
     if db_project:
         db_project.status = "archived"
+        db.commit()
+        db.refresh(db_project)
+        from app.cache import cache_service
+        cache_service.invalidate_project(project_id)
+    return db_project
+
+
+def restore_project(db: Session, project_id: int):
+    """Restore an archived project to active status."""
+    db_project = get_project_by_id(db, project_id)
+    if db_project:
+        db_project.status = "active"
         db.commit()
         db.refresh(db_project)
         from app.cache import cache_service

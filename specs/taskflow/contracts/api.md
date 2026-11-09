@@ -321,6 +321,7 @@ Leyenda de permisos: **Público**, **Auth** (cualquier autenticado), **Member**,
 | POST | `/teams/` | Auth | `{name, description?, slug?}` | `TeamOut` | 201, 409, 422 |
 | GET | `/teams/` | Auth | `page,page_size` | `Paginated<TeamOut>` | 200 |
 | GET | `/teams/{team}` | Member | — | `TeamOut` | 200, 403, 404 |
+| PATCH | `/teams/{team}` | Admin | `{name?,description?}` | `TeamOut` | 200, 400, 403, 404 |
 | GET | `/teams/{team}/search` | Member | `q,page,page_size` | `{projects,tasks}` | 200, 422 |
 | POST | `/teams/{team}/members` | Admin | `{email, role}` | `TeamMemberOut` | 201, 404, 409 |
 | GET | `/teams/{team}/members` | Member | `page,page_size` | `Paginated<TeamMemberOut>` | 200, 403 |
@@ -344,6 +345,8 @@ Leyenda de permisos: **Público**, **Auth** (cualquier autenticado), **Member**,
 | GET | `/teams/{team}/projects/{project}` | Member | — | `ProjectOut` | 200, 404 |
 | PATCH | `/teams/{team}/projects/{project}` | Admin | `{name?,description?,status?}` | `ProjectOut` | 200, 403, 404 |
 | DELETE | `/teams/{team}/projects/{project}` | Admin | — | — | 204, 403 |
+| POST | `/teams/{team}/projects/{project}/archive` | Admin | — | `ProjectOut` | 200, 403, 404 |
+| POST | `/teams/{team}/projects/{project}/restore` | Admin | — | `ProjectOut` | 200, 403, 404 |
 | GET | `/teams/{team}/projects/{project}/activity` | Member | `page,page_size` | `Paginated<ActivityLogOut>` | 200, 403 |
 
 **Semántica actual:** `DELETE` **archiva** (`status=archived`).

@@ -191,6 +191,33 @@ def get_team(
     return team
 
 
+@router.patch("/{team_id_or_slug}", response_model=schemas.TeamOut)
+def update_team(
+    team_id_or_slug: str,
+    team_update: schemas.TeamUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    admin: models.TeamMember = Depends(get_current_team_admin),
+):
+    """Update a team's name or description. Only team admins may do this."""
+    if team_update.name is not None and not team_update.name.strip():
+        raise HTTPException(status_code=400, detail="Team name cannot be empty")
+
+    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    old_name = team.name
+    updated = crud.update_team(db, team.id, team_update)
+    crud.log_activity(
+        db,
+        "team",
+        team.id,
+        "updated",
+        current_user.id,
+        old_name,
+        updated.name if updated else None,
+    )
+    return updated
+
+
 @router.post("/{team_id_or_slug}/members", response_model=schemas.TeamMemberOut, status_code=status.HTTP_201_CREATED)
 def invite_member(
     team_id_or_slug: str,

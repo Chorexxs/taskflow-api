@@ -19,7 +19,11 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import crud, models, schemas
 from app.auth import get_current_user
-from app.dependencies import get_current_team_admin, get_current_team_member
+from app.dependencies import (
+    get_current_team_admin,
+    get_current_team_member,
+    get_team_from_id_or_slug,
+)
 
 router = APIRouter()
 
@@ -93,6 +97,7 @@ def create_project(
 @router.get("/", response_model=list[schemas.ProjectOut])
 def list_projects(
     team_id_or_slug: str,
+    include_archived: bool = False,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
@@ -118,7 +123,7 @@ def list_projects(
     """
     from app.dependencies import get_team_from_id_or_slug
     team = get_team_from_id_or_slug(db, team_id_or_slug)
-    return crud.get_projects_by_team(db, team.id)
+    return crud.get_projects_by_team(db, team.id, include_archived=include_archived)
 
 
 @router.get("/{project_id_or_slug}", response_model=schemas.ProjectOut)
@@ -227,6 +232,42 @@ def archive_project(
     old_status = project.status
     crud.archive_project(db, project.id)
     crud.log_activity(db, "project", project.id, "archived", current_user.id, old_status, "archived")
+
+
+@router.post("/{project_id_or_slug}/archive", response_model=schemas.ProjectOut)
+def archive_project_endpoint(
+    team_id_or_slug: str,
+    project_id_or_slug: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    admin: models.TeamMember = Depends(get_current_team_admin),
+):
+    """Explicitly archive a project. Only team admins may do this."""
+    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    project = get_project_from_id_or_slug(db, project_id_or_slug, team.id)
+    old_status = project.status
+    if old_status != "archived":
+        project = crud.archive_project(db, project.id)
+        crud.log_activity(db, "project", project.id, "archived", current_user.id, old_status, "archived")
+    return project
+
+
+@router.post("/{project_id_or_slug}/restore", response_model=schemas.ProjectOut)
+def restore_project_endpoint(
+    team_id_or_slug: str,
+    project_id_or_slug: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    admin: models.TeamMember = Depends(get_current_team_admin),
+):
+    """Restore an archived project to active status. Only team admins may do this."""
+    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    project = get_project_from_id_or_slug(db, project_id_or_slug, team.id)
+    old_status = project.status
+    if old_status != "active":
+        project = crud.restore_project(db, project.id)
+        crud.log_activity(db, "project", project.id, "restored", current_user.id, old_status, "active")
+    return project
 
 
 @router.get("/{project_id_or_slug}/activity", response_model=list[schemas.ActivityLogOut])
