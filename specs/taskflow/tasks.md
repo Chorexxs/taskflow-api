@@ -22,7 +22,9 @@
 
 **Parcial (P4):** `T-062` (búsqueda con debounce; controles de paginación en UI pendientes), `T-054` (se implementó almacenamiento persistente en PostgreSQL en lugar de S3 por falta de credenciales), `T-055` (validación MIME/tamaño; checksum pendiente).
 
-**Completadas (P6):** `T-073` (Python 3.12), `T-075` (Docker non-root + HEALTHCHECK), `T-078` (snapshot OpenAPI + check en CI), `T-079` (health live/ready).
+**Completadas (P6):** `T-072` (dependencias backend fijadas + React Router parcheado), `T-073` (Python 3.12), `T-075` (Docker non-root + HEALTHCHECK), `T-078` (snapshot OpenAPI + check en CI), `T-079` (health live/ready).
+
+**Parcial (P6):** `T-074` (`pyproject.toml` con config de ruff/mypy; falta instalar/enforcing en CI).
 
 **Completadas (P5):** `T-065` (decisión dark-only), `T-070` (eliminados axios y ThemeContext muerto).
 
