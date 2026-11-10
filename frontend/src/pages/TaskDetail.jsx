@@ -23,7 +23,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Send, MessageSquare, User, Calendar, Edit2, X, Check, Paperclip, Download, Trash2, File, Pencil, Trash, ChevronDown, Activity } from 'lucide-react'
+import { ArrowLeft, Send, MessageSquare, User, Calendar, Edit2, X, Check, Paperclip, Download, Trash2, File, Pencil, Trash, Activity } from 'lucide-react'
+import { formatActivityAction, formatActivityActor, formatActivityValue } from '../utils/activity'
 
 /**
  * TaskDetail Component - Page for viewing and interacting with a single task
@@ -56,7 +57,7 @@ export default function TaskDetail() {
   const [isEditing, setIsEditing] = useState(false)
   const [editingCommentId, setEditingCommentId] = useState(null)
   const [editingCommentContent, setEditingCommentContent] = useState('')
-  const [showAllActivity, setShowAllActivity] = useState(false)
+  const [activityPageNumber, setActivityPageNumber] = useState(1)
   const [editForm, setEditForm] = useState({
     title: '',
     description: '',
@@ -82,8 +83,12 @@ export default function TaskDetail() {
   })
 
   const { data: activityPage } = useQuery({
-    queryKey: ['task-activity', teamId, projectId, taskId],
-    queryFn: () => api.tasks.getActivity(token, teamId, projectId, taskId),
+    queryKey: ['task-activity', teamId, projectId, taskId, activityPageNumber],
+    queryFn: () =>
+      api.tasks.getActivity(token, teamId, projectId, taskId, {
+        page: activityPageNumber,
+        page_size: 10,
+      }),
   })
   const activity = activityPage?.items ?? []
 
@@ -435,50 +440,66 @@ export default function TaskDetail() {
           </div>
         </div>
 
-        {activity && activity.length > 0 && (
+        {activityPage?.total > 0 && (
           <div className="mt-8">
             <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-4 flex items-center gap-2">
               <Activity className="w-4 h-4" />
-              Activity ({activity.length})
+              Activity ({activityPage.total})
             </h3>
             <div className="space-y-2">
-              {(showAllActivity ? activity : activity.slice(0, 5)).map(log => {
-                const actionLabel = log.action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+              {activity.map(log => {
+                const oldValue = formatActivityValue(log.old_value)
+                const newValue = formatActivityValue(log.new_value)
                 return (
                   <div key={log.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded-lg text-xs">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-[var(--color-accent)]">{actionLabel}</span>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="font-medium text-[var(--color-accent)]">
+                        {formatActivityAction(log.action)}
+                      </span>
                       <span className="text-[var(--color-text-muted)]">
                         {new Date(log.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    {log.old_value && log.new_value && (
-                      <div className="text-[var(--color-text-secondary)]">
-                        <span className="line-through text-[var(--color-text-muted)] mr-1">{log.old_value}</span>
-                        <span className="text-[var(--color-text-primary)]">→ {log.new_value}</span>
+                    <div className="text-[var(--color-text-muted)]">by {formatActivityActor(log)}</div>
+                    {oldValue && newValue && (
+                      <div className="text-[var(--color-text-secondary)] mt-1">
+                        <span className="line-through text-[var(--color-text-muted)] mr-1">{oldValue}</span>
+                        <span className="text-[var(--color-text-primary)]">→ {newValue}</span>
                       </div>
                     )}
-                    {log.old_value && !log.new_value && (
-                      <div className="text-[var(--color-text-secondary)]">
-                        Removed: <span className="text-[var(--color-text-muted)]">{log.old_value}</span>
+                    {oldValue && !newValue && (
+                      <div className="text-[var(--color-text-secondary)] mt-1">
+                        Removed: <span className="text-[var(--color-text-muted)]">{oldValue}</span>
                       </div>
                     )}
-                    {!log.old_value && log.new_value && log.action !== 'created' && (
-                      <div className="text-[var(--color-text-secondary)]">
-                        Set to: <span className="text-[var(--color-text-primary)]">{log.new_value}</span>
+                    {!oldValue && newValue && log.action !== 'created' && (
+                      <div className="text-[var(--color-text-secondary)] mt-1">
+                        Set to: <span className="text-[var(--color-text-primary)]">{newValue}</span>
                       </div>
                     )}
                   </div>
                 )
               })}
-              {activity.length > 5 && (
-                <button
-                  onClick={() => setShowAllActivity(!showAllActivity)}
-                  className="text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] flex items-center gap-1 mt-2"
-                >
-                  {showAllActivity ? 'Show less' : `Show ${activity.length - 5} more`}
-                  <ChevronDown className={`w-3 h-3 transition-transform ${showAllActivity ? 'rotate-180' : ''}`} />
-                </button>
+              {activityPage.pages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                  <button
+                    onClick={() => setActivityPageNumber(page => Math.max(1, page - 1))}
+                    disabled={activityPageNumber <= 1}
+                    className="text-xs text-[var(--color-accent)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-xs text-[var(--color-text-muted)]">
+                    Page {activityPage.page} of {activityPage.pages}
+                  </span>
+                  <button
+                    onClick={() => setActivityPageNumber(page => Math.min(activityPage.pages, page + 1))}
+                    disabled={!activityPage.has_next}
+                    className="text-xs text-[var(--color-accent)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
               )}
             </div>
           </div>

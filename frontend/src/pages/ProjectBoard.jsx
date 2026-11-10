@@ -29,6 +29,7 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Plus, Search, Filter, X, Activity, ChevronDown, Settings, Archive } from 'lucide-react'
+import { formatActivityAction, formatActivityActor, formatActivityValue } from '../utils/activity'
 import TaskCard from '../components/TaskCard'
 
 /**
@@ -138,6 +139,7 @@ export default function ProjectBoard() {
   const [search, setSearch] = useState('')
   const [activeTask, setActiveTask] = useState(null)
   const [showActivityPanel, setShowActivityPanel] = useState(false)
+  const [activityPageNumber, setActivityPageNumber] = useState(1)
   const [showEditProject, setShowEditProject] = useState(false)
   const [projectForm, setProjectForm] = useState({ name: '', description: '' })
   const [taskColumns, setTaskColumns] = useState({
@@ -183,8 +185,12 @@ export default function ProjectBoard() {
   })
 
   const { data: projectActivity } = useQuery({
-    queryKey: ['project-activity', teamId, projectId],
-    queryFn: () => api.projects.getActivity(token, teamId, projectId),
+    queryKey: ['project-activity', teamId, projectId, activityPageNumber],
+    queryFn: () =>
+      api.projects.getActivity(token, teamId, projectId, {
+        page: activityPageNumber,
+        page_size: 10,
+      }),
     enabled: showActivityPanel,
   })
 
@@ -716,29 +722,56 @@ export default function ProjectBoard() {
               {projectActivity?.items?.length > 0 ? (
                 <div className="space-y-3">
                   {projectActivity.items.map(log => {
-                    const actionLabel = log.action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    const oldValue = formatActivityValue(log.old_value)
+                    const newValue = formatActivityValue(log.new_value)
                     return (
                       <div key={log.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded-lg text-sm">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-[var(--color-accent)]">{actionLabel}</span>
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="font-medium text-[var(--color-accent)]">
+                            {formatActivityAction(log.action)}
+                          </span>
                           <span className="text-xs text-[var(--color-text-muted)]">
                             {new Date(log.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
-                        {log.old_value && log.new_value && (
-                          <div className="text-[var(--color-text-secondary)]">
-                            <span className="line-through text-[var(--color-text-muted)] mr-1">{log.old_value}</span>
-                            <span className="text-[var(--color-text-primary)]">→ {log.new_value}</span>
+                        <div className="text-xs text-[var(--color-text-muted)]">
+                          by {formatActivityActor(log)}
+                        </div>
+                        {oldValue && newValue && (
+                          <div className="text-[var(--color-text-secondary)] mt-1">
+                            <span className="line-through text-[var(--color-text-muted)] mr-1">{oldValue}</span>
+                            <span className="text-[var(--color-text-primary)]">→ {newValue}</span>
                           </div>
                         )}
-                        {!log.old_value && log.new_value && log.action !== 'created' && (
-                          <div className="text-[var(--color-text-secondary)]">
-                            Set to: <span className="text-[var(--color-text-primary)]">{log.new_value}</span>
+                        {!oldValue && newValue && log.action !== 'created' && (
+                          <div className="text-[var(--color-text-secondary)] mt-1">
+                            Set to: <span className="text-[var(--color-text-primary)]">{newValue}</span>
                           </div>
                         )}
                       </div>
                     )
                   })}
+                  {projectActivity.pages > 1 && (
+                    <div className="flex items-center justify-between pt-2">
+                      <button
+                        onClick={() => setActivityPageNumber(page => Math.max(1, page - 1))}
+                        disabled={activityPageNumber <= 1}
+                        className="text-xs text-[var(--color-accent)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        Page {projectActivity.page} of {projectActivity.pages}
+                      </span>
+                      <button
+                        onClick={() => setActivityPageNumber(page => Math.min(projectActivity.pages, page + 1))}
+                        disabled={!projectActivity.has_next}
+                        className="text-xs text-[var(--color-accent)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8 text-[var(--color-text-muted)]">
