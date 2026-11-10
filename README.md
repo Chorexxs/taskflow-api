@@ -452,9 +452,12 @@ El detalle y el orden están en [`specs/taskflow/tasks.md`](./specs/taskflow/tas
 
 1. Lee [`specs/taskflow/constitution.md`](./specs/taskflow/constitution.md).
 2. Toma una tarea `T-###` del backlog.
-3. Crea una rama `feature/T-###-descripcion`.
+3. Crea una rama `feat/T-###-descripcion` (ver [`CONTRIBUTING.md`](./CONTRIBUTING.md)).
 4. Añade tests y actualiza la spec/contrato si cambia el comportamiento.
 5. Abre un PR referenciando `T-###` y los `FR-###`/`BL-##` cubiertos.
+
+La política completa de ramas, PR, release y rollback está en
+[`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ## Licencia
 
