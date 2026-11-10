@@ -1,4 +1,3 @@
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -99,7 +98,6 @@ def test_assign_task_to_non_member_returns_400(client: TestClient):
 
     client.post("/api/v1/teams/test-team/projects/Test Project/tasks/", json={"title": "Task"}, headers={"Authorization": f"Bearer {owner_token}"})
 
-    outsider = client.post("/api/v1/auth/login", data={"username": "outsider@example.com", "password": "password123"}).json()
     outsider_id = 999
 
     response = client.patch(

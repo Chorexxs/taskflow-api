@@ -17,11 +17,10 @@ import re
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.database import get_db
 from app import crud, models, schemas
 from app.auth import get_current_user
+from app.database import get_db
 from app.dependencies import (
-    get_current_team_admin,
     get_current_team_member,
     get_team_from_id_or_slug,
 )

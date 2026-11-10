@@ -26,3 +26,6 @@ pytest-cov==7.1.0
 coverage==7.17.2
 httpx==0.28.1
 fakeredis[lua]==2.32.1
+ruff==0.14.2
+mypy==1.18.2
+pre-commit==4.3.0

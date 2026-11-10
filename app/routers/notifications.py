@@ -13,16 +13,16 @@ receive comments on tasks they're working on.
 import asyncio
 import json
 import time
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from typing import Optional
 
-from app.config import settings
-from app.database import get_db
 from app import crud, models, schemas
 from app.auth import get_current_user
+from app.config import settings
+from app.database import get_db
 from app.logging_config import get_logger
 from app.rate_limit import rate_limit
 
@@ -82,7 +82,7 @@ async def iter_notification_events(request: Request, db: Session, user_id: int, 
     Extracted from the route so it can be unit-tested without an infinite HTTP
     response. The caller owns the database session and must close it.
     """
-    last_id = start_after
+    last_id: int = start_after
     last_heartbeat = time.monotonic()
     while True:
         if await request.is_disconnected():
@@ -100,7 +100,7 @@ async def iter_notification_events(request: Request, db: Session, user_id: int, 
                 .all()
             )
             for notification in pending:
-                last_id = notification.id
+                last_id = int(notification.id)
                 payload = schemas.NotificationOut.model_validate(
                     notification
                 ).model_dump(mode="json")

@@ -1,0 +1,19 @@
+# Local quality gates. Install once with `pre-commit install`.
+# CI runs the same ruff/mypy commands, so hooks and pipeline stay aligned.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.2
+    hooks:
+      - id: ruff
+        name: ruff check
+        args: [--fix]
+        files: ^(app|tests)/.*\.py$
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy app
+        entry: python -m mypy app
+        language: system
+        pass_filenames: false
+        files: ^app/.*\.py$

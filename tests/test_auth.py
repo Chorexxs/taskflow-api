@@ -1,4 +1,3 @@
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -51,7 +50,7 @@ def test_login_invalid_credentials(client: TestClient):
 
 
 def test_get_current_user(client: TestClient):
-    register_response = client.post(
+    client.post(
         "/api/v1/auth/register",
         json={"email": "current@example.com", "password": "password123"}
     )

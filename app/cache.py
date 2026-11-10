@@ -32,7 +32,6 @@ try:
 except ImportError:
     REDIS_AVAILABLE = False
 
-from datetime import timedelta
 
 # Redis connection URL from environment
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
@@ -113,8 +112,11 @@ class CacheService:
         """
         if not self._enabled:
             return None
+        client = self.client
+        if client is None:
+            return None
         try:
-            data = self.client.get(key)
+            data = client.get(key)
             if data:
                 return json.loads(data)
         except Exception:
@@ -141,8 +143,11 @@ class CacheService:
         """
         if not self._enabled:
             return None
+        client = self.client
+        if client is None:
+            return None
         try:
-            self.client.setex(key, ttl, json.dumps(value))
+            client.setex(key, ttl, json.dumps(value))
         except Exception:
             pass
 
@@ -163,8 +168,11 @@ class CacheService:
         """
         if not self._enabled:
             return None
+        client = self.client
+        if client is None:
+            return None
         try:
-            self.client.delete(key)
+            client.delete(key)
         except Exception:
             pass
 
@@ -188,7 +196,7 @@ class CacheService:
         if not self._enabled:
             return None
         self.delete(f"team:{team_id}")
-        self.delete(f"team:slug:*")
+        self.delete("team:slug:*")
 
     def invalidate_project(self, project_id: int) -> None:
         """

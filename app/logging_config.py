@@ -23,8 +23,7 @@ from contextvars import ContextVar
 from typing import Any
 
 import structlog
-from structlog.types import EventDict, Processor
-
+from structlog.types import EventDict
 
 # Context variable for storing request ID across async operations
 # This allows the request ID to be propagated through all log calls

@@ -20,21 +20,21 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
+from app.auth import (
+    SECRET_KEY,
+    check_user_locked,
+    create_access_token,
+    create_refresh_token,
+    get_revoked_token,
+    record_failed_login,
+    reset_failed_login,
+    revoke_token,
+    settings,
+    verify_password,
+)
 from app.database import get_db
 from app.logging_config import get_logger
 from app.rate_limit import rate_limit
-from app.auth import (
-    SECRET_KEY,
-    settings,
-    create_access_token,
-    create_refresh_token,
-    verify_password,
-    revoke_token,
-    get_revoked_token,
-    check_user_locked,
-    record_failed_login,
-    reset_failed_login,
-)
 
 router = APIRouter()
 logger = get_logger(__name__)

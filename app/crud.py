@@ -25,12 +25,13 @@ Key patterns used:
 import re
 import unicodedata
 from datetime import datetime, timezone
+from typing import Any
+
+from fastapi import Depends
 from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
-from app.auth import get_password_hash, verify_password, get_current_user
-from app.database import get_db
-from fastapi import Depends
+from app.auth import get_current_user, get_password_hash, verify_password
 
 
 def paginate_query(query, page: int, page_size: int):
@@ -413,7 +414,7 @@ def remove_member(db: Session, team_id: int, user_id: int, changed_by: int | Non
             .all()
         )
         for task in assigned_tasks:
-            task.assigned_to = None
+            task.assigned_to = None  # type: ignore[assignment]
             if changed_by is not None:
                 db.add(
                     models.ActivityLog(
@@ -816,11 +817,11 @@ def get_task_by_id(db: Session, task_id: int):
 def get_tasks_by_project(
     db: Session,
     project_id: int,
-    status: str = None,
-    priority: str = None,
-    assigned_to: int = None,
-    due_before: datetime = None,
-    due_after: datetime = None,
+    status: str | None = None,
+    priority: str | None = None,
+    assigned_to: int | None = None,
+    due_before: datetime | None = None,
+    due_after: datetime | None = None,
     sort_by: str = "created_at",
     order: str = "desc",
     page: int = 1,
@@ -879,6 +880,7 @@ def get_tasks_by_project(
         query = query.filter(models.Task.due_date >= due_after)
     
     # Determine sort column
+    order_col: Any
     if sort_by == "title":
         order_col = models.Task.title
     elif sort_by == "due_date":
@@ -1152,7 +1154,15 @@ def delete_comment(db: Session, comment_id: int):
     return db_comment
 
 
-def log_activity(db: Session, entity_type: str, entity_id: int, action: str, user_id: int, old_value: str = None, new_value: str = None):
+def log_activity(
+    db: Session,
+    entity_type: str,
+    entity_id: int,
+    action: str,
+    user_id: int,
+    old_value: str | None = None,
+    new_value: str | None = None,
+):
     """
     Create an activity log entry for audit purposes.
     
@@ -1494,7 +1504,7 @@ def create_notification(
 def get_notifications_by_user(
     db: Session,
     user_id: int,
-    is_read: bool = None,
+    is_read: bool | None = None,
     page: int = 1,
     page_size: int = 20,
 ):
@@ -1587,6 +1597,6 @@ def mark_all_notifications_read(db: Session, user_id: int):
     """
     db.query(models.Notification).filter(
         models.Notification.user_id == user_id,
-        models.Notification.is_read == False
+        models.Notification.is_read.is_(False)
     ).update({"is_read": True})
     db.commit()

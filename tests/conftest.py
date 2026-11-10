@@ -1,4 +1,5 @@
 import os
+
 os.environ["TESTING"] = "1"
 os.environ["REDIS_URL"] = "redis://localhost:6379/0"
 
@@ -7,9 +8,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from app.database import Base, get_db
-from app import main
 
+from app import main
+from app.database import Base, get_db
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 

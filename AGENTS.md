@@ -72,6 +72,11 @@ pytest tests/test_auth.py::test_register_user
 pytest -v
 pytest --cov=app --cov-report=html
 
+# Lint / tipos
+ruff check app tests
+mypy app
+pre-commit run --all-files
+
 # Migraciones
 alembic upgrade head
 alembic downgrade -1

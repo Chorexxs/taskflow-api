@@ -16,20 +16,23 @@ The application uses:
 """
 
 import os
+from contextlib import asynccontextmanager
+
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
-from contextlib import asynccontextmanager
 from slowapi.errors import RateLimitExceeded
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
+
 from app.config import settings
-from app.rate_limit import limiter
-from app.routers import auth, users, teams, projects, tasks, comments, attachments, notifications
 from app.logging_config import configure_logging, get_logger, request_id_context
+from app.middleware import LoggingMiddleware
+from app.rate_limit import limiter
+from app.routers import attachments, auth, comments, notifications, projects, tasks, teams, users
 
 # Configure structured logging at module import
 configure_logging()
@@ -220,7 +223,8 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
             response, request.state.view_rate_limit
         )
     except Exception:  # pragma: no cover - defensive
-        response.headers.setdefault("Retry-After", str(exc.limit.get_expiry()))
+        if exc.limit is not None:
+            response.headers.setdefault("Retry-After", str(exc.limit.get_expiry()))
     return response
 
 
@@ -268,7 +272,6 @@ app.add_middleware(
 )
 
 # Custom logging middleware for request/response logging
-from app.middleware import LoggingMiddleware
 app.add_middleware(LoggingMiddleware)
 
 # Add security headers middleware
@@ -355,8 +358,9 @@ def health_check():
     
     # Check database connection
     try:
-        from app.database import get_engine
         from sqlalchemy import text
+
+        from app.database import get_engine
         engine = get_engine()
         if engine:
             with engine.connect() as conn:
@@ -372,7 +376,7 @@ def health_check():
         r = redis.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379/0"))
         r.ping()
         health_status["redis"] = "connected"
-    except Exception as e:
+    except Exception:
         health_status["redis"] = "not_available"
     
     # Check disk space

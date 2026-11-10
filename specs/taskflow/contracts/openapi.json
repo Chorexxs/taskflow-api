@@ -2521,8 +2521,15 @@
             "name": "status",
             "required": false,
             "schema": {
-              "title": "Status",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
             }
           },
           {
@@ -2530,8 +2537,15 @@
             "name": "priority",
             "required": false,
             "schema": {
-              "title": "Priority",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
             }
           },
           {
@@ -2539,8 +2553,15 @@
             "name": "assigned_to",
             "required": false,
             "schema": {
-              "title": "Assigned To",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assigned To"
             }
           },
           {
@@ -2548,9 +2569,16 @@
             "name": "due_before",
             "required": false,
             "schema": {
-              "format": "date-time",
-              "title": "Due Before",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Due Before"
             }
           },
           {
@@ -2558,9 +2586,16 @@
             "name": "due_after",
             "required": false,
             "schema": {
-              "format": "date-time",
-              "title": "Due After",
-              "type": "string"
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Due After"
             }
           },
           {

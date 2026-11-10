@@ -13,7 +13,6 @@ import warnings
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 DEV_SECRET_KEY = "dev-only-insecure-secret-key-change-me"
 DEFAULT_DEV_ORIGINS = (
     "http://localhost:5173",

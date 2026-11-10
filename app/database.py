@@ -16,21 +16,23 @@ The module supports:
 """
 
 import warnings
-from typing import Generator
 from contextlib import contextmanager
+from typing import Generator
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 from app.config import settings
-
 
 # Database URL comes from the single configuration module.
 # Warns if not configured (database features will be unavailable).
 DATABASE_URL = settings.DATABASE_URL
 if not DATABASE_URL:
-    warnings.warn("DATABASE_URL is not set, database functionality will be unavailable")
+    warnings.warn(
+    "DATABASE_URL is not set, database functionality will be unavailable",
+    stacklevel=2,
+)
 
 
 # Declarative base for SQLAlchemy models
@@ -64,7 +66,10 @@ def get_engine():
     global _engine
     if _engine is None:
         if not DATABASE_URL:
-            warnings.warn("DATABASE_URL is not set, returning None engine")
+            warnings.warn(
+    "DATABASE_URL is not set, returning None engine",
+    stacklevel=2,
+)
             return None
         
         # Configure PostgreSQL-specific settings. Managed providers such as
@@ -115,7 +120,10 @@ def get_session_local():
     global _SessionLocal
     if _SessionLocal is None:
         if not DATABASE_URL:
-            warnings.warn("DATABASE_URL is not set, returning None session")
+            warnings.warn(
+    "DATABASE_URL is not set, returning None session",
+    stacklevel=2,
+)
             return None
         _SessionLocal = sessionmaker(
             autocommit=False,

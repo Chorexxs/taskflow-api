@@ -1,4 +1,3 @@
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -49,7 +48,6 @@ def test_task_assignment_logs_activity(client: TestClient):
     client.post("/api/v1/auth/register", json={"email": "member@example.com", "password": "password123"})
     owner_token = setup_full_hierarchy_with_task(client, "assignlog@example.com")
     
-    member_token = client.post("/api/v1/auth/login", data={"username": "member@example.com", "password": "password123"}).json()["access_token"]
     client.post("/api/v1/teams/test-team/members", json={"email": "member@example.com", "role": "member"}, headers={"Authorization": f"Bearer {owner_token}"})
     
     member_response = client.get("/api/v1/teams/test-team/members", headers={"Authorization": f"Bearer {owner_token}"})
@@ -95,7 +93,7 @@ def test_role_change_logs_activity(client: TestClient):
     client.post("/api/v1/auth/register", json={"email": "roleadmin@example.com", "password": "password123"})
     owner_token = setup_full_hierarchy_with_task(client, "rolelog@example.com")
     
-    member_token = client.post("/api/v1/auth/login", data={"username": "roleadmin@example.com", "password": "password123"}).json()["access_token"]
+
     client.post("/api/v1/teams/test-team/members", json={"email": "roleadmin@example.com", "role": "member"}, headers={"Authorization": f"Bearer {owner_token}"})
     
     member_response = client.get("/api/v1/teams/test-team/members", headers={"Authorization": f"Bearer {owner_token}"})

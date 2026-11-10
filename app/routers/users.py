@@ -8,14 +8,14 @@ This module handles user-related API endpoints:
 All endpoints in this router require authentication.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
+from app.auth import get_current_user, verify_password
 from app.database import get_db
 from app.logging_config import get_logger
 from app.models import User
-from app.auth import get_current_user, verify_password
 from app.rate_limit import rate_limit
 
 router = APIRouter()
@@ -147,7 +147,7 @@ def update_notification_preferences(
     db: Session = Depends(get_db),
 ):
     """Mute or unmute notification types for the current user."""
-    current_user.muted_notification_types = ",".join(
+    current_user.muted_notification_types = ",".join(  # type: ignore[assignment]
         sorted({value.value for value in preferences.muted_types})
     )
     db.commit()

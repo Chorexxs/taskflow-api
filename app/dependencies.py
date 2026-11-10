@@ -19,9 +19,9 @@ These dependencies automatically:
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.database import get_db
-from app import models, crud
+from app import crud, models
 from app.auth import get_current_user
+from app.database import get_db
 
 
 def get_team_from_id_or_slug(db: Session, team_id_or_slug: str) -> models.Team:

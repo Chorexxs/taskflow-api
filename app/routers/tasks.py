@@ -15,16 +15,16 @@ They have status (todo, in_progress, done), priority (low, medium, high),
 and optional due dates.
 """
 
-from datetime import datetime
 import os
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.database import get_db
 from app import crud, models, schemas
 from app.auth import get_current_user
-from app.dependencies import get_current_team_admin, get_current_team_member
+from app.database import get_db
+from app.dependencies import get_current_team_member
 from app.logging_config import get_logger
 
 router = APIRouter()
@@ -180,11 +180,11 @@ def create_task(
 def list_tasks(
     team_id_or_slug: str,
     project_id_or_name: str,
-    status: str = None,
-    priority: str = None,
-    assigned_to: str = None,
-    due_before: datetime = None,
-    due_after: datetime = None,
+    status: str | None = None,
+    priority: str | None = None,
+    assigned_to: str | None = None,
+    due_before: datetime | None = None,
+    due_after: datetime | None = None,
     sort_by: str = "created_at",
     order: str = "desc",
     page: int = 1,

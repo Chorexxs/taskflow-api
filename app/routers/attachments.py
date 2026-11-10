@@ -17,14 +17,24 @@ import os
 import re
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, status, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from app.config import settings
-from app.database import get_db
 from app import crud, models, schemas
 from app.auth import get_current_user
+from app.config import settings
+from app.database import get_db
 from app.dependencies import get_current_team_member
 from app.rate_limit import rate_limit
 

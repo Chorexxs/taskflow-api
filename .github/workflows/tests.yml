@@ -38,6 +38,11 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      - name: Lint and type check
+        run: |
+          ruff check app tests
+          mypy app
+
       - name: Check migrations
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test

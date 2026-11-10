@@ -1,6 +1,4 @@
-import pytest
 from fastapi.testclient import TestClient
-import io
 
 
 def setup_full_hierarchy_with_task(client: TestClient, owner_email: str):
@@ -72,7 +70,7 @@ def test_delete_own_attachment(client: TestClient):
 
 def test_member_cannot_delete_others_attachment(client: TestClient):
     client.post("/api/v1/auth/register", json={"email": "member2@example.com", "password": "password123"})
-    owner_token = setup_full_hierarchy_with_task(client, "deletemember@example.com")
+    setup_full_hierarchy_with_task(client, "deletemember@example.com")
     
     owner_token2 = client.post("/api/v1/auth/login", data={"username": "deletemember@example.com", "password": "password123"}).json()["access_token"]
     member_token = client.post("/api/v1/auth/login", data={"username": "member2@example.com", "password": "password123"}).json()["access_token"]
