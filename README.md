@@ -420,6 +420,8 @@ alembic/                 # migraciones
 | [`contracts/api.md`](./specs/taskflow/contracts/api.md) | Contrato HTTP |
 | [`contracts/openapi.json`](./specs/taskflow/contracts/openapi.json) | Snapshot OpenAPI verificado en CI |
 | [`blockers.md`](./specs/taskflow/blockers.md) | Bloqueos de despliegue y credenciales |
+| [`environments.md`](./specs/taskflow/environments.md) | Local, CI, preview, staging y producción |
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Ramas, PR, release y rollback |
 
 ### Auditorías bajo demanda
 

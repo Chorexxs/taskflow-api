@@ -556,10 +556,14 @@ stages:
 | Entorno | Backend | Frontend | DB |
 |---|---|---|---|
 | Local | Uvicorn + Docker | Vite | Postgres Docker |
-| Preview | Render preview (si disponible) | Vercel preview | InsForge branch (si disponible) |
+| CI | No aplica | Build de Vite | Postgres efímero del runner |
+| Preview | API de producción (compartida) | Vercel preview | InsForge de producción |
+| Staging | No aprovisionado (ver `environments.md`) | — | — |
 | Producción | Render | Vercel | InsForge |
 
 > Si no hay preview de DB, los tests de integración usan Postgres efímero en CI.
+> El detalle, las URLs y las reglas de uso están en
+> [`environments.md`](./environments.md).
 
 ---
 

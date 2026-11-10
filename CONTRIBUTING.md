@@ -109,8 +109,8 @@ Revisión y merge:
    del deploy de la API.
 3. Despliega la API (Render) y espera a `/health/ready` → `200`.
 4. Despliega el frontend (Vercel) o deja que el merge lo haga.
-5. Ejecuta el smoke test de producción y el de performance
-   ([`specs/taskflow/release-checklist.md`](./specs/taskflow/release-checklist.md)).
+5. Ejecuta el smoke test de producción y el de performance (checklist de
+   release, T-080).
 6. Crea el tag `vX.Y.Z` y publica la release con las notas del CHANGELOG.
 7. Monitoriza 30 minutos: 5xx, login/refresh, latencia y readiness.
 
