@@ -13,11 +13,13 @@ from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.database import get_db
+from app.logging_config import get_logger
 from app.models import User
 from app.auth import get_current_user, verify_password
 from app.rate_limit import rate_limit
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 @router.get("/me", response_model=schemas.UserOut)
@@ -106,4 +108,11 @@ def update_current_user(
     updated_user = crud.update_user(db, current_user.id, user_update)
     if not updated_user:
         raise HTTPException(status_code=404, detail="User not found")
+    if changing_credentials:
+        logger.info(
+            "auth_credentials_updated",
+            user_id=updated_user.id,
+            password_changed=user_update.password is not None,
+            email_changed=user_update.email is not None,
+        )
     return updated_user

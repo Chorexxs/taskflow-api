@@ -16,7 +16,7 @@
 
 **Completadas (P1):** `T-011`, `T-012`, `T-013`, `T-014`, `T-015`, `T-016`, `T-017`, `T-018`, `T-019`, `T-020`, `T-021`, `T-022`, `T-023`, `T-024`.
 
-**Completadas (P2):** `T-025` (auto-refresh proactivo con single-flight entre pestañas), `T-027` (política de contraseñas), `T-028` (cambio de contraseña con verificación y revocación global de sesiones), `T-029` (limpieza de tokens expirados al arrancar), `T-030` (limiter compartido con storage Redis y fallback en memoria), `T-031` (límites en auth/uploads/búsqueda y `429` con `Retry-After`), `T-032` (CSP, Referrer-Policy y Permissions-Policy).
+**Completadas (P2):** `T-025` (auto-refresh proactivo con single-flight entre pestañas), `T-027` (política de contraseñas), `T-028` (cambio de contraseña con verificación y revocación global de sesiones), `T-029` (limpieza de tokens expirados al arrancar), `T-030` (limiter compartido con storage Redis y fallback en memoria), `T-031` (límites en auth/uploads/búsqueda y `429` con `Retry-After`), `T-032` (CSP, Referrer-Policy y Permissions-Policy), `T-033` (auditoría de auth con `user_id` y sin PII).
 
 **Completadas (P3):** `T-039` (envelope de errores con `detail` compatible), `T-041` (edición de equipo), `T-044` (borrado de tarea con limpieza de adjuntos), `T-046` (archivar/restaurar proyecto), `T-047` (actividad con actor y paginación), `T-048` (comentarios paginados y pertenencia al equipo), `T-049` (búsqueda con escape, descripciones y paginación).
 

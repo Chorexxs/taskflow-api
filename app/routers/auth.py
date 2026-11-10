@@ -16,12 +16,15 @@ Security features:
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.database import get_db
-from app.rate_limit import limiter, rate_limit
+from app.logging_config import get_logger
+from app.rate_limit import rate_limit
 from app.auth import (
+    SECRET_KEY,
     settings,
     create_access_token,
     create_refresh_token,
@@ -33,6 +36,31 @@ from app.auth import (
 )
 
 router = APIRouter()
+logger = get_logger(__name__)
+
+
+def _user_id_from_token(db: Session, token: str | None) -> int | None:
+    """Return the user id encoded in a token, without logging or trusting PII.
+
+    Expiration is ignored on purpose: logout must audit expired tokens too.
+    The decoded subject is only used to resolve the numeric user id.
+    """
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            options={"verify_exp": False},
+        )
+    except JWTError:
+        return None
+    email = payload.get("sub")
+    if not email:
+        return None
+    user = crud.get_user_by_email(db, email=email)
+    return user.id if user else None
 
 
 @router.post("/register", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
@@ -77,7 +105,9 @@ def register(request: Request, user: schemas.UserCreate, db: Session = Depends(g
         raise HTTPException(status_code=400, detail="Email already registered")
     
     # Create the user
-    return crud.create_user(db=db, user=user)
+    created_user = crud.create_user(db=db, user=user)
+    logger.info("auth_register_succeeded", user_id=created_user.id)
+    return created_user
 
 
 @router.post("/login", response_model=schemas.Token)
@@ -119,8 +149,9 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
     # Look up user by email (username in OAuth2 form is the email)
     user = crud.get_user_by_email(db, email=form_data.username)
     
-    # Check if user exists
+    # Check if user exists. The attempted email is never logged.
     if not user:
+        logger.warning("auth_login_failed", user_id=None, reason="unknown_user")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -129,6 +160,7 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
     
     # Check if account is locked
     if check_user_locked(db, user):
+        logger.warning("auth_login_failed", user_id=user.id, reason="account_locked")
         raise HTTPException(
             status_code=status.HTTP_423_LOCKED,
             detail="Account temporarily locked due to too many failed login attempts",
@@ -137,7 +169,15 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
     # Verify password
     if not verify_password(form_data.password, user.hashed_password):
         # Record failed attempt (may lock account)
+        was_blocked = user.is_blocked
         record_failed_login(db, user)
+        logger.warning("auth_login_failed", user_id=user.id, reason="bad_password")
+        if not was_blocked and user.is_blocked:
+            logger.warning(
+                "auth_account_locked",
+                user_id=user.id,
+                lockout_minutes=settings.LOCKOUT_DURATION_MINUTES,
+            )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -146,6 +186,7 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
     
     # Successful login - reset failed attempts
     reset_failed_login(db, user)
+    logger.info("auth_login_succeeded", user_id=user.id)
     
     # Generate tokens. `ver` lets a password change invalidate every session.
     token_data = {"sub": user.email, "ver": user.token_version or 0}
@@ -188,16 +229,22 @@ def refresh(
     if not token:
         token = refresh_token
     if not token:
+        logger.warning("auth_refresh_failed", user_id=None, reason="missing_token")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="refresh_token is required",
         )
 
     # Validate refresh token and get user
-    user = get_current_user_from_refresh(token, db)
+    try:
+        user = get_current_user_from_refresh(token, db)
+    except HTTPException:
+        logger.warning("auth_refresh_failed", user_id=None, reason="invalid_token")
+        raise
 
     # Revoke the old refresh token (rotation)
     revoke_token(db, token, "refresh")
+    logger.info("auth_refresh_succeeded", user_id=user.id)
 
     # Generate new tokens with the current token version.
     token_data = {"sub": user.email, "ver": user.token_version or 0}
@@ -237,11 +284,13 @@ def logout(
     refresh_token = payload.refresh_token if payload else None
 
     if not access_token and not refresh_token:
+        logger.warning("auth_logout_failed", user_id=None, reason="missing_tokens")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="An access or refresh token is required",
         )
 
+    user_id = _user_id_from_token(db, access_token) or _user_id_from_token(db, refresh_token)
     access_revoked = False
     if access_token:
         try:
@@ -261,9 +310,16 @@ def logout(
             refresh_revoked = False
 
     if not access_revoked and not refresh_revoked:
+        logger.warning("auth_logout_failed", user_id=user_id, reason="no_valid_token")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="No valid token to revoke",
         )
 
+    logger.info(
+        "auth_logout_succeeded",
+        user_id=user_id,
+        access_revoked=access_revoked,
+        refresh_revoked=refresh_revoked,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
