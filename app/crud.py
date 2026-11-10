@@ -32,6 +32,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
 from app.auth import get_current_user, get_password_hash, verify_password
+from app.events import notification_bus
 
 
 def paginate_query(query, page: int, page_size: int):
@@ -1512,6 +1513,11 @@ def create_notification(
     db.add(db_notification)
     db.commit()
     db.refresh(db_notification)
+
+    notification_bus.publish(
+        user_id,
+        schemas.NotificationOut.model_validate(db_notification).model_dump(mode="json"),
+    )
     return db_notification
 
 

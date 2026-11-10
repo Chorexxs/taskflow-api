@@ -25,8 +25,8 @@ verificados y firmados. Si algo falla, se aplica el rollback de
 ## 2. Pre-release (código y contrato)
 
 - [x] `main` verde y sin cambios locales sin commitear.
-- [x] `pytest -q` → **169 passed** sobre PostgreSQL 15.
-- [x] `pytest --cov=app --cov-fail-under=80` → **88 %** de cobertura.
+- [x] `pytest -q` → **174 passed** sobre PostgreSQL 15.
+- [x] `pytest --cov=app --cov-fail-under=80` → **86 %** de cobertura.
 - [x] `mypy app` → **Success: no issues found in 23 source files**.
 - [x] `ruff check app tests` y `ruff format --check app tests` → limpios.
 - [ ] `npm run test:coverage`, `npm run lint` y `npm run build` → verdes (CI frontend).
@@ -99,6 +99,34 @@ la fecha, el commit desplegado y los valores obtenidos:
 > limitados (`eb9815b`). El redeploy de Render sigue pendiente: ver **B-05** en
 > `blockers.md`. Repetir la medición tras el redeploy y actualizar esta tabla
 > antes de aprobar la release.
+
+### Smoke de carga SSE (T-081)
+
+```bash
+# Servidor local sin rate limit por IP y con los límites elevados para la prueba
+RATE_LIMIT_ENABLED=false SSE_MAX_CONNECTIONS=600 \
+SSE_MAX_CONNECTIONS_PER_USER=600 \
+python -m uvicorn app.main:app --port 8002
+
+python scripts/sse_load_test.py \
+  --base-url http://127.0.0.1:8002 --token "$TOKEN" \
+  --connections 500 --duration 20
+```
+
+Resultado local (2026-11-10, PostgreSQL 15, 500 conexiones, 20 s):
+
+| Métrica | Valor |
+|---|---:|
+| Conexiones abiertas | 500/500 |
+| Fallos | 0 |
+| Handshake p50 / p95 | 3758,8 ms / 4031,0 ms |
+| Heartbeats recibidos | 500 |
+| Errores de transporte | 0 |
+
+El handshake p95 incluye la autenticación contra PostgreSQL de 500 clientes
+simultáneos con un pool de 30 conexiones; no es la latencia de entrega de
+eventos. La entrega event-driven se valida con los tests de pub/sub y de
+reconciliación.
 
 ---
 

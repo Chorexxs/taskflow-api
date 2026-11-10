@@ -11,6 +11,9 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `specs/taskflow/environments.md` con local, CI, preview, staging y producción (T-009).
 - `specs/taskflow/release-checklist.md` y `scripts/smoke_performance.py` (T-080).
 - ADRs 002, 003, 006 y 007 aceptados con responsable y desviaciones documentadas (T-004).
+- SSE event-driven con Redis pub/sub y fallback en proceso; límites de 500 conexiones/5 por usuario con 503 + `Retry-After`; sesiones DB cortas, reconciliación cada 30 s y backoff exponencial en el cliente (T-081).
+- `scripts/sse_load_test.py` para validar 500 conexiones simultáneas.
+- `SSE_FALLBACK_POLL_SECONDS`, `SSE_MAX_CONNECTIONS` y `SSE_MAX_CONNECTIONS_PER_USER` configurables.
 
 - Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.
 - Configuración central en `app/config.py` con validación y fail-fast en producción.
@@ -86,8 +89,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Pendiente
 
-- P2: auto-refresh, cookies/ADR-001, rate limit Redis, limpieza de tokens.
-- P3: IDs/slugs, paginación uniforme, envelope de errores, permisos por endpoint.
-- P4: object storage, notificaciones SSE.
-- P5: accesibilidad, tema y tests de flujos.
-- P6: ruff/mypy, lockfiles, Docker non-root, CI completo.
+- Redeploy de Render para desplegar el fix de rate limiting (**B-05**).
+- T-003: labels/milestones/issues requieren credenciales de GitHub (**B-06**).
+- T-054: migración de adjuntos a object storage S3-compatible (requiere credenciales).
+- P7: reevaluar cookies `httpOnly` + CSRF (ADR-001).

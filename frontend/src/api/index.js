@@ -16,13 +16,14 @@ const API_URL =
   'http://localhost:8000';
 
 export class ApiError extends Error {
-  constructor(message, { status, code, details, data } = {}) {
+  constructor(message, { status, code, details, data, retryAfter } = {}) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
     this.details = details;
     this.data = data;
+    this.retryAfter = retryAfter ?? null;
   }
 }
 
@@ -220,11 +221,26 @@ export function parseSseFrame(frame) {
 }
 
 /**
+ * Exponential backoff with jitter for SSE reconnects.
+ *
+ * The first retry waits ~1 s, then ~2 s, 4 s… capped at 30 s. "Reconnect in
+ * under 5 s" holds for the first two attempts after a drop.
+ */
+export function nextSseBackoff(
+  attempt,
+  { baseMs = 1000, maxMs = 30000, random = Math.random } = {},
+) {
+  const exponential = Math.min(maxMs, baseMs * 2 ** Math.max(0, attempt));
+  const jitter = exponential * 0.2 * random();
+  return Math.min(maxMs, Math.round(exponential + jitter));
+}
+
+/**
  * Subscribe to notification SSE with the bearer token.
  *
  * EventSource cannot send custom headers, so this uses `fetch` streaming.
  * Resolves when the stream closes or the caller aborts; rejects on HTTP error
- * so the caller can fall back to polling.
+ * so the caller can fall back to polling and reconnect with backoff.
  */
 async function streamNotifications(token, { signal, onEvent, onOpen } = {}) {
   const response = await fetch(`${API_URL}/api/v1/notifications/stream`, {
@@ -237,9 +253,11 @@ async function streamNotifications(token, { signal, onEvent, onOpen } = {}) {
 
   if (!response.ok || !response.body) {
     const data = await response.json().catch(() => null);
+    const retryAfter = Number(response.headers.get('Retry-After'));
     throw new ApiError(data?.detail || 'Notification stream unavailable', {
       status: response.status,
       code: data?.error?.code,
+      retryAfter: Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : null,
     });
   }
 

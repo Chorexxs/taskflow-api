@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { api, parseSseFrame } from '../api'
+import { api, nextSseBackoff, parseSseFrame } from '../api'
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -114,5 +114,13 @@ describe('API client', () => {
       parseSseFrame('id: 7\nevent: notification\ndata: {"id":7,"message":"Hi"}'),
     ).toEqual({ id: 7, message: 'Hi' })
     expect(parseSseFrame(': heartbeat')).toBeNull()
+  })
+
+  it('backs off exponentially for SSE reconnects', () => {
+    expect(nextSseBackoff(0, { random: () => 0 })).toBe(1000)
+    expect(nextSseBackoff(1, { random: () => 0 })).toBe(2000)
+    expect(nextSseBackoff(2, { random: () => 0 })).toBe(4000)
+    expect(nextSseBackoff(10, { random: () => 0 })).toBe(30000)
+    expect(nextSseBackoff(1, { random: () => 1 })).toBe(2400)
   })
 })

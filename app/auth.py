@@ -26,7 +26,7 @@ from jwt import PyJWTError
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.database import get_db
+from app.database import get_db, get_session_local
 
 if TYPE_CHECKING:
     from app.models import User
@@ -397,6 +397,28 @@ async def get_current_user(
         raise credentials_exception
 
     return user
+
+
+async def get_stream_user_id(
+    token: Annotated[str, Depends(oauth2_scheme)],
+) -> int:
+    """Authenticate an SSE client without holding a request-scoped session.
+
+    ``StreamingResponse`` keeps FastAPI dependencies alive for the whole
+    response, so a long-lived stream must not depend on ``get_db``: with 500
+    concurrent connections that would exhaust the database pool. This
+    dependency opens a short-lived session, validates the token and returns the
+    user id.
+    """
+    factory = get_session_local()
+    if factory is None:  # pragma: no cover - misconfigured deployment
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database is not configured",
+        )
+    with factory() as db:
+        user = await get_current_user(token=token, db=db)
+        return int(user.id)
 
 
 def get_current_user_from_refresh(

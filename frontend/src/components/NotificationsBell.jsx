@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../api';
+import { api, nextSseBackoff } from '../api';
 import toast from 'react-hot-toast';
 import { Bell, CheckCheck, X } from 'lucide-react';
 
@@ -42,23 +42,49 @@ export default function NotificationsBell() {
   useEffect(() => {
     if (!token) return undefined;
     const controller = new AbortController();
+    let reconnectTimer;
+    let attempt = 0;
+    let stopped = false;
     const invalidate = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
     };
 
-    api.notifications
-      .stream(token, {
-        signal: controller.signal,
-        onOpen: () => setLiveConnected(true),
-        onEvent: invalidate,
-      })
-      .catch(() => {
+    const scheduleReconnect = (error) => {
+      if (stopped || controller.signal.aborted) return;
+      const retryAfterMs = error?.retryAfter ? Math.max(1, error.retryAfter) * 1000 : 0;
+      const delay = retryAfterMs || nextSseBackoff(attempt);
+      attempt += 1;
+      reconnectTimer = setTimeout(connect, delay);
+    };
+
+    const connect = async () => {
+      if (stopped || controller.signal.aborted) return;
+      try {
+        await api.notifications.stream(token, {
+          signal: controller.signal,
+          onOpen: () => {
+            attempt = 0;
+            setLiveConnected(true);
+          },
+          onEvent: invalidate,
+        });
+        // A clean close (proxy, deploy, idle timeout) also reconnects.
+        setLiveConnected(false);
+        scheduleReconnect(null);
+      } catch (error) {
+        if (stopped || controller.signal.aborted) return;
         // Network error or unsupported streaming: polling remains active.
         setLiveConnected(false);
-      });
+        scheduleReconnect(error);
+      }
+    };
+
+    connect();
 
     return () => {
+      stopped = true;
+      clearTimeout(reconnectTimer);
       controller.abort();
       setLiveConnected(false);
     };

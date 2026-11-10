@@ -158,7 +158,7 @@
 - Redis pub/sub para fan-out entre instancias.
 - Si SSE falla o el proxy lo corta, el cliente vuelve a polling.
 
-**Implementado (T-059/T-060):** endpoint SSE autenticado con heartbeat, `Last-Event-ID` y cliente con fallback a polling. El fan-out con Redis pub/sub, el backoff y las pruebas de carga de conexiones quedan como endurecimiento en T-081 (P7, opcional).
+**Implementado (T-059/T-060/T-081):** endpoint SSE autenticado con heartbeat, `Last-Event-ID` y cliente con fallback a polling. Entrega event-driven mediante Redis pub/sub con fallback en proceso, sesiones de base de datos cortas, reconciliación cada 30 s, límites de conexión (500 totales/5 por usuario) y backoff exponencial en el cliente. Prueba de carga: 500 conexiones simultáneas, 0 errores.
 
 **Consecuencias:** endpoint autenticado, heartbeat, límites de conexiones, tests de reconexión.
 

@@ -22,7 +22,7 @@ Implementado en P1:
 
 Implementado: envelope `{error:...}` (manteniendo `detail`), paginación en tareas/comentarios/actividad/notificaciones/búsqueda, IDs/slugs en equipos y proyectos, notificaciones con contador.
 
-Pendiente (P2-P4): cookies/ADR-001, SSE, paginación en equipos/miembros/proyectos/adjuntos y IDs/slugs estrictos.
+Pendiente (P2-P4): cookies/ADR-001, paginación en equipos/miembros/proyectos/adjuntos y IDs/slugs estrictos.
 
 ---
 
@@ -433,7 +433,7 @@ si hay más de un proyecto con ese nombre, responde `409`.
 | GET | `/notifications/unread-count` | Owner | — | `{count}` | 200 |
 | PATCH | `/notifications/{id}/read` | Owner | — | `NotificationOut` | 200, 403, 404 |
 | PATCH | `/notifications/read-all` | Owner | — | — | 204 |
-| GET | `/notifications/stream` | Owner | — | `text/event-stream` | 200 (P4) |
+| GET | `/notifications/stream` | Owner | — | `text/event-stream` | 200, 401, 503 |
 
 Cada evento usa una `dedupe_key` única (por usuario, tipo y entidad/evento), de
 modo que reintentos o dobles clics no crean notificaciones duplicadas. Los tipos
@@ -441,8 +441,13 @@ silenciados con `/users/me/notification-preferences` se omiten al crearlas.
 
 SSE: `GET /notifications/stream` requiere `Authorization: Bearer`, emite
 `event: notification` con `data` JSON, `id` incremental y heartbeats. Reanuda con
-`Last-Event-ID`. El frontend usa `fetch` streaming (EventSource no admite
-cabeceras) y cae a polling cada 30 s si el stream falla.
+`Last-Event-ID`. La entrega es event-driven con Redis pub/sub (fan-out entre
+instancias) y fallback en proceso; cada 30 s se reconcilia desde la base de
+datos para recuperar eventos perdidos. Los límites son
+`SSE_MAX_CONNECTIONS` (500) y `SSE_MAX_CONNECTIONS_PER_USER` (5); al superarlos
+responde **503** con `Retry-After`. El frontend usa `fetch` streaming
+(EventSource no admite cabeceras), reconecta con backoff exponencial
+(1 s, 2 s, 4 s… máx. 30 s) y cae a polling cada 30 s si el stream falla.
 
 ### 7.9 Sistema
 

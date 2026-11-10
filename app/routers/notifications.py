@@ -20,14 +20,60 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
-from app.auth import get_current_user
+from app.auth import get_current_user, get_stream_user_id
 from app.config import settings
-from app.database import get_db
+from app.database import get_db, get_session_local
+from app.events import NotificationEventBus, notification_bus, sse_limiter
 from app.logging_config import get_logger
 from app.rate_limit import rate_limit
 
 router = APIRouter()
 logger = get_logger(__name__)
+
+
+def _session_factory():
+    """Return a factory for short-lived SSE database sessions."""
+    factory = get_session_local()
+    if factory is None:  # pragma: no cover - misconfigured deployment
+        raise RuntimeError("DATABASE_URL is not configured")
+    return factory
+
+
+def _latest_notification_id(user_id: int, session_factory) -> int:
+    with session_factory() as db:
+        row = (
+            db.query(models.Notification.id)
+            .filter(models.Notification.user_id == user_id)
+            .order_by(models.Notification.id.desc())
+            .first()
+        )
+    return int(row[0]) if row else 0
+
+
+def _pending_notifications(user_id: int, last_id: int, session_factory) -> list[dict]:
+    with session_factory() as db:
+        rows = (
+            db.query(models.Notification)
+            .filter(
+                models.Notification.user_id == user_id,
+                models.Notification.id > last_id,
+            )
+            .order_by(models.Notification.id)
+            .limit(50)
+            .populate_existing()
+            .all()
+        )
+        return [
+            schemas.NotificationOut.model_validate(notification).model_dump(mode="json")
+            for notification in rows
+        ]
+
+
+def _sse_frame(payload: dict) -> str:
+    return (
+        f"id: {payload['id']}\nevent: notification\n"
+        f"data: {json.dumps(payload, separators=(',', ':'))}\n\n"
+    )
 
 
 @router.get("/", response_model=schemas.PaginatedNotificationResponse)
@@ -76,49 +122,74 @@ def get_unread_count(
     return {"count": crud.count_unread_notifications(db, current_user.id)}
 
 
-async def iter_notification_events(request: Request, db: Session, user_id: int, start_after: int):
-    """Yield SSE frames with new notifications and periodic heartbeats.
+async def iter_notification_events(
+    request: Request,
+    user_id: int,
+    start_after: int,
+    *,
+    bus: NotificationEventBus | None = None,
+    session_factory=None,
+):
+    """Yield SSE frames from the event bus with periodic DB reconciliation.
 
-    Extracted from the route so it can be unit-tested without an infinite HTTP
-    response. The caller owns the database session and must close it.
+    Events arrive through the bus (Redis pub/sub or in-process). Every
+    ``SSE_FALLBACK_POLL_SECONDS`` the generator also queries the database, so a
+    missed publish (Redis down, reconnect, dropped queue) is recovered without
+    keeping a database session open for the whole stream.
     """
+    bus = bus or notification_bus
+    session_factory = session_factory or _session_factory()
     last_id: int = start_after
     last_heartbeat = time.monotonic()
-    while True:
-        if await request.is_disconnected():
-            break
-        try:
-            pending = (
-                db.query(models.Notification)
-                .filter(
-                    models.Notification.user_id == user_id,
-                    models.Notification.id > last_id,
-                )
-                .order_by(models.Notification.id)
-                .limit(50)
-                .populate_existing()
-                .all()
-            )
-            for notification in pending:
-                last_id = int(notification.id)
-                payload = schemas.NotificationOut.model_validate(notification).model_dump(
-                    mode="json"
-                )
-                yield (
-                    f"id: {notification.id}\nevent: notification\ndata: {json.dumps(payload)}\n\n"
-                )
-            db.expire_all()
-        except Exception as exc:  # pragma: no cover - defensive
-            logger.warning("sse_poll_failed", error=str(exc))
+    last_poll = 0.0
+    fallback_seconds = max(settings.SSE_FALLBACK_POLL_SECONDS, 0.05)
+    heartbeat_seconds = max(settings.SSE_HEARTBEAT_SECONDS, 0.01)
 
-        now = time.monotonic()
-        if now - last_heartbeat >= settings.SSE_HEARTBEAT_SECONDS:
-            yield ": heartbeat\n\n"
-            last_heartbeat = now
-        try:
-            await asyncio.sleep(settings.SSE_POLL_SECONDS)
-        except asyncio.CancelledError:  # pragma: no cover - client closed
-            break
+    async with bus.subscription(user_id) as queue:
+        while True:
+            if await request.is_disconnected():
+                break
+
+            now = time.monotonic()
+            if now >= last_poll + fallback_seconds:
+                try:
+                    pending = await asyncio.to_thread(
+                        _pending_notifications, user_id, last_id, session_factory
+                    )
+                except Exception as exc:  # pragma: no cover - defensive
+                    logger.warning("sse_poll_failed", error=str(exc))
+                    pending = []
+                for payload in pending:
+                    notification_id = int(payload["id"])
+                    if notification_id <= last_id:
+                        continue
+                    last_id = notification_id
+                    yield _sse_frame(payload)
+                last_poll = time.monotonic()
+
+            now = time.monotonic()
+            timeout = max(
+                0.01,
+                min(
+                    last_heartbeat + heartbeat_seconds,
+                    last_poll + fallback_seconds,
+                )
+                - now,
+            )
+            event = await bus.wait_for_event(queue, timeout)
+            if event is not None:
+                try:
+                    notification_id = int(event["id"])
+                except (KeyError, TypeError, ValueError):
+                    continue
+                if notification_id > last_id:
+                    last_id = notification_id
+                    yield _sse_frame(event)
+
+            now = time.monotonic()
+            if now - last_heartbeat >= heartbeat_seconds:
+                yield ": heartbeat\n\n"
+                last_heartbeat = now
 
 
 @router.get("/stream")
@@ -126,32 +197,49 @@ async def iter_notification_events(request: Request, db: Session, user_id: int, 
 async def stream_notifications(
     request: Request,
     response: Response,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    user_id: int = Depends(get_stream_user_id),
 ):
     """Stream new notifications as Server-Sent Events.
 
     The client must send ``Authorization: Bearer`` (EventSource does not allow
     custom headers, so the frontend uses ``fetch`` with a ReadableStream).
     ``Last-Event-ID`` resumes after a reconnect; without it only notifications
-    created from now on are streamed. A heartbeat comment keeps proxies from
-    closing idle connections.
+    created from now on are streamed.
+
+    Events are delivered through Redis pub/sub when available, with an
+    in-process fallback and a periodic database reconciliation. Concurrent
+    streams are capped by ``SSE_MAX_CONNECTIONS`` and
+    ``SSE_MAX_CONNECTIONS_PER_USER``; over the limit returns 503 + Retry-After.
     """
     header_last_id = request.headers.get("Last-Event-ID", "").strip()
+    session_factory = _session_factory()
 
     if header_last_id.isdigit():
         start_after = int(header_last_id)
     else:
-        row = (
-            db.query(models.Notification.id)
-            .filter(models.Notification.user_id == current_user.id)
-            .order_by(models.Notification.id.desc())
-            .first()
+        start_after = await asyncio.to_thread(_latest_notification_id, user_id, session_factory)
+
+    if not sse_limiter.acquire(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Too many concurrent notification streams",
+            headers={"Retry-After": "5"},
         )
-        start_after = row[0] if row else 0
+
+    async def guarded_events():
+        try:
+            async for frame in iter_notification_events(
+                request,
+                user_id,
+                start_after,
+                session_factory=session_factory,
+            ):
+                yield frame
+        finally:
+            sse_limiter.release(user_id)
 
     return StreamingResponse(
-        iter_notification_events(request, db, current_user.id, start_after),
+        guarded_events(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

@@ -1807,7 +1807,7 @@
     },
     "/api/v1/notifications/stream": {
       "get": {
-        "description": "Stream new notifications as Server-Sent Events.\n\nThe client must send ``Authorization: Bearer`` (EventSource does not allow\ncustom headers, so the frontend uses ``fetch`` with a ReadableStream).\n``Last-Event-ID`` resumes after a reconnect; without it only notifications\ncreated from now on are streamed. A heartbeat comment keeps proxies from\nclosing idle connections.",
+        "description": "Stream new notifications as Server-Sent Events.\n\nThe client must send ``Authorization: Bearer`` (EventSource does not allow\ncustom headers, so the frontend uses ``fetch`` with a ReadableStream).\n``Last-Event-ID`` resumes after a reconnect; without it only notifications\ncreated from now on are streamed.\n\nEvents are delivered through Redis pub/sub when available, with an\nin-process fallback and a periodic database reconciliation. Concurrent\nstreams are capped by ``SSE_MAX_CONNECTIONS`` and\n``SSE_MAX_CONNECTIONS_PER_USER``; over the limit returns 503 + Retry-After.",
         "operationId": "stream_notifications_api_v1_notifications_stream_get",
         "responses": {
           "200": {

@@ -2,7 +2,7 @@
 
 API REST para gestión de tareas en equipo con autenticación JWT, equipos, proyectos, tablero Kanban, comentarios, adjuntos, notificaciones y registro de actividad.
 
-[![Tests](https://img.shields.io/badge/backend%20tests-169%20passed-brightgreen)](./tests)
+[![Tests](https://img.shields.io/badge/backend%20tests-174%20passed-brightgreen)](./tests)
 [![Frontend](https://img.shields.io/badge/frontend%20tests-42%20passed-brightgreen)](./frontend/src/test)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.135-blue)](https://fastapi.tiangolo.com/)
@@ -38,7 +38,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 │  Tailwind CSS   │                       │  Pydantic v2        │      │  Alembic        │
 └─────────────────┘                       └─────────────────────┘      └─────────────────┘
                                                   │
-                                                  ├── Redis opcional (rate limiting/cache)
+                                                  ├── Redis opcional (rate limiting/cache/SSE pub-sub)
                                                   ├── Sentry opcional (errores)
                                                   └── Adjuntos en PostgreSQL (STORAGE_BACKEND=database)
 ```
@@ -56,7 +56,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Frontend** | React 18, Vite 5, React Router 7 |
 | **Datos front** | TanStack React Query 5, `fetch` |
 | **UI** | Tailwind CSS 4, Lucide React, React Hot Toast, `@dnd-kit` |
-| **Tests** | pytest + pytest-cov (169, 88 %), Vitest + Testing Library (42, 71,6 %) |
+| **Tests** | pytest + pytest-cov (174, 86 %), Vitest + Testing Library (43, 71,6 %) |
 | **CI/CD** | GitHub Actions, Render, Vercel, InsForge |
 | **Contenedores** | Docker, docker-compose (PostgreSQL + Redis + API) |
 
@@ -127,7 +127,8 @@ Los adjuntos se guardan por defecto en PostgreSQL (`STORAGE_BACKEND=database`) p
   - Almacenamiento persistente en PostgreSQL por defecto; `local` para desarrollo.
   - Solo el uploader o un admin puede borrar.
 - **Notificaciones** in-app al asignar, comentar o mencionar.
-- Campana con contador de no leídas consultado a `/notifications/unread-count`; refresco cada 30 s (polling; SSE planificado en P4).
+- Campana con contador de no leídas consultado a `/notifications/unread-count`.
+- **SSE event-driven** con Redis pub/sub y fallback en proceso; reconciliación cada 30 s, heartbeats, `Last-Event-ID`, reconexión con backoff y polling de respaldo. Límite de 500 conexiones totales y 5 por usuario (503 + `Retry-After`).
 - **Activity log** paginado con actor (`actor.email`) de tareas, proyectos, comentarios y adjuntos.
 
 ### Frontend
@@ -243,7 +244,7 @@ CORS_ORIGINS=http://localhost:5173
 STORAGE_BACKEND=database
 ```
 
-Opcionales: `REDIS_URL`, `SENTRY_DSN`, `MAX_UPLOAD_SIZE`, `UPLOAD_DIR`, `ALLOWED_UPLOAD_EXTENSIONS`. En InsForge usar `DB_SSLMODE=require`.
+Opcionales: `REDIS_URL`, `SENTRY_DSN`, `MAX_UPLOAD_SIZE`, `UPLOAD_DIR`, `ALLOWED_UPLOAD_EXTENSIONS`, `SSE_FALLBACK_POLL_SECONDS`, `SSE_HEARTBEAT_SECONDS`, `SSE_MAX_CONNECTIONS`, `SSE_MAX_CONNECTIONS_PER_USER`. En InsForge usar `DB_SSLMODE=require`.
 
 ---
 
@@ -294,8 +295,8 @@ npm run build
 Postgres; no vale para validar un release. `TEST_SKIP_MIGRATIONS=1` reutiliza un
 esquema ya migrado.
 
-Estado actual: **169 tests backend** (88 % de cobertura, verdes sobre PostgreSQL)
-y **42 tests frontend** (71,6 % de líneas). El CI falla por debajo de **80 %** en
+Estado actual: **174 tests backend** (86 % de cobertura, verdes sobre PostgreSQL)
+y **43 tests frontend** (71,6 % de líneas). El CI falla por debajo de **80 %** en
 backend y **70 %** en frontend.
 
 Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y otro contra la **API de producción en Render** (13/13): health, registro, login, equipo, proyecto, tarea, comentario, adjunto en PostgreSQL, descarga, búsqueda, notificaciones, perfil y error envelope. También se verificó CORS para las dos URLs de frontend y el rechazo de un origen no permitido.
@@ -441,7 +442,7 @@ alembic/                 # migraciones
 - **MCP de Vercel:** el servidor `vercel` está configurado en OpenCode pero requiere autenticación OAuth (`/mcps` → `vercel` → sign in). El deploy por CLI y la integración con Git ya funcionan.
 - Migración a cookies `httpOnly` o decisión formal (ADR-001): decidido mantener Bearer + auto-refresh; cookies se reevalúan en P7.
 - Adjuntos en object storage S3-compatible (la alternativa actual es PostgreSQL) (P4, parcial T-054).
-- SSE implementado con fallback a polling; fan-out con Redis pub/sub y prueba de carga pendientes en P7 (T-081).
+- SSE implementado con Redis pub/sub, límites de conexión y prueba de 500 conexiones (T-081); el polling queda como respaldo.
 - Rate limiting con Redis para múltiples instancias implementado (T-030/T-031); fallback en memoria si Redis no responde.
 - Auditoría WCAG completa y tema claro/oscuro (P5); la UI es dark-only.
 - Gates de seguridad en CI: `gitleaks` (pre-commit y CI), `pip-audit` y dependencias al día (P8).
