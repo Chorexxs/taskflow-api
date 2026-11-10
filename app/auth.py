@@ -171,6 +171,12 @@ def is_token_revoked(db: Session, token: str) -> bool:
     return revoked is not None
 
 
+def get_revoked_token(db: Session, token: str):
+    """Return the revocation record for ``token``, or ``None``."""
+    from app.models import RevokedToken
+    return db.query(RevokedToken).filter(RevokedToken.token == token).first()
+
+
 def revoke_token(db: Session, token: str, token_type: str = "access") -> None:
     """
     Revoke a token to prevent its future use.

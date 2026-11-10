@@ -30,6 +30,7 @@ from app.auth import (
     create_refresh_token,
     verify_password,
     revoke_token,
+    get_revoked_token,
     check_user_locked,
     record_failed_login,
     reset_failed_login,
@@ -233,6 +234,27 @@ def refresh(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="refresh_token is required",
+        )
+
+    # Refresh-token reuse: a rotated or logged-out refresh token must never
+    # work again. Treat any replay as a compromised session and revoke every
+    # token issued for the user (the family) by bumping token_version.
+    revoked = get_revoked_token(db, token)
+    if revoked is not None and revoked.token_type == "refresh":
+        user_id = _user_id_from_token(db, token)
+        user = crud.get_user_by_id(db, user_id) if user_id else None
+        if user is not None:
+            user.token_version = (user.token_version or 0) + 1
+            db.commit()
+        logger.warning(
+            "auth_refresh_reuse_detected",
+            user_id=user_id,
+            sessions_revoked=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token reuse detected; all sessions were revoked",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     # Validate refresh token and get user

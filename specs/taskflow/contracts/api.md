@@ -98,7 +98,9 @@ Reglas:
 
 - El refresh va en el **body**, nunca en query string.
 - El token anterior se revoca y se emite uno nuevo (rotación).
-- Si se reutiliza un refresh revocado → `401` y se revoca la familia.
+- Si se reutiliza un refresh revocado → `401` y se revoca la familia. La
+  implementación incrementa `token_version`, por lo que también invalidan los
+  access tokens vigentes.
 - Si el usuario está inactivo/bloqueado → `401`.
 
 ### 2.3 Logout
