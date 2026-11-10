@@ -241,6 +241,12 @@ export const api = {
         token,
         body: data,
       }),
+    updateStatus: (token, teamId, projectId, taskId, status) =>
+      request(`/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/status`, {
+        method: 'PATCH',
+        token,
+        body: { status },
+      }),
     delete: (token, teamId, projectId, taskId) =>
       request(`/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}`, {
         method: 'DELETE',

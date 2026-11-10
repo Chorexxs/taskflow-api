@@ -592,6 +592,19 @@ class TaskAssign(BaseModel):
     user_id: int | None = None
 
 
+class TaskStatusUpdate(BaseModel):
+    """Payload for the dedicated Kanban status endpoint.
+
+    Only ``status`` is accepted, so a member cannot smuggle other task edits
+    through the status-only permission. Used in
+    ``PATCH .../tasks/{id}/status``.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: TaskStatus
+
+
 class TaskOut(BaseModel):
     """
     Schema for task response data.

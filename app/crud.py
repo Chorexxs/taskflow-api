@@ -801,6 +801,43 @@ def update_task(db: Session, task_id: int, task_update: schemas.TaskUpdate):
     return db_task
 
 
+def update_task_status(
+    db: Session,
+    task_id: int,
+    new_status: schemas.TaskStatus,
+    changed_by: int,
+):
+    """Change only a task's Kanban status and log it in one transaction.
+
+    Args:
+        db (Session): SQLAlchemy database session.
+        task_id (int): ID of the task to move.
+        new_status (TaskStatus): Destination column.
+        changed_by (int): User performing the move.
+
+    Returns:
+        Task | None: Updated task, or ``None`` if it does not exist.
+    """
+    db_task = get_task_by_id(db, task_id)
+    if not db_task:
+        return None
+    old_status = db_task.status
+    db_task.status = new_status.value
+    db.add(
+        models.ActivityLog(
+            entity_type="task",
+            entity_id=db_task.id,
+            action="updated_status",
+            changed_by=changed_by,
+            old_value=old_status,
+            new_value=new_status.value,
+        )
+    )
+    db.commit()
+    db.refresh(db_task)
+    return db_task
+
+
 def assign_task(db: Session, task_id: int, user_id: int | None):
     """
     Assign or unassign a task.

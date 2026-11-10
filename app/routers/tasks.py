@@ -299,6 +299,46 @@ def update_task(
     return updated_task
 
 
+@router.patch("/{task_id_or_title}/status", response_model=schemas.TaskOut)
+def update_task_status(
+    team_id_or_slug: str,
+    project_id_or_name: str,
+    task_id_or_title: str,
+    status_update: schemas.TaskStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    member: models.TeamMember = Depends(get_current_team_member),
+):
+    """Move a task between Kanban columns.
+
+    Any team member may call this endpoint; it only accepts ``status`` so the
+    status-only permission cannot be used to edit other task fields. The task
+    update and the activity entry are committed in the same transaction.
+
+    Args:
+        team_id_or_slug (str): The team identifier (ID or slug).
+        project_id_or_name (str): The project identifier (ID or name).
+        task_id_or_title (str): The task identifier (ID or title).
+        status_update (TaskStatusUpdate): Destination status.
+        db (Session): Database session (injected by FastAPI).
+        current_user (User): The authenticated user.
+        member (TeamMember): Team membership check (injected via dependency).
+
+    Returns:
+        TaskOut: Updated task.
+    """
+    from app.dependencies import get_team_from_id_or_slug
+
+    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    project = get_project_from_id_or_name(db, project_id_or_name, team.id)
+    task = get_task_from_id_or_title(db, task_id_or_title, project.id)
+
+    if task.status == status_update.status.value:
+        return task
+
+    return crud.update_task_status(db, task.id, status_update.status, current_user.id)
+
+
 @router.delete("/{task_id_or_title}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(
     team_id_or_slug: str,

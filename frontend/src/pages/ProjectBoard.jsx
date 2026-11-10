@@ -236,7 +236,7 @@ export default function ProjectBoard() {
   })
 
   const updateTaskMutation = useMutation({
-    mutationFn: ({ taskId, data }) => api.tasks.update(token, teamId, projectId, taskId, data),
+    mutationFn: ({ taskId, status }) => api.tasks.updateStatus(token, teamId, projectId, taskId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
       toast.success('Task updated!')
@@ -314,7 +314,7 @@ export default function ProjectBoard() {
         return newColumns
       })
       
-      updateTaskMutation.mutate({ taskId: task.id, data: { status: newStatus } })
+      updateTaskMutation.mutate({ taskId: task.id, status: newStatus })
     }
     
     setActiveTask(null)

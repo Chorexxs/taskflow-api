@@ -378,6 +378,7 @@ Leyenda de permisos: **Público**, **Auth** (cualquier autenticado), **Member**,
 | GET | `/teams/{team}/projects/{project}/tasks/` | Member | filtros + paginación | `Paginated<TaskOut>` | 200 |
 | GET | `/teams/{team}/projects/{project}/tasks/{task}` | Member | — | `TaskOut` | 200, 404 |
 | PATCH | `/teams/{team}/projects/{project}/tasks/{task}` | Creator/Admin (todos los campos); Member (solo status) | `{title?,description?,status?,priority?,due_date?}` | `TaskOut` | 200, 403, 404, 422 |
+| PATCH | `/teams/{team}/projects/{project}/tasks/{task}/status` | Member | `{status}` (sin campos extra) | `TaskOut` | 200, 403, 404, 422 |
 | DELETE | `/teams/{team}/projects/{project}/tasks/{task}` | Creator/Admin | — | — | 204, 403, 404 |
 | PATCH | `/teams/{team}/projects/{project}/tasks/{task}/assign` | Admin/Creator | `{user_id}` | `TaskOut` | 200, 400, 403, 404 |
 | GET | `/teams/{team}/projects/{project}/tasks/{task}/activity` | Member | `page,page_size` | `Paginated<ActivityLogOut>` | 200, 403 |
