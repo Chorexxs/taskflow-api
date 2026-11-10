@@ -4,7 +4,7 @@
 **Fecha:** 2026-11-09
 **Proyecto:** TaskFlow API
 **Alcance del ciclo:** documentación + bugs conocidos + modernización completa
-**Estado:** P0 parcial (specs/docs/LICENSE/baseline) y P1 (correcciones críticas) ejecutado; P2 pendiente
+**Estado:** P0–P6 ejecutados (P0 con T-003 bloqueada por credenciales, P6 con verificación post-deploy pendiente); P7 opcional y T-054 (S3) pendientes por credenciales.
 
 ---
 
@@ -77,7 +77,8 @@ Reglas de uso:
 
 ## Decisiones que deben confirmarse antes de P2
 
-Estas decisiones no bloquean P0/P1, pero sí el resto del plan. Se proponen valores por defecto y cada una tiene un ADR asociado.
+Estas decisiones no bloqueaban P0/P1, pero sí el resto del plan. Estado tras
+T-004: **todas aceptadas** (ver ADRs en `plan.md` y `DECISIONS.md`).
 
 | ID | Decisión | Propuesta por defecto | ADR |
 |---|---|---|---|
@@ -114,14 +115,16 @@ Este paquete vive en `specs/taskflow/` y es la fuente de verdad del ciclo. `READ
 
 | Fase | Estado | Notas |
 |---|---|---|
-| P0 — Gobernanza | 🟡 Parcial | Specs en el repo, documentación alineada, LICENSE y baseline. Pendientes: labels/milestones, aceptación formal de ADRs, pre-commit y staging |
+| P0 — Gobernanza | 🟡 Parcial | Specs, documentación, LICENSE, baseline, ADRs aceptados (T-004), entornos (T-009) y política de release (T-010). Pendiente T-003 por falta de credenciales de GitHub (**B-06**) |
 | P1 — Correcciones críticas | ✅ Ejecutado | Refresh, logout, uploads, permisos de equipo, CORS, secret fail-fast, Kanban, cliente API, Sentry, Alembic |
-| P2 — Auth/sesión | 🟡 Parcial | Auto-refresh implementado; pendientes cookies/ADR-001, rate limit Redis y limpieza de tokens |
-| P3 — API/datos | ⏳ Pendiente | IDs/slugs, paginación, errores, permisos, borrados |
-| P4 — Colaboración/storage | ⏳ Pendiente | S3, notificaciones, SSE |
-| P5 — Frontend | ⏳ Pendiente | A11y, tema, tests de flujos |
-| P6 — Ops/release | ⏳ Pendiente | Ruff/mypy, CI completo, runbook |
-| P7 — Realtime | ⏳ Opcional | SSE endurecido |
+| P2 — Auth/sesión | ✅ Ejecutado | Auto-refresh, contraseñas, cambio con revocación, limpieza de tokens, rate limit Redis, headers, auditoría y reutilización de refresh. Cookies `httpOnly` se reevalúan en P7 (ADR-001) |
+| P3 — API/datos | ✅ Ejecutado | IDs/slugs, paginación, errores, permisos, borrados, archivado, actividad y búsqueda |
+| P4 — Colaboración/storage | ✅ Ejecutado | Notificaciones, menciones, SSE + polling, activity; S3 queda parcial en T-054 (PostgreSQL por defecto) |
+| P5 — Frontend | ✅ Ejecutado | Cliente API, AuthContext, a11y, responsive, estados de error, MSW y dark-only |
+| P6 — Ops/release | ✅ Ejecutado | Ruff/mypy, CI completo, runbook, health, gitleaks/pip-audit, checklist y smoke de performance; verificación post-deploy pendiente (**B-05**) |
+| P7 — Realtime | ⏳ Opcional | SSE funciona con polling de respaldo; Redis pub/sub y prueba de 500 conexiones (T-081) |
+| P8 — Auditoría de seguridad | ✅ Ejecutado | T-083…T-092 |
+| P9 — Smoke de release | ✅ Ejecutado | T-093 (rate limit 500) y T-094 (health bloqueado por Redis) |
 
 ---
 
