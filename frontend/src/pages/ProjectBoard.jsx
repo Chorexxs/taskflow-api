@@ -132,7 +132,8 @@ export default function ProjectBoard() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const token = localStorage.getItem('access_token')
-  const currentUserId = parseInt(localStorage.getItem('user_id') || '0')
+  const { user } = useAuth()
+  const currentUserId = user?.id ?? 0
   const [showCreateTask, setShowCreateTask] = useState(false)
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium', assigned_to: null, due_date: null })
   const [showFilters, setShowFilters] = useState(false)

@@ -25,6 +25,7 @@ import { api } from '../api'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Send, MessageSquare, User, Calendar, Edit2, X, Check, Paperclip, Download, Trash2, File, Pencil, Trash, Activity } from 'lucide-react'
 import { formatActivityAction, formatActivityActor, formatActivityValue } from '../utils/activity'
+import { useAuth } from '../context/AuthContext'
 
 /**
  * TaskDetail Component - Page for viewing and interacting with a single task
@@ -52,7 +53,8 @@ export default function TaskDetail() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const token = localStorage.getItem('access_token')
-  const currentUserId = parseInt(localStorage.getItem('user_id') || '0')
+  const { user } = useAuth()
+  const currentUserId = user?.id ?? 0
   const [newComment, setNewComment] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [editingCommentId, setEditingCommentId] = useState(null)

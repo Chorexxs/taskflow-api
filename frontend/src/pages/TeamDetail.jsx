@@ -70,7 +70,8 @@ export default function TeamDetail() {
   const [showArchived, setShowArchived] = useState(false)
 
   const token = localStorage.getItem('access_token')
-  const currentUserId = parseInt(localStorage.getItem('user_id') || '0')
+  const { user } = useAuth()
+  const currentUserId = user?.id ?? 0
 
   const { data: team, isLoading: teamLoading } = useQuery({
     queryKey: ['team', teamId],

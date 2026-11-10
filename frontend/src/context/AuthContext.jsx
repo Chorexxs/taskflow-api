@@ -95,7 +95,6 @@ export function AuthProvider({ children }) {
         .then(data => {
           if (data.id) {
             setUser(data);
-            localStorage.setItem('user_id', String(data.id));
           } else {
             logout();
           }
@@ -139,9 +138,11 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const syncSession = (event) => {
       if (event.storageArea && event.storageArea !== localStorage) return;
-      if (event.key === 'access_token') setAccessToken(event.newValue);
+      if (event.key === 'access_token') {
+        setAccessToken(event.newValue);
+        if (!event.newValue) setUser(null);
+      }
       if (event.key === 'refresh_token') setRefreshToken(event.newValue);
-      if (event.key === 'user_id' && !event.newValue) setUser(null);
     };
 
     window.addEventListener('storage', syncSession);
@@ -196,7 +197,6 @@ export function AuthProvider({ children }) {
       setRefreshToken(data.refresh_token);
       const user = await api.users.me(data.access_token);
       setUser(user);
-      localStorage.setItem('user_id', String(user.id));
       return user;
     }
     throw new Error(data?.detail || 'Login failed');
@@ -308,7 +308,8 @@ export function AuthProvider({ children }) {
    * const headers = getAuthHeader();
    * // { Authorization: 'Bearer eyJhbGc...' }
    */
-  const getAuthHeader = () => ({ Authorization: `Bearer ${accessToken}` });
+  const getAuthHeader = () =>
+    accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 
   return (
     <AuthContext.Provider value={{ user, accessToken, refreshToken, loading, login, register, logout, getAuthHeader }}>
