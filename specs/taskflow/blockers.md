@@ -146,6 +146,38 @@ curl -i -X POST https://taskflow-api-gkgl.onrender.com/api/v1/auth/register \
 
 ---
 
+## B-06 — T-003: labels, milestones e issues requieren credenciales de GitHub
+
+**Estado:** abierto (2026-11-10)
+**Severidad:** gobernanza (no bloquea runtime)
+
+T-003 pide crear labels (`s0/s1/security/db/frontend/docs`), milestones e issues
+`T-###` en `Chorexxs/taskflow-api`. El entorno no tiene `gh` instalado,
+`GITHUB_TOKEN` ni ningún credential helper con sesión de GitHub:
+
+```text
+gh -> CommandNotFoundException
+GITHUB_TOKEN -> no definido
+%APPDATA%\GitHub CLI\hosts.yml -> no existe
+```
+
+**Acción manual requerida:** con una sesión autenticada, ejecutar la importación
+del backlog o crearlo desde la UI. Labels mínimos:
+
+```bash
+gh label create s0 --color B60205 --description "Critico"
+gh label create s1 --color D93F0B --description "Alto"
+gh label create security --color 0E8A16
+gh label create frontend --color 1D76DB
+gh label create db --color 5319E7
+gh label create docs --color FBCA04
+```
+
+Después, crear un milestone por fase (P0…P9, P7 opcional) e importar una issue
+por cada `T-###` de `specs/taskflow/tasks.md`.
+
+---
+
 ## Lo que sí está verificado
 
 - `pytest -q` → **101 tests passed** (última ejecución completa).

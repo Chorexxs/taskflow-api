@@ -40,7 +40,7 @@
 
 **Completada (P0):** `T-007` (pre-commit con `ruff`, `ruff format`, `gitleaks`, eslint y mypy; `pre-commit run --all-files` verde), `T-004` (ADR-001…011 aceptados con responsable y desviaciones documentadas), `T-010` (política de ramas, PR, release y rollback en `CONTRIBUTING.md`), `T-009` (entornos local/CI/preview/staging/producción en `environments.md`).
 
-**Pendientes de P0:** `T-003` (labels/milestones; requiere `gh` autenticado).
+**Pendientes de P0:** `T-003` (labels/milestones; requiere `gh` autenticado, ver **B-06**).
 
 Verificación actual: `pytest -q` → **169 passed** sobre PostgreSQL 15 con **88 % de cobertura**; `npm run test:coverage` → **42 passed** con **71,6 % de líneas**; `npm run lint` → limpio; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge real migrado a `d4e5f6a7b8c9` con smoke test **12/12**; Render live con smoke test de producción **13/13** y CORS verificado. Smoke de performance local (T-080): p95 < 33 ms en lecturas.
 
