@@ -87,6 +87,7 @@ export default function Login() {
                 required
                 className="input-field"
                 placeholder="you@example.com"
+                aria-label="Email"
               />
             </div>
             
@@ -102,6 +103,7 @@ export default function Login() {
                 required
                 className="input-field"
                 placeholder="••••••••"
+                aria-label="Password"
               />
             </div>
             

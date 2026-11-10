@@ -14,5 +14,9 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test/setup.js',
     css: true,
+    env: {
+      // Tests must never call the deployed API.
+      VITE_API_URL: 'http://localhost:8000',
+    },
   },
 })

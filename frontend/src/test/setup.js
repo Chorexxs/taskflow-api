@@ -2,6 +2,9 @@ import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 
+// Tests always target the local MSW server, never a deployed backend.
+globalThis.__TASKFLOW_API_URL__ = 'http://localhost:8000'
+
 // Node 22+ exposes an experimental `localStorage` global that is undefined
 // unless `--localstorage-file` is passed, which can shadow jsdom's version.
 // Provide the jsdom implementation when available and a deterministic
@@ -46,19 +49,3 @@ vi.mock('react-hot-toast', () => ({
   error: vi.fn(),
 }))
 
-vi.mock('lucide-react', () => ({
-  ArrowLeft: () => null,
-  Send: () => null,
-  MessageSquare: () => null,
-  User: () => null,
-  Calendar: () => null,
-  Edit2: () => null,
-  X: () => null,
-  Check: () => null,
-  Paperclip: () => null,
-  Download: () => null,
-  Trash2: () => null,
-  File: () => null,
-  Pencil: () => null,
-  Trash: () => null,
-}))

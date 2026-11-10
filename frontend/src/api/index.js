@@ -10,7 +10,10 @@
  * Set `VITE_API_URL` to point at the backend. It defaults to localhost.
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL =
+  globalThis.__TASKFLOW_API_URL__ ||
+  import.meta.env.VITE_API_URL ||
+  'http://localhost:8000';
 
 export class ApiError extends Error {
   constructor(message, { status, code, details, data } = {}) {
