@@ -209,8 +209,19 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    """Handle rate limit exceeded errors with a consistent envelope."""
-    return _error_response(429, "Too many requests")
+    """Handle rate limit exceeded errors with a consistent envelope.
+
+    The response includes ``Retry-After`` and the ``X-RateLimit-*`` headers so
+    clients can back off instead of retrying immediately.
+    """
+    response = _error_response(429, "Too many requests")
+    try:
+        response = request.app.state.limiter._inject_headers(
+            response, request.state.view_rate_limit
+        )
+    except Exception:  # pragma: no cover - defensive
+        response.headers.setdefault("Retry-After", str(exc.limit.get_expiry()))
+    return response
 
 
 @app.exception_handler(Exception)

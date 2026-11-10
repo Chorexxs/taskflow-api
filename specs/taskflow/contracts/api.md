@@ -22,7 +22,7 @@ Implementado en P1:
 
 Implementado: envelope `{error:...}` (manteniendo `detail`), paginación en tareas/comentarios/actividad/notificaciones/búsqueda, IDs/slugs en equipos y proyectos, notificaciones con contador.
 
-Pendiente (P2–P4): rate limit Redis, cookies/ADR-001, SSE, paginación en equipos/miembros/proyectos/adjuntos y IDs/slugs estrictos.
+Pendiente (P2-P4): cookies/ADR-001, SSE, paginación en equipos/miembros/proyectos/adjuntos y IDs/slugs estrictos.
 
 ---
 
@@ -280,8 +280,15 @@ Aplicable a: equipos, miembros, proyectos, tareas, comentarios, adjuntos, notifi
 | `POST /auth/register` | 5 | 1 minuto/IP |
 | `POST /auth/login` | 10 | 1 minuto/IP |
 | `POST /auth/refresh` | 30 | 1 minuto/IP |
-| Uploads | 20 | 1 minuto/usuario |
-| Resto | 300 | 1 minuto/IP |
+| `POST /auth/logout` | 60 | 1 minuto/IP |
+| `PUT /users/me` | 10 | 1 minuto/IP |
+| `GET /teams/{id}/search` | 60 | 1 minuto/IP |
+| `POST .../attachments` | 20 | 1 minuto/IP |
+| Resto | Sin límite global todavía | — |
+
+Los contadores se guardan en Redis (`REDIS_URL` o `RATE_LIMIT_STORAGE_URI`) para
+compartirse entre instancias; si Redis no responde se usa memoria como fallback.
+`RATE_LIMIT_ENABLED=false` desactiva el limiter.
 
 Respuesta `429`:
 

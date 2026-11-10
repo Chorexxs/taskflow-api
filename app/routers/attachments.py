@@ -16,7 +16,7 @@ import os
 import re
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status, UploadFile, File
+from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, status, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -25,6 +25,7 @@ from app.database import get_db
 from app import crud, models, schemas
 from app.auth import get_current_user
 from app.dependencies import get_current_team_member
+from app.rate_limit import rate_limit
 
 router = APIRouter()
 
@@ -117,10 +118,12 @@ def get_task_from_params(db: Session, team_id_or_slug: str, project_id_or_name: 
 
 
 @router.post("/", response_model=schemas.AttachmentOut, status_code=status.HTTP_201_CREATED)
+@rate_limit("20/minute")
 async def upload_attachment(
     team_id_or_slug: str,
     project_id_or_name: str,
     task_id_or_title: str,
+    request: Request,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),

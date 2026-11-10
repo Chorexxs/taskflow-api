@@ -160,7 +160,9 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
 
 
 @router.post("/refresh", response_model=schemas.Token)
+@rate_limit("30/minute")
 def refresh(
+    request: Request,
     payload: schemas.RefreshTokenRequest | None = Body(default=None),
     refresh_token: str | None = Query(default=None, include_in_schema=False),
     db: Session = Depends(get_db),
@@ -210,6 +212,7 @@ def refresh(
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@rate_limit("60/minute")
 def logout(
     request: Request,
     payload: schemas.LogoutRequest | None = Body(default=None),

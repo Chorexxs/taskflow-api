@@ -15,13 +15,14 @@ Teams allow users to collaborate on projects. Each team has members
 with roles (admin or member) that determine their permissions.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import crud, models, schemas
 from app.auth import get_current_user
 from app.dependencies import get_current_team_admin, get_current_team_member
+from app.rate_limit import rate_limit
 
 router = APIRouter()
 
@@ -120,9 +121,11 @@ def get_teams(
 
 
 @router.get("/{team_id_or_slug}/search", response_model=schemas.SearchResult)
+@rate_limit("60/minute")
 def search_in_team(
     team_id_or_slug: str,
     q: str,
+    request: Request,
     page: int = 1,
     page_size: int = 10,
     db: Session = Depends(get_db),
