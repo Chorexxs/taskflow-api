@@ -25,7 +25,7 @@ import { api } from '../api'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Send, MessageSquare, User, Calendar, Edit2, X, Check, Paperclip, Download, Trash2, File, Pencil, Trash, Activity } from 'lucide-react'
 import { formatActivityAction, formatActivityActor, formatActivityValue } from '../utils/activity'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/auth-context'
 import QueryError from '../components/QueryError'
 
 /**

@@ -14,7 +14,7 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import toast from 'react-hot-toast';
 
 /**
@@ -129,7 +129,7 @@ export default function Login() {
           
           {/* Register link */}
           <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link to="/register" className="text-[var(--color-accent)] hover:underline">
               Sign up
             </Link>

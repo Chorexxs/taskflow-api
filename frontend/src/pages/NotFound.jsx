@@ -52,7 +52,7 @@ export default function NotFound() {
           
           {/* Description */}
           <p className="text-sm text-[var(--color-text-muted)] mb-8">
-            The page you're looking for doesn't exist or has been moved.
+            The page you&apos;re looking for doesn&apos;t exist or has been moved.
           </p>
           
           {/* CTA Button */}

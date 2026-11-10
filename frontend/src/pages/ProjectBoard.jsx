@@ -21,14 +21,14 @@
  */
 
 import { useState, useEffect } from 'react'
-import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { DndContext, closestCorners, DragOverlay, useDroppable, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/auth-context'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Plus, Search, Filter, X, Activity, ChevronDown, Settings, Archive } from 'lucide-react'
+import { ArrowLeft, Plus, Filter, X, Activity, Settings, Archive } from 'lucide-react'
 import { formatActivityAction, formatActivityActor, formatActivityValue } from '../utils/activity'
 import TaskCard from '../components/TaskCard'
 
@@ -399,8 +399,6 @@ export default function ProjectBoard() {
     const priorityOrder = { high: 0, medium: 1, low: 2 }
     return filtered.sort((a, b) => (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1))
   }
-
-  const getColumnTaskCount = (status) => getTasksByStatus(status).length
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">

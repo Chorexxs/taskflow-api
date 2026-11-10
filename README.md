@@ -3,7 +3,7 @@
 API REST para gestión de tareas en equipo con autenticación JWT, equipos, proyectos, tablero Kanban, comentarios, adjuntos, notificaciones y registro de actividad.
 
 [![Tests](https://img.shields.io/badge/backend%20tests-166%20passed-brightgreen)](./tests)
-[![Frontend](https://img.shields.io/badge/frontend%20tests-23%20passed-brightgreen)](./frontend/src/test)
+[![Frontend](https://img.shields.io/badge/frontend%20tests-42%20passed-brightgreen)](./frontend/src/test)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.135-blue)](https://fastapi.tiangolo.com/)
 
@@ -56,7 +56,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Frontend** | React 18, Vite 5, React Router 7 |
 | **Datos front** | TanStack React Query 5, `fetch` |
 | **UI** | Tailwind CSS 4, Lucide React, React Hot Toast, `@dnd-kit` |
-| **Tests** | pytest + pytest-cov (166), Vitest + Testing Library (23) |
+| **Tests** | pytest + pytest-cov (166, 87 %), Vitest + Testing Library (42, 71,6 %) |
 | **CI/CD** | GitHub Actions, Render, Vercel, InsForge |
 | **Contenedores** | Docker, docker-compose (PostgreSQL + Redis + API) |
 
@@ -272,6 +272,8 @@ pytest tests/test_auth.py::test_register_user
 # Frontend
 cd frontend
 npm run test
+npm run test:coverage   # umbrales: 70 % líneas/ramas, 40 % funciones
+npm run lint
 npm run build
 ```
 
@@ -279,7 +281,9 @@ npm run build
 Postgres; no vale para validar un release. `TEST_SKIP_MIGRATIONS=1` reutiliza un
 esquema ya migrado.
 
-Estado actual: **166 tests backend** (verdes sobre PostgreSQL) y **23 tests frontend**.
+Estado actual: **166 tests backend** (87 % de cobertura, verdes sobre PostgreSQL)
+y **42 tests frontend** (71,6 % de líneas). El CI falla por debajo de **80 %** en
+backend y **70 %** en frontend.
 
 Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y otro contra la **API de producción en Render** (13/13): health, registro, login, equipo, proyecto, tarea, comentario, adjunto en PostgreSQL, descarga, búsqueda, notificaciones, perfil y error envelope. También se verificó CORS para las dos URLs de frontend y el rechazo de un origen no permitido.
 
@@ -424,7 +428,6 @@ alembic/                 # migraciones
 - Notificaciones en tiempo real con SSE (P4); hoy polling cada 30 s.
 - Paginación uniforme en equipos/miembros/proyectos/adjuntos (P3); tareas, comentarios, actividad, notificaciones y búsqueda ya la tienen.
 - Rate limiting con Redis para múltiples instancias (P2); hoy memoria por proceso.
-- Umbral de cobertura en CI (P6); los tests de integración ya corren contra PostgreSQL.
 - Auditoría WCAG completa y tema claro/oscuro (P5); la UI es dark-only.
 - Gates de seguridad en CI: `gitleaks` (pre-commit y CI), `pip-audit` y dependencias al día (P8).
 

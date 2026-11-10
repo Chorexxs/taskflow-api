@@ -16,7 +16,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
 import toast from 'react-hot-toast';
-import { Plus, Users, FolderKanban, ChevronRight } from 'lucide-react';
+import { Plus, Users, ChevronRight } from 'lucide-react';
 import QueryError from '../components/QueryError';
 
 /**

@@ -10,7 +10,7 @@
 
 Resueltos en P1: `BL-02`, `BL-03`, `BL-04`, `BL-05`, `BL-06`, `BL-08`, `BL-09`, `BL-10`, `BL-11`, `BL-14`, `BL-17`, `BL-32`, `BL-36`, `BL-37`, `BL-38`, `BL-41`.
 
-Parciales: `BL-01` (refresh y logout corregidos; auto-refresh del cliente pendiente P2), `BL-07` (file_path eliminado; storage externo pendiente P4), `BL-16` (integración ya sobre PostgreSQL; pendiente el umbral de cobertura), `BL-45` (cliente API con errores tipados; quedan mensajes por pulir).
+Parciales: `BL-01` (refresh y logout corregidos; auto-refresh del cliente pendiente P2), `BL-07` (file_path eliminado; storage externo pendiente P4), `BL-45` (cliente API con errores tipados; quedan mensajes por pulir).
 
 Pendientes: el resto de hallazgos S1/S2/S3 según `tasks.md` (P2–P6).
 
@@ -101,7 +101,7 @@ Severidad: **S0** bloqueante de seguridad/pérdida de datos; **S1** alta; **S2**
 | BL-13 | Equipos | `invite_member` exige que el usuario ya exista; no hay token/email de invitación | “Invitar” es en realidad “añadir miembro existente” |
 | BL-14 | Equipos | No se impide eliminar al último admin; el admin puede abandonar el equipo | Equipo sin administrador |
 | BL-15 | Rate limit | `slowapi` con almacenamiento en memoria; solo register/login | Límites inconsistentes con múltiples instancias; resto de endpoints sin protección |
-| BL-16 | Tests/CI | Integración sobre PostgreSQL con migraciones (T-077); pendiente el umbral de cobertura | Regresiones de cobertura pasan desapercibidas |
+| BL-16 | Tests/CI | Integración sobre PostgreSQL (T-077); lint, build y umbrales de cobertura en CI (T-076) | Regresiones de cobertura o de estilo pasan desapercibidas |
 | BL-17 | Observabilidad | `main.py`: `sentry_sdk.fastapi.FastApiIntegration()` | Posible `AttributeError` al arrancar con `SENTRY_DSN` definido |
 | BL-18 | Notificaciones | Polling cada 30 s; sin endpoint de no leídas; sin paginación; menciones solo en docs, no implementadas | Escalabilidad y UX limitadas; docs engañosas |
 | BL-19 | API | Solo las tareas tienen paginación; equipos, proyectos, miembros, comentarios, adjuntos, notificaciones y actividad devuelven todo | Listas no escalables |

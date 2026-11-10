@@ -20,7 +20,7 @@
  */
 
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
+import { useAuth } from './context/auth-context';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';

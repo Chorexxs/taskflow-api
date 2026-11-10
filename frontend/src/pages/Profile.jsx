@@ -18,7 +18,7 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/auth-context'
 import { api } from '../api'
 import toast from 'react-hot-toast'
 import { LogOut, User, Shield, Loader2 } from 'lucide-react'

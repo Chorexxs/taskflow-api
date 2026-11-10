@@ -22,7 +22,7 @@
  * - getAuthHeader(): Get Authorization header object
  * 
  * Usage:
- * import { useAuth } from './context/AuthContext';
+ * import { useAuth } from './context/auth-context';
  * 
  * function MyComponent() {
  *   const { user, logout } = useAuth();
@@ -30,34 +30,9 @@
  * }
  */
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api';
-
-/**
- * Read the `exp` claim (milliseconds) from a JWT without verifying it.
- * Verification is the server's job; the client only uses this to schedule a
- * proactive refresh.
- */
-export function getJwtExpiry(token) {
-  try {
-    const payload = token.split('.')[1];
-    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = normalized.padEnd(
-      normalized.length + ((4 - (normalized.length % 4)) % 4),
-      '=',
-    );
-    const decoded = JSON.parse(atob(padded));
-    return decoded.exp ? decoded.exp * 1000 : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Authentication context - provides auth state and methods
- * @type {React.Context<null>}
- */
-const AuthContext = createContext(null);
+import { AuthContext, getJwtExpiry } from './auth-context';
 
 /**
  * Authentication provider component.
@@ -86,6 +61,18 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   /**
+   * Clear the local session without a network round-trip. Used when the
+   * session is already invalid (expired/revoked token), so there is nothing to
+   * revoke server-side.
+   */
+  const clearSession = useCallback(() => {
+    setUser(null);
+    setAccessToken(null);
+    setRefreshToken(null);
+    localStorage.removeItem('user_id');
+  }, []);
+
+  /**
    * Effect: Validate token and fetch user on mount/token change
    * Runs when accessToken changes to validate the session
    */
@@ -96,15 +83,15 @@ export function AuthProvider({ children }) {
           if (data.id) {
             setUser(data);
           } else {
-            logout();
+            clearSession();
           }
         })
-        .catch(() => logout())
+        .catch(() => clearSession())
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, clearSession]);
 
   /**
    * Effect: Persist accessToken to localStorage
@@ -241,10 +228,7 @@ export function AuthProvider({ children }) {
       // the network call fails, so logout always works for the user.
       api.auth.logout(accessToken, refreshToken).catch(() => {});
     }
-    setUser(null);
-    setAccessToken(null);
-    setRefreshToken(null);
-    localStorage.removeItem('user_id');
+    clearSession();
   };
 
   /**
@@ -272,7 +256,7 @@ export function AuthProvider({ children }) {
         }
 
         if (!currentRefresh) {
-          logout();
+          clearSession();
           return;
         }
 
@@ -290,14 +274,12 @@ export function AuthProvider({ children }) {
           await performRefresh();
         }
       } catch {
-        logout();
+        clearSession();
       }
     }, delay);
 
     return () => clearTimeout(timer);
-    // `logout` is stable enough for this timer; it only reads current tokens.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, refreshToken]);
+  }, [accessToken, refreshToken, clearSession]);
 
   /**
    * Get Authorization header object for API requests.
@@ -318,29 +300,3 @@ export function AuthProvider({ children }) {
   );
 }
 
-/**
- * Hook to access authentication context.
- * Must be used within an AuthProvider.
- * 
- * @returns {Object} Auth context with user, tokens, and methods
- * @throws {Error} If used outside AuthProvider
- * 
- * @example
- * function Dashboard() {
- *   const { user, logout } = useAuth();
- *   
- *   return (
- *     <div>
- *       <p>Welcome, {user.email}</p>
- *       <button onClick={logout}>Logout</button>
- *     </div>
- *   );
- * }
- */
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}

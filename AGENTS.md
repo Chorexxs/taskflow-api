@@ -87,6 +87,7 @@ cd frontend
 npm install
 npm run dev
 npm run test
+npm run test:coverage
 npm run build
 npm run lint
 ```
@@ -275,6 +276,7 @@ Reglas:
 - No usar servicios externos reales.
 - Frontend: Vitest + Testing Library + jsdom; mockear `../api` y `react-hot-toast`.
 - Los tests de integración usan PostgreSQL vía `TEST_DATABASE_URL`, con el esquema creado por Alembic y tablas truncadas entre tests (ADR-008). `TEST_USE_SQLITE=1` es solo un atajo para runs unitarios.
+- Cobertura obligatoria en CI: **80 % backend** (`--cov-fail-under`) y **70 % frontend** en líneas/ramas (`vitest` thresholds). No bajar los umbrales sin justificarlo en el PR.
 
 ---
 

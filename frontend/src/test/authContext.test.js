@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getJwtExpiry } from '../context/AuthContext'
+import { getJwtExpiry } from '../context/auth-context'
 
 function tokenWithPayload(payload) {
   const encoded = btoa(JSON.stringify(payload))

@@ -14,7 +14,7 @@
  */
 
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import NotificationsBell from './NotificationsBell';
 import { Settings, LogOut } from 'lucide-react';
 
@@ -23,7 +23,6 @@ import { Settings, LogOut } from 'lucide-react';
  * 
  * @param {Object} props - Component props
  * @param {React.ReactNode} props.children - Page content to render
- * @param {boolean} [props.hideNav] - Whether to hide navigation (optional)
  * @returns {JSX.Element} Layout with header and content
  * 
  * @example
@@ -31,14 +30,8 @@ import { Settings, LogOut } from 'lucide-react';
  * <Layout>
  *   <Dashboard />
  * </Layout>
- * 
- * @example
- * // With hidden navigation
- * <Layout hideNav>
- *   <FullScreenContent />
- * </Layout>
  */
-export default function Layout({ children, hideNav }) {
+export default function Layout({ children }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
 

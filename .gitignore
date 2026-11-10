@@ -27,6 +27,7 @@ htmlcov/
 *.sqlite
 uploads/
 frontend/dist/
+frontend/coverage/
 /.agents
 skills-lock.json
 /.vscode
