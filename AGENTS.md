@@ -196,6 +196,20 @@ uploads/                 # adjuntos locales (dev; producción requiere storage)
 
 ---
 
+## Commits
+
+- **Siempre en español**, incluidos el asunto y el cuerpo.
+- Formato Conventional Commits: `tipo(alcance): resumen`.
+- Tipos permitidos: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `perf`, `style`, `build`, `ci`.
+- Asunto en imperativo, minúscula inicial tras los dos puntos, sin punto final y ≤ 72 caracteres.
+- Cuerpo opcional en español: qué cambia y por qué; referencia `T-###`, `FR-###` o `BL-##`.
+- Ejemplos:
+  - `feat(tareas): añadir endpoint para cambiar solo el estado`
+  - `fix(adjuntos): sanear el nombre antes de construir la ruta`
+  - `docs(despliegue): marcar Vercel como verificado`
+
+---
+
 ## Invariantes de autenticación y permisos
 
 ### Tokens
