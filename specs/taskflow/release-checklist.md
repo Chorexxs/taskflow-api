@@ -58,8 +58,8 @@ verificados y firmados. Si algo falla, se aplica el rollback de
 - [x] Bucket privado `taskflow-attachments` creado en InsForge Storage.
 - [x] Backfill de los adjuntos existentes (`scripts/backfill_attachments_object_storage.py`): 3/3 con `storage_key` y checksum verificado.
 - [x] Flujo real con `STORAGE_BACKEND=insforge` verificado en local: 15/15, subida presignada a S3, confirmación y descarga por CDN.
-- [ ] `STORAGE_BACKEND=insforge` + `INSFORGE_URL` + `INSFORGE_API_KEY` + `INSFORGE_STORAGE_BUCKET` configurados en Render (**B-07**).
-- [ ] Subida/descarga/borrado de un adjunto tras activar el backend en producción.
+- [x] `STORAGE_BACKEND=insforge` + `INSFORGE_URL` + `INSFORGE_API_KEY` + `INSFORGE_STORAGE_BUCKET` configurados en Render.
+- [x] Subida/descarga/borrado de un adjunto tras activar el backend en producción (smoke 15/15; adjunto con `storage_key` y `content = NULL`).
 
 Rollback de storage:
 

@@ -170,26 +170,20 @@ Verificación: `GET /repos/Chorexxs/taskflow-api/labels` → 15 labels (9 previo
 
 ---
 
-## B-07 — Activar el backend de object storage en Render
+## B-07 — Activar el backend de object storage en Render (RESUELTO)
 
-**Estado:** abierto (2026-11-10)
-**Severidad:** operativa (no bloquea; los adjuntos siguen sirviéndose desde PostgreSQL)
+**Estado:** resuelto (2026-11-10)
 
-El código, el bucket privado `taskflow-attachments` y los 3 adjuntos migrados ya
-están verificados. Falta configurar en Render (servicio
-`srv-d82qnghj2pic73aqr5l0`):
+Render se configuró con `STORAGE_BACKEND=insforge` y las credenciales del bucket
+privado `taskflow-attachments`. Verificación en producción:
 
-```text
-STORAGE_BACKEND=insforge
-INSFORGE_URL=https://<app-key>.eu-central.insforge.app
-INSFORGE_API_KEY=ik_...            # en .insforge/project.json, no exponer
-INSFORGE_STORAGE_BUCKET=taskflow-attachments
-```
+- `scripts/smoke_release.py` → **15/15** (subida y descarga de adjunto).
+- El adjunto nuevo quedó con `storage_key = attachments/7/...` y `content = NULL`
+  en PostgreSQL.
+- El objeto se descargó desde el CDN con el contenido esperado.
+- Los 3 adjuntos previos mantienen `content` como respaldo de rollback.
 
-Mientras no se configuren, `STORAGE_BACKEND=database` sigue operativo y las
-descargas de adjuntos migrados caen al `content` conservado en PostgreSQL. Tras
-cambiarlas, repetir la subida/descarga/borrado de un adjunto
-(`scripts/smoke_release.py`).
+Rollback: `STORAGE_BACKEND=database` (o `local`) y limpiar `storage_key`.
 
 ---
 

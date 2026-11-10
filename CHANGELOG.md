@@ -14,7 +14,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - SSE event-driven con Redis pub/sub y fallback en proceso; límites de 500 conexiones/5 por usuario con 503 + `Retry-After`; sesiones DB cortas, reconciliación cada 30 s y backoff exponencial en el cliente (T-081).
 - `scripts/sse_load_test.py` para validar 500 conexiones simultáneas.
 - `SSE_FALLBACK_POLL_SECONDS`, `SSE_MAX_CONNECTIONS` y `SSE_MAX_CONNECTIONS_PER_USER` configurables.
-- Backend `insforge` de `StorageService` con bucket privado `taskflow-attachments`, checksum y backfill de adjuntos (T-054).
+- Backend `insforge` de `StorageService` con bucket privado `taskflow-attachments`, checksum y backfill de adjuntos (T-054); verificado en producción con subida presignada, confirmación y descarga por CDN.
 - `scripts/backfill_attachments_object_storage.py` con modo `--dry-run` y verificación de checksum.
 - `scripts/import_github_backlog.py`; 6 labels, 10 milestones y 95 issues importados en GitHub (T-003).
 
@@ -93,5 +93,4 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Pendiente
 
-- Activar `STORAGE_BACKEND=insforge` y sus credenciales en Render (el código y el backfill ya están listos).
 - P7: reevaluar cookies `httpOnly` + CSRF (ADR-001).

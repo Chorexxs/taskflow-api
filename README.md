@@ -23,7 +23,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Liveness** | https://taskflow-api-gkgl.onrender.com/health/live | Proceso vivo |
 | **Readiness** | https://taskflow-api-gkgl.onrender.com/health/ready | DB accesible |
 
-> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend Vercel **live** en `https://taskflow-api-tau.vercel.app`. Producción verificada el 2026-11-10 tras aplicar las migraciones pendientes: **register 201**, **login 200**, smoke de release **15/15**, performance p95 < 1000 ms (WAN) y SSE 3/3. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
+> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend Vercel **live** en `https://taskflow-api-tau.vercel.app`. Producción verificada el 2026-11-10: **register 201**, **login 200**, smoke de release **15/15**, performance p95 < 1000 ms (WAN), SSE 3/3 y **object storage activo** (`taskflow-attachments`). Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
 
 ---
 
@@ -313,7 +313,7 @@ Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y 
   - Si usas un dominio propio en Vercel, añádelo separado por comas.
   - Sin `CORS_ORIGINS`, la app **no arranca en producción** (fail-fast).
 - Ejecutar `alembic upgrade head` antes del despliegue. `alembic/env.py` usa `DATABASE_URL`.
-- Los adjuntos se guardan por defecto en PostgreSQL (`STORAGE_BACKEND=database`). Con `STORAGE_BACKEND=insforge` se usa el bucket privado `taskflow-attachments`; los objetos migrados siguen siendo legibles si se vuelve a `database` (conservan `content` hasta limpiarlo). La activación en Render requiere las variables `INSFORGE_URL`, `INSFORGE_API_KEY` e `INSFORGE_STORAGE_BUCKET` (**B-07**).
+- Los adjuntos se guardan por defecto en PostgreSQL (`STORAGE_BACKEND=database`). En producción está activo `STORAGE_BACKEND=insforge` con el bucket privado `taskflow-attachments`; los objetos migrados conservan `content` como respaldo de rollback.
 - Estado actual: `/health/ready` → `200`, base de datos en `d0e1f2a3b4c5 (head)`, registro/login y smoke de release **15/15** verificados.
 
 ### Frontend — Vercel

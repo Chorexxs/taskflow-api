@@ -4,7 +4,7 @@
 **Fecha:** 2026-11-09
 **Proyecto:** TaskFlow API
 **Alcance del ciclo:** documentación + bugs conocidos + modernización completa
-**Estado:** P0–P9 ejecutados (incluye T-003, T-054 y T-081); producción verificada. Solo queda activar el backend de storage en Render y reevaluar cookies `httpOnly` en P7.
+**Estado:** P0–P9 ejecutados; producción verificada con object storage activo. Solo queda reevaluar cookies `httpOnly` en P7.
 
 ---
 
@@ -119,7 +119,7 @@ Este paquete vive en `specs/taskflow/` y es la fuente de verdad del ciclo. `READ
 | P1 — Correcciones críticas | ✅ Ejecutado | Refresh, logout, uploads, permisos de equipo, CORS, secret fail-fast, Kanban, cliente API, Sentry, Alembic |
 | P2 — Auth/sesión | ✅ Ejecutado | Auto-refresh, contraseñas, cambio con revocación, limpieza de tokens, rate limit Redis, headers, auditoría y reutilización de refresh. Cookies `httpOnly` se reevalúan en P7 (ADR-001) |
 | P3 — API/datos | ✅ Ejecutado | IDs/slugs, paginación, errores, permisos, borrados, archivado, actividad y búsqueda |
-| P4 — Colaboración/storage | ✅ Ejecutado | Notificaciones, menciones, SSE + polling, activity y object storage con backfill (T-054); activación de `STORAGE_BACKEND=insforge` en Render pendiente |
+| P4 — Colaboración/storage | ✅ Ejecutado | Notificaciones, menciones, SSE + polling, activity y object storage con backfill (T-054); `STORAGE_BACKEND=insforge` verificado en producción |
 | P5 — Frontend | ✅ Ejecutado | Cliente API, AuthContext, a11y, responsive, estados de error, MSW y dark-only |
 | P6 — Ops/release | ✅ Ejecutado | Ruff/mypy, CI completo, runbook, health, gitleaks/pip-audit, checklist, smoke funcional 15/15 y smoke de performance; verificación post-deploy completada |
 | P7 — Realtime | ✅ Ejecutado | SSE con Redis pub/sub, fallback en proceso, límites de conexión, backoff y prueba de 500 conexiones (T-081) |

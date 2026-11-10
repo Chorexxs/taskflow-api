@@ -46,7 +46,7 @@
 
 **Pendientes de P0:** ninguno.
 
-Verificación actual: `pytest -q` → **180 passed** sobre PostgreSQL 15 con **87 % de cobertura**; `npm run test` → **43 passed**; `npm run lint` → limpio; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge migrado a `d0e1f2a3b4c5` con 3 adjuntos backfillados a object storage; Render live con smoke de release **15/15**, register 201/login 200 y CORS verificado. Smoke de performance local (T-080): p95 < 33 ms en lecturas. Carga SSE (T-081): **500/500 conexiones, 0 errores**.
+Verificación actual: `pytest -q` → **180 passed** sobre PostgreSQL 15 con **87 % de cobertura**; `npm run test` → **43 passed**; `npm run lint` → limpio; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge migrado a `d0e1f2a3b4c5` con 3 adjuntos backfillados y `STORAGE_BACKEND=insforge` activo en producción; Render live con smoke de release **15/15**, register 201/login 200 y CORS verificado. Smoke de performance local (T-080): p95 < 33 ms en lecturas. Carga SSE (T-081): **500/500 conexiones, 0 errores**.
 
 ---
 
