@@ -24,6 +24,8 @@
 
 **Completadas (P6):** `T-072` (dependencias backend fijadas + React Router parcheado), `T-073` (Python 3.12), `T-074` (ruff y mypy fijados y ejecutados en CI), `T-075` (Docker non-root + HEALTHCHECK), `T-076` (CI frontend con lint/build y umbrales de cobertura: 80 % backend, 70 % frontend), `T-077` (tests de integración sobre PostgreSQL con esquema Alembic y truncado por test), `T-078` (snapshot OpenAPI + check en CI), `T-079` (health live/ready).
 
+**Parcial (P6):** `T-080` (checklist de release y smoke de performance en `release-checklist.md` + `scripts/smoke_performance.py`; verificación post-deploy pendiente por **B-05**, Render no redeploya).
+
 **Completadas (P5):** `T-066` (auditoría WCAG de flujos críticos en `a11y-audit.md`, skip link y nombres accesibles), `T-063` (cliente API con refresh single-flight, retry en 401, errores tipados y AbortController), `T-064` (AuthContext endurecido: permisos visuales desde `user`, sin `user_id` en storage), `T-067` (cabeceras y buscadores responsive; tablero usable desde 360 px), `T-071` (acciones de admin ocultas en tablero y miembros), `T-069` (tests de flujos críticos con MSW: login, tablero, tarea, comentarios y notificaciones), `T-068` (estados de error consistentes con reintento en dashboard, equipo, tablero y tarea), `T-065` (decisión dark-only), `T-070` (eliminados axios y ThemeContext muerto).
 
 **Completadas (P4):** `T-050` (orden asc/desc de comentarios), `T-051` (pertenencia actual al equipo al editar comentarios), `T-052` (menciones), `T-053` (backend de almacenamiento configurable), `T-055` (MIME/tamaño, checksum SHA-256 y nombres únicos), `T-056` (limpieza de adjuntos locales al borrar tarea).
@@ -40,7 +42,7 @@
 
 **Pendientes de P0:** `T-003` (labels/milestones; requiere `gh` autenticado).
 
-Verificación actual: `pytest -q` → **166 passed** sobre PostgreSQL 15 con **87 % de cobertura**; `npm run test:coverage` → **42 passed** con **71,6 % de líneas**; `npm run lint` → limpio; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge real migrado a `d4e5f6a7b8c9` con smoke test **12/12**; Render live con smoke test de producción **13/13** y CORS verificado.
+Verificación actual: `pytest -q` → **169 passed** sobre PostgreSQL 15 con **88 % de cobertura**; `npm run test:coverage` → **42 passed** con **71,6 % de líneas**; `npm run lint` → limpio; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge real migrado a `d4e5f6a7b8c9` con smoke test **12/12**; Render live con smoke test de producción **13/13** y CORS verificado. Smoke de performance local (T-080): p95 < 33 ms en lecturas.
 
 ---
 

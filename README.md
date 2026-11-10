@@ -2,7 +2,7 @@
 
 API REST para gestión de tareas en equipo con autenticación JWT, equipos, proyectos, tablero Kanban, comentarios, adjuntos, notificaciones y registro de actividad.
 
-[![Tests](https://img.shields.io/badge/backend%20tests-166%20passed-brightgreen)](./tests)
+[![Tests](https://img.shields.io/badge/backend%20tests-169%20passed-brightgreen)](./tests)
 [![Frontend](https://img.shields.io/badge/frontend%20tests-42%20passed-brightgreen)](./frontend/src/test)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.135-blue)](https://fastapi.tiangolo.com/)
@@ -23,7 +23,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Liveness** | https://taskflow-api-gkgl.onrender.com/health/live | Proceso vivo |
 | **Readiness** | https://taskflow-api-gkgl.onrender.com/health/ready | DB accesible |
 
-> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend Vercel **live y actualizado** en `https://taskflow-api-tau.vercel.app`, con `VITE_API_URL` correcto y headers de seguridad. El preview `https://<insforge-project-id>.insforge.site` sirve el mismo build. Smoke test de producción: **13/13**. B-02 resuelto; solo queda autenticar el MCP de Vercel en OpenCode. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
+> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend Vercel **live** en `https://taskflow-api-tau.vercel.app`. El último smoke completo fue **13/13**, pero el 2026-11-10 se detectó que producción sigue sirviendo una versión anterior: `POST /auth/register` devuelve 500 por el bug de rate limiting (T-093). El fix está en `main` y CI verde; falta el redeploy de Render (**B-05**). Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
 
 ---
 
@@ -56,7 +56,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Frontend** | React 18, Vite 5, React Router 7 |
 | **Datos front** | TanStack React Query 5, `fetch` |
 | **UI** | Tailwind CSS 4, Lucide React, React Hot Toast, `@dnd-kit` |
-| **Tests** | pytest + pytest-cov (166, 87 %), Vitest + Testing Library (42, 71,6 %) |
+| **Tests** | pytest + pytest-cov (169, 88 %), Vitest + Testing Library (42, 71,6 %) |
 | **CI/CD** | GitHub Actions, Render, Vercel, InsForge |
 | **Contenedores** | Docker, docker-compose (PostgreSQL + Redis + API) |
 
@@ -294,7 +294,7 @@ npm run build
 Postgres; no vale para validar un release. `TEST_SKIP_MIGRATIONS=1` reutiliza un
 esquema ya migrado.
 
-Estado actual: **166 tests backend** (87 % de cobertura, verdes sobre PostgreSQL)
+Estado actual: **169 tests backend** (88 % de cobertura, verdes sobre PostgreSQL)
 y **42 tests frontend** (71,6 % de líneas). El CI falla por debajo de **80 %** en
 backend y **70 %** en frontend.
 
@@ -313,7 +313,7 @@ Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y 
   - Sin `CORS_ORIGINS`, la app **no arranca en producción** (fail-fast).
 - Ejecutar `alembic upgrade head` antes del despliegue. `alembic/env.py` usa `DATABASE_URL`.
 - Los adjuntos se guardan en PostgreSQL por defecto (`STORAGE_BACKEND=database`), por lo que sobreviven a los redeploys. Cambiar a `local` solo para desarrollo.
-- Estado actual: `/health/ready` → `200`, base de datos conectada y smoke test de producción **13/13**.
+- Estado actual: `/health/ready` → `200`; pendiente el redeploy del fix de rate limiting (**B-05**).
 
 ### Frontend — Vercel
 
@@ -421,6 +421,7 @@ alembic/                 # migraciones
 | [`contracts/openapi.json`](./specs/taskflow/contracts/openapi.json) | Snapshot OpenAPI verificado en CI |
 | [`blockers.md`](./specs/taskflow/blockers.md) | Bloqueos de despliegue y credenciales |
 | [`environments.md`](./specs/taskflow/environments.md) | Local, CI, preview, staging y producción |
+| [`release-checklist.md`](./specs/taskflow/release-checklist.md) | Checklist de release y smoke de performance |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Ramas, PR, release y rollback |
 
 ### Auditorías bajo demanda
@@ -438,11 +439,10 @@ alembic/                 # migraciones
 ## Limitaciones conocidas y próximos pasos
 
 - **MCP de Vercel:** el servidor `vercel` está configurado en OpenCode pero requiere autenticación OAuth (`/mcps` → `vercel` → sign in). El deploy por CLI y la integración con Git ya funcionan.
-- Migración a cookies `httpOnly` o decisión formal (ADR-001).
-- Adjuntos en object storage S3-compatible (la alternativa actual es PostgreSQL) (P4).
-- Notificaciones en tiempo real con SSE (P4); hoy polling cada 30 s.
-- Paginación uniforme en equipos/miembros/proyectos/adjuntos (P3); tareas, comentarios, actividad, notificaciones y búsqueda ya la tienen.
-- Rate limiting con Redis para múltiples instancias (P2); hoy memoria por proceso.
+- Migración a cookies `httpOnly` o decisión formal (ADR-001): decidido mantener Bearer + auto-refresh; cookies se reevalúan en P7.
+- Adjuntos en object storage S3-compatible (la alternativa actual es PostgreSQL) (P4, parcial T-054).
+- SSE implementado con fallback a polling; fan-out con Redis pub/sub y prueba de carga pendientes en P7 (T-081).
+- Rate limiting con Redis para múltiples instancias implementado (T-030/T-031); fallback en memoria si Redis no responde.
 - Auditoría WCAG completa y tema claro/oscuro (P5); la UI es dark-only.
 - Gates de seguridad en CI: `gitleaks` (pre-commit y CI), `pip-audit` y dependencias al día (P8).
 

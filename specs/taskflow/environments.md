@@ -79,8 +79,8 @@ Sustituto acordado:
 
 - Cambios de API/DB → local con Docker + CI sobre PostgreSQL efímero.
 - Cambios de UI → Vercel Preview con cuentas de prueba.
-- Antes de un release que toque DB/auth/storage → ejecutar la checklist de
-  release (T-080) contra producción.
+- Antes de un release que toque DB/auth/storage → ejecutar el
+  [`release-checklist.md`](./release-checklist.md) contra producción.
 
 ### Cómo habilitar staging en el futuro
 
@@ -106,7 +106,8 @@ Reglas:
 
 - `ENVIRONMENT=production`, `SECRET_KEY` y `CORS_ORIGINS` obligatorios (fail-fast).
 - Deploy automático desde `main`; migración antes del código.
-- Smoke test y checklist de release obligatorios (T-080).
+- Smoke test y checklist de release obligatorios
+  ([`release-checklist.md`](./release-checklist.md)).
 - Rollback según `CONTRIBUTING.md` §6.
 
 ---

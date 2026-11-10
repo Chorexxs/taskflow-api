@@ -7,6 +7,11 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Añadido
 
+- `CONTRIBUTING.md` con política de ramas, PR, release y rollback (T-010).
+- `specs/taskflow/environments.md` con local, CI, preview, staging y producción (T-009).
+- `specs/taskflow/release-checklist.md` y `scripts/smoke_performance.py` (T-080).
+- ADRs 002, 003, 006 y 007 aceptados con responsable y desviaciones documentadas (T-004).
+
 - Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.
 - Configuración central en `app/config.py` con validación y fail-fast en producción.
 - Tests de regresión para refresh, logout, permisos de equipo, Kanban, asignación y uploads (`tests/test_p1_hardening.py`).

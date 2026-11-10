@@ -113,6 +113,39 @@ Docker Desktop no está iniciado, así que la imagen no se pudo construir localm
 
 ---
 
+## B-05 — Render no redeploya el fix de rate limiting
+
+**Estado:** abierto (2026-11-10)
+**Severidad:** S0 en producción
+
+`POST /api/v1/auth/register` con datos válidos devuelve **500** en producción. La
+causa es T-093: con el rate limiter activo, slowapi lanzaba
+`parameter 'response' must be an instance of starlette.responses.Response` al
+inyectar cabeceras en respuestas 2xx.
+
+El fix está en `main` (`eb9815b`, T-093 + T-094) y verificado:
+
+- `pytest -q` → 169 passed; local `register` → 201 con `X-RateLimit-*`.
+- CI de GitHub Actions #114 y #115 → verdes.
+- Smoke de performance local: p95 < 33 ms.
+
+Producción sigue sirviendo la versión anterior después de 15 minutos. No hay
+`RENDER_API_KEY` ni deploy hook disponibles en el entorno del agente, y
+`gh` no está instalado. **Acción manual requerida:** redeploy del servicio
+`srv-d82qnghj2pic73aqr5l0` en Render desde `main` (o habilitar Auto-Deploy) y
+repetir el smoke de release.
+
+Verificación tras el redeploy:
+
+```bash
+curl -i -X POST https://taskflow-api-gkgl.onrender.com/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"release-check@example.com","password":"ReleaseCheck1!"}'
+# Esperado: 201 + X-RateLimit-Limit
+```
+
+---
+
 ## Lo que sí está verificado
 
 - `pytest -q` → **101 tests passed** (última ejecución completa).
