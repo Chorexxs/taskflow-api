@@ -1,0 +1,25 @@
+# Gitleaks configuration (SPEC-AUDIT-SEC §13).
+# Default rules stay enabled; only documented placeholders are allowlisted so a
+# real credential still fails the scan.
+title = "TaskFlow API"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documented placeholders that are not credentials."
+regexTarget = "match"
+paths = [
+  # Template file: only placeholders are allowed here.
+  '''(^|/)\.env\.example$''',
+]
+regexes = [
+  # JWT placeholder used in the API docs/curl examples.
+  '''(?i)authorization:\s*bearer\s+eyJhbGc\.\.\.''',
+  # Development-only values from .env.example, docker-compose and CI.
+  '''your-secret-key-here''',
+  '''dev-only-insecure-secret-key-change-me''',
+  '''dev-secret-key-change-in-production''',
+  '''ci-secret-key''',
+  '''<db-password>''',
+]
