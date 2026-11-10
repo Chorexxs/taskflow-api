@@ -166,7 +166,7 @@ export default function ProjectBoard() {
     return () => clearTimeout(timeout)
   }, [searchInput])
 
-  const { data: tasks, isLoading, error: tasksError } = useQuery({
+  const { data: tasks, isLoading, error: tasksError, refetch: refetchTasks } = useQuery({
     queryKey: ['tasks', teamId, projectId, filters, page],
     queryFn: () =>
       api.tasks.list(token, teamId, projectId, {
@@ -418,7 +418,16 @@ export default function ProjectBoard() {
             </div>
             
             {tasksError && (
-              <span className="text-[var(--color-priority-high)] text-sm">Error loading tasks</span>
+              <span className="flex items-center gap-2 text-[var(--color-priority-high)] text-sm">
+                Error loading tasks
+                <button
+                  type="button"
+                  onClick={() => refetchTasks()}
+                  className="underline hover:no-underline"
+                >
+                  Retry
+                </button>
+              </span>
             )}
             
             <div className="flex-1 max-w-md mx-4">

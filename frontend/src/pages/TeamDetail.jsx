@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
+import QueryError from '../components/QueryError'
 import { api } from '../api'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Plus, Users, Crown, X, FolderOpen, ChevronRight, Edit2, Save, Pencil, Trash2 } from 'lucide-react'
@@ -73,7 +74,7 @@ export default function TeamDetail() {
   const { user } = useAuth()
   const currentUserId = user?.id ?? 0
 
-  const { data: team, isLoading: teamLoading } = useQuery({
+  const { data: team, isLoading: teamLoading, isError: teamError, refetch: refetchTeam } = useQuery({
     queryKey: ['team', teamId],
     queryFn: () => api.teams.get(token, teamId),
   })
@@ -236,6 +237,18 @@ export default function TeamDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
+  }
+
+  if (teamError) {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg-primary)]">
+        <QueryError
+          title="Could not load this team"
+          message="It may have been removed or you may not have access."
+          onRetry={() => refetchTeam()}
+        />
       </div>
     )
   }

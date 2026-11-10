@@ -26,6 +26,7 @@ import toast from 'react-hot-toast'
 import { ArrowLeft, Send, MessageSquare, User, Calendar, Edit2, X, Check, Paperclip, Download, Trash2, File, Pencil, Trash, Activity } from 'lucide-react'
 import { formatActivityAction, formatActivityActor, formatActivityValue } from '../utils/activity'
 import { useAuth } from '../context/AuthContext'
+import QueryError from '../components/QueryError'
 
 /**
  * TaskDetail Component - Page for viewing and interacting with a single task
@@ -68,7 +69,7 @@ export default function TaskDetail() {
     due_date: '',
   })
 
-  const { data: task, isLoading } = useQuery({
+  const { data: task, isLoading, isError: taskError, refetch: refetchTask } = useQuery({
     queryKey: ['task', teamId, projectId, taskId],
     queryFn: () => api.tasks.get(token, teamId, projectId, taskId),
   })
@@ -227,6 +228,18 @@ export default function TaskDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
+  }
+
+  if (taskError) {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg-primary)]">
+        <QueryError
+          title="Could not load this task"
+          message="It may have been deleted or you may not have access."
+          onRetry={() => refetchTask()}
+        />
       </div>
     )
   }

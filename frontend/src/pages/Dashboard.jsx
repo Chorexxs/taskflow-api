@@ -17,6 +17,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
 import toast from 'react-hot-toast';
 import { Plus, Users, FolderKanban, ChevronRight } from 'lucide-react';
+import QueryError from '../components/QueryError';
 
 /**
  * Dashboard page component.
@@ -35,7 +36,7 @@ export default function Dashboard() {
   /**
    * Fetch user's teams from API.
    */
-  const { data: teams, isLoading } = useQuery({
+  const { data: teams, isLoading, isError, refetch } = useQuery({
     queryKey: ['teams'],
     queryFn: () => api.teams.list(localStorage.getItem('access_token')),
   });
@@ -91,6 +92,12 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
+      ) : isError ? (
+        <QueryError
+          title="Could not load your teams"
+          message="Check your connection and try again."
+          onRetry={() => refetch()}
+        />
       ) : teams?.length === 0 ? (
         /* Empty state */
         <div className="text-center py-16">
