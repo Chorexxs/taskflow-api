@@ -140,35 +140,41 @@ def list_comments(
     task_id_or_title: str,
     page: int = 1,
     page_size: int = 20,
+    order: str = "desc",
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
 ):
     """
     List all comments for a task.
-    
-    Returns all comments on a task, ordered by creation date
-    (newest first).
-    
+
+    Returns a page of comments ordered by creation date. ``order=desc`` is the
+    default (newest first); use ``order=asc`` for chronological threads.
+
     Args:
         team_id_or_slug (str): The team identifier (ID or slug).
         project_id_or_name (str): The project identifier (ID or name).
         task_id_or_title (str): The task identifier (ID or title).
+        page (int): Page number (1-indexed).
+        page_size (int): Items per page (max 100).
+        order (str): ``asc`` or ``desc`` by creation date.
         db (Session): Database session (injected by FastAPI).
         current_user (User): The authenticated user.
         member (TeamMember): Team membership check (injected via dependency).
-    
+
     Returns:
         PaginatedCommentResponse: Page of comments plus metadata.
-    
+
     Example:
-        >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/projects/1/tasks/1/comments/ \\
+        >>> curl -X GET "https://api.taskflow.com/api/v1/teams/1/projects/1/tasks/1/comments/?order=asc" \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
     page = max(page, 1)
     page_size = min(max(page_size, 1), 100)
+    if order not in {"asc", "desc"}:
+        raise HTTPException(status_code=422, detail="order must be 'asc' or 'desc'")
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
-    return crud.get_comments_by_task(db, task.id, page, page_size)
+    return crud.get_comments_by_task(db, task.id, page, page_size, order)
 
 
 @router.patch("/{comment_id}", response_model=schemas.CommentOut)

@@ -30,7 +30,7 @@
 
 **Completadas (P5):** `T-065` (decisión dark-only), `T-070` (eliminados axios y ThemeContext muerto).
 
-**Completadas (P4):** `T-052` (menciones), `T-053` (backend de almacenamiento configurable), `T-056` (limpieza de adjuntos locales al borrar tarea).
+**Completadas (P4):** `T-050` (orden asc/desc de comentarios), `T-051` (pertenencia actual al equipo al editar comentarios), `T-052` (menciones), `T-053` (backend de almacenamiento configurable), `T-056` (limpieza de adjuntos locales al borrar tarea).
 
 **Completadas (P4):** `T-057` (notificaciones paginadas y contador de no leídas).
 

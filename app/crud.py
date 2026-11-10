@@ -1074,10 +1074,16 @@ def get_comment_by_id(db: Session, comment_id: int):
     return db.query(models.Comment).filter(models.Comment.id == comment_id).first()
 
 
-def get_comments_by_task(db: Session, task_id: int, page: int = 1, page_size: int = 20):
+def get_comments_by_task(
+    db: Session,
+    task_id: int,
+    page: int = 1,
+    page_size: int = 20,
+    order: str = "desc",
+):
     """
-    Get a page of comments for a task, ordered newest first.
-    
+    Get a page of comments for a task, ordered newest first by default.
+
     Returns a pagination envelope compatible with the rest of the API.
     """
     from sqlalchemy.orm import selectinload
@@ -1085,9 +1091,13 @@ def get_comments_by_task(db: Session, task_id: int, page: int = 1, page_size: in
     query = db.query(models.Comment).filter(models.Comment.task_id == task_id)
     total = query.count()
     pages = (total + page_size - 1) // page_size if total else 0
+    if order == "asc":
+        order_columns = (models.Comment.created_at.asc(), models.Comment.id.asc())
+    else:
+        order_columns = (models.Comment.created_at.desc(), models.Comment.id.desc())
     items = (
         query.options(selectinload(models.Comment.author))
-        .order_by(models.Comment.created_at.desc())
+        .order_by(*order_columns)
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()
