@@ -134,7 +134,11 @@ erDiagram
 | `is_blocked` | `boolean` | DEFAULT false |
 | `failed_login_attempts` | `integer` | DEFAULT 0 |
 | `locked_until` | `timestamptz` | NULL |
+| `token_version` | `integer` | NOT NULL, DEFAULT 0 |
 | `created_at` | `timestamptz` | DEFAULT now() |
+| `updated_at` | `timestamptz` | DEFAULT now(), on update |
+| `last_login_at` | `timestamptz` | NULL |
+| `password_changed_at` | `timestamptz` | NULL |
 
 ### `teams`
 
@@ -146,6 +150,7 @@ erDiagram
 | `description` | `varchar(500)` | NULL |
 | `created_by` | `integer` | FK `users.id`, NOT NULL |
 | `created_at` | `timestamptz` | DEFAULT now() |
+| `updated_at` | `timestamptz` | DEFAULT now(), on update |
 
 ### `team_members`
 
@@ -168,6 +173,7 @@ erDiagram
 | `status` | `varchar(20)` | DEFAULT `active`, índice |
 | `created_by` | `integer` | FK `users.id`, NOT NULL |
 | `created_at` | `timestamptz` | DEFAULT now() |
+| `updated_at` | `timestamptz` | DEFAULT now(), on update |
 
 Índices: `(team_id, status)` y `(team_id, slug)` UNIQUE. Migración
 `e5f6a7b8c9d0` (M-02) con backfill determinista y sufijos ante colisiones.
@@ -443,14 +449,14 @@ erDiagram
 
 | ID | Migración | Pasos | Rollback |
 |---|---|---|---|
-| M-01 | Constraints y columnas de auditoría | Añadir `updated_at`, `CHECK` de enums, `last_login_at`, `password_changed_at` con defaults; validar datos | `downgrade` elimina columnas/constraints |
+| M-01 | Constraints y columnas de auditoría | **Implementado** en `a7b8c9d0e1f2`: `updated_at`, `last_login_at`, `password_changed_at`, CHECK de roles/estados/prioridades/tipos | `downgrade` elimina columnas/constraints |
 | M-02 | Slugs de proyecto | Añadir `slug NULL`; backfill `slugify(name)` + sufijo; unique; `NOT NULL` | Eliminar unique/columna |
 | M-03 | Storage de adjuntos | Añadir `storage_key`, `checksum`, `original_filename`; backfill desde `file_path`; migrar objetos; dual-read; deprecar `file_path` | Restaurar lectura por `file_path`; mantener columnas |
 | M-04 | Sesiones de refresh | Crear `refresh_sessions` y `revoked_access_tokens`; dual-write; migrar tokens vigentes; retirar `revoked_tokens` en release posterior | Volver a `revoked_tokens`; conservar tablas |
 | M-05 | Posición de tareas | Añadir `position NULL`; backfill por `created_at`; default; `NOT NULL` | Eliminar columna |
 | M-06 | Notificaciones | Añadir `read_at`; backfill desde `is_read`; índice; conservar `is_read` temporalmente | Eliminar `read_at`/índice |
 | M-07 | Invitaciones (opcional) | Crear `team_invites` | Drop table |
-| M-08 | Índices de lectura | Crear índices objetivo con `CREATE INDEX CONCURRENTLY` donde aplique | Drop indexes |
+| M-08 | Índices de lectura | **Implementado** en `a7b8c9d0e1f2` para team_members, projects, tasks, comments, attachments y notifications | Drop indexes |
 
 ### Backfill de ejemplo (slugs)
 

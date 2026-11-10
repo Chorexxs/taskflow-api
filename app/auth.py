@@ -305,6 +305,7 @@ def reset_failed_login(db: Session, user) -> None:
     user.failed_login_attempts = 0
     user.is_blocked = False
     user.locked_until = None
+    user.last_login_at = datetime.now(timezone.utc)
     db.commit()
 
 

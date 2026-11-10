@@ -24,7 +24,7 @@ Key patterns used:
 
 import re
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
@@ -164,6 +164,7 @@ def update_user(db: Session, user_id: int, user_update: schemas.UserUpdate):
         return None
     if user_update.password:
         db_user.hashed_password = get_password_hash(user_update.password)
+        db_user.password_changed_at = datetime.now(timezone.utc)
         # Invalidate every existing session (access and refresh tokens).
         db_user.token_version = (db_user.token_version or 0) + 1
     if user_update.email:

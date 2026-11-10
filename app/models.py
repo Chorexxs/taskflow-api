@@ -30,6 +30,7 @@ Relationships:
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
     DateTime,
     ForeignKey,
@@ -77,6 +78,11 @@ class User(Base):
     # existing session can be invalidated at once.
     token_version = Column(Integer, nullable=False, default=0, server_default="0")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
+    password_changed_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class Team(Base):
@@ -111,6 +117,9 @@ class Team(Base):
     description = Column(String(500), nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
     members = relationship("TeamMember", back_populates="team", cascade="all, delete-orphan")
     creator = relationship("User")
@@ -138,6 +147,11 @@ class TeamMember(Base):
         - role: Index for role-based queries
     """
     __tablename__ = "team_members"
+    __table_args__ = (
+        CheckConstraint("role IN ('admin', 'member')", name="ck_team_members_role"),
+        Index("ix_team_members_user_id", "user_id"),
+        Index("ix_team_members_team_role", "team_id", "role"),
+    )
 
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
@@ -176,7 +190,11 @@ class Project(Base):
     """
     __tablename__ = "projects"
     __table_args__ = (
+        CheckConstraint(
+            "status IN ('active', 'archived')", name="ck_projects_status"
+        ),
         Index("ix_projects_team_status", "team_id", "status"),
+        Index("ix_projects_team_status_created", "team_id", "status", "created_at"),
         UniqueConstraint("team_id", "slug", name="uq_projects_team_slug"),
     )
 
@@ -188,6 +206,9 @@ class Project(Base):
     status = Column(String(20), default="active", index=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
     team = relationship("Team")
     creator = relationship("User")
@@ -228,8 +249,16 @@ class Task(Base):
     """
     __tablename__ = "tasks"
     __table_args__ = (
+        CheckConstraint(
+            "status IN ('todo', 'in_progress', 'done')", name="ck_tasks_status"
+        ),
+        CheckConstraint(
+            "priority IN ('low', 'medium', 'high')", name="ck_tasks_priority"
+        ),
         Index("ix_tasks_project_status", "project_id", "status"),
         Index("ix_tasks_project_priority", "project_id", "priority"),
+        Index("ix_tasks_project_assignee_status", "project_id", "assigned_to", "status"),
+        Index("ix_tasks_project_due_date", "project_id", "due_date"),
         Index("ix_tasks_assigned_to", "assigned_to"),
         Index("ix_tasks_due_date", "due_date"),
         Index("ix_tasks_created_at", "created_at"),
@@ -273,6 +302,9 @@ class Comment(Base):
     Table: comments
     """
     __tablename__ = "comments"
+    __table_args__ = (
+        Index("ix_comments_task_created", "task_id", "created_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
@@ -309,6 +341,9 @@ class Attachment(Base):
     Table: attachments
     """
     __tablename__ = "attachments"
+    __table_args__ = (
+        Index("ix_attachments_task_created", "task_id", "created_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
@@ -398,6 +433,13 @@ class Notification(Base):
     Table: notifications
     """
     __tablename__ = "notifications"
+    __table_args__ = (
+        CheckConstraint(
+            "type IN ('assigned', 'commented', 'mentioned')",
+            name="ck_notifications_type",
+        ),
+        Index("ix_notifications_user_read_created", "user_id", "is_read", "created_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -430,6 +472,11 @@ class RevokedToken(Base):
         - token: Unique index for quick lookups
     """
     __tablename__ = "revoked_tokens"
+    __table_args__ = (
+        CheckConstraint(
+            "token_type IN ('access', 'refresh')", name="ck_revoked_tokens_type"
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     token = Column(String(500), unique=True, index=True, nullable=False)
