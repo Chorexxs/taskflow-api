@@ -139,6 +139,7 @@ erDiagram
 | `updated_at` | `timestamptz` | DEFAULT now(), on update |
 | `last_login_at` | `timestamptz` | NULL |
 | `password_changed_at` | `timestamptz` | NULL |
+| `muted_notification_types` | `varchar(200)` | NOT NULL, DEFAULT `''` |
 
 ### `teams`
 
@@ -246,7 +247,11 @@ erDiagram
 | `entity_id` | `integer` | NOT NULL |
 | `message` | `varchar(500)` | NOT NULL |
 | `is_read` | `boolean` | DEFAULT false |
+| `dedupe_key` | `varchar(255)` | UNIQUE, NULL (idempotencia por evento) |
 | `created_at` | `timestamptz` | DEFAULT now() |
+
+Migración `c9d0e1f2a3b4`: añade `dedupe_key` y
+`users.muted_notification_types`.
 
 ### `revoked_tokens`
 

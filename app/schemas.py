@@ -903,6 +903,23 @@ class PaginatedAttachmentResponse(BaseModel):
     has_next: bool
 
 
+class NotificationType(str, Enum):
+    """Notification types a user can mute."""
+
+    assigned = "assigned"
+    commented = "commented"
+    mentioned = "mentioned"
+
+
+class NotificationPreferences(BaseModel):
+    """Per-user notification preferences.
+
+    Only the listed types are muted; an empty list enables everything.
+    """
+
+    muted_types: list[NotificationType] = []
+
+
 class NotificationOut(BaseModel):
     """
     Schema for notification response data.

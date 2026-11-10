@@ -499,7 +499,8 @@ def assign_task(
                     notification_type="assigned",
                     entity_type="task",
                     entity_id=updated_task.id,
-                    message=f"You have been assigned to task: {updated_task.title}"
+                    message=f"You have been assigned to task: {updated_task.title}",
+                    dedupe_key=f"assigned:{updated_task.id}:{assignment.user_id}",
                 )
     
     return updated_task

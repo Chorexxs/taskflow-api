@@ -83,6 +83,10 @@ class User(Base):
     )
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     password_changed_at = Column(DateTime(timezone=True), nullable=True)
+    # Comma-separated notification types the user does not want to receive.
+    muted_notification_types = Column(
+        String(200), nullable=False, default="", server_default=""
+    )
 
 
 class Team(Base):
@@ -449,6 +453,8 @@ class Notification(Base):
     entity_id = Column(Integer, nullable=False)
     message = Column(String(500), nullable=False)
     is_read = Column(Boolean, default=False)
+    # Idempotency key: the same event must never create two notifications.
+    dedupe_key = Column(String(255), unique=True, index=True, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User")

@@ -106,6 +106,7 @@ def create_comment(
             entity_type="task",
             entity_id=task.id,
             message=f"New comment on task: {task.title}",
+            dedupe_key=f"commented:{new_comment.id}:{task.assigned_to}",
         )
         notified_user_ids.add(task.assigned_to)
 
@@ -127,6 +128,7 @@ def create_comment(
             entity_type="task",
             entity_id=task.id,
             message=f"You were mentioned in a comment on task: {task.title}",
+            dedupe_key=f"mentioned:{new_comment.id}:{mentioned_user.id}",
         )
         notified_user_ids.add(mentioned_user.id)
 

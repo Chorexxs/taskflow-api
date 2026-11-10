@@ -1419,13 +1419,22 @@ def delete_attachment(db: Session, attachment_id: int):
     return db_attachment
 
 
-def create_notification(db: Session, user_id: int, notification_type: str, entity_type: str, entity_id: int, message: str):
+def create_notification(
+    db: Session,
+    user_id: int,
+    notification_type: str,
+    entity_type: str,
+    entity_id: int,
+    message: str,
+    dedupe_key: str | None = None,
+):
     """
     Create a notification for a user.
-    
+
     Notifications are created when events occur that the user should
-    be aware of, such as being assigned to a task.
-    
+    be aware of, such as being assigned to a task. Muted types are skipped and
+    ``dedupe_key`` makes the call idempotent for the same event.
+
     Args:
         db (Session): SQLAlchemy database session.
         user_id (int): ID of the user to notify.
@@ -1433,10 +1442,12 @@ def create_notification(db: Session, user_id: int, notification_type: str, entit
         entity_type (str): Type of related entity.
         entity_id (int): ID of the related entity.
         message (str): Human-readable notification message.
-    
+        dedupe_key (str | None): Stable key for the event, unique per user/type.
+
     Returns:
-        Notification: The newly created notification.
-    
+        Notification | None: The created notification, the existing one for a
+        repeated dedupe key, or ``None`` when the type is muted.
+
     Example:
         >>> create_notification(
         ...     db,
@@ -1447,12 +1458,32 @@ def create_notification(db: Session, user_id: int, notification_type: str, entit
         ...     message="You have been assigned to: Fix bug"
         ... )
     """
+    user = get_user_by_id(db, user_id)
+    if user is not None:
+        muted = {
+            value.strip()
+            for value in (user.muted_notification_types or "").split(",")
+            if value.strip()
+        }
+        if notification_type in muted:
+            return None
+
+    if dedupe_key:
+        existing = (
+            db.query(models.Notification)
+            .filter(models.Notification.dedupe_key == dedupe_key)
+            .first()
+        )
+        if existing is not None:
+            return existing
+
     db_notification = models.Notification(
         user_id=user_id,
         type=notification_type,
         entity_type=entity_type,
         entity_id=entity_id,
         message=message,
+        dedupe_key=dedupe_key,
     )
     db.add(db_notification)
     db.commit()

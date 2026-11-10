@@ -32,7 +32,7 @@
 
 **Completadas (P4):** `T-050` (orden asc/desc de comentarios), `T-051` (pertenencia actual al equipo al editar comentarios), `T-052` (menciones), `T-053` (backend de almacenamiento configurable), `T-055` (MIME/tamaño, checksum SHA-256 y nombres únicos), `T-056` (limpieza de adjuntos locales al borrar tarea).
 
-**Completadas (P4):** `T-057` (notificaciones paginadas y contador de no leídas).
+**Completadas (P4):** `T-057` (notificaciones paginadas y contador de no leídas), `T-058` (deduplicación por evento y preferencias de tipo silenciado).
 
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 

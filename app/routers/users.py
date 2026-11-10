@@ -116,3 +116,45 @@ def update_current_user(
             email_changed=user_update.email is not None,
         )
     return updated_user
+
+
+def _preferences_payload(user: User) -> dict:
+    return {
+        "muted_types": [
+            value
+            for value in (user.muted_notification_types or "").split(",")
+            if value
+        ]
+    }
+
+
+@router.get(
+    "/me/notification-preferences",
+    response_model=schemas.NotificationPreferences,
+)
+def get_notification_preferences(current_user: User = Depends(get_current_user)):
+    """Return the notification types the current user has muted."""
+    return _preferences_payload(current_user)
+
+
+@router.put(
+    "/me/notification-preferences",
+    response_model=schemas.NotificationPreferences,
+)
+def update_notification_preferences(
+    preferences: schemas.NotificationPreferences,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Mute or unmute notification types for the current user."""
+    current_user.muted_notification_types = ",".join(
+        sorted({value.value for value in preferences.muted_types})
+    )
+    db.commit()
+    db.refresh(current_user)
+    logger.info(
+        "notification_preferences_updated",
+        user_id=current_user.id,
+        muted_count=len(preferences.muted_types),
+    )
+    return _preferences_payload(current_user)

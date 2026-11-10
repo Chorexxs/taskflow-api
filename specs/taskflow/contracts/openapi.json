@@ -365,6 +365,31 @@
         "title": "NotificationOut",
         "type": "object"
       },
+      "NotificationPreferences": {
+        "description": "Per-user notification preferences.\n\nOnly the listed types are muted; an empty list enables everything.",
+        "properties": {
+          "muted_types": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/NotificationType"
+            },
+            "title": "Muted Types",
+            "type": "array"
+          }
+        },
+        "title": "NotificationPreferences",
+        "type": "object"
+      },
+      "NotificationType": {
+        "description": "Notification types a user can mute.",
+        "enum": [
+          "assigned",
+          "commented",
+          "mentioned"
+        ],
+        "title": "NotificationType",
+        "type": "string"
+      },
       "PaginatedActivityResponse": {
         "description": "Paginated list of activity entries.",
         "properties": {
@@ -4217,6 +4242,78 @@
           }
         ],
         "summary": "Update Current User",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me/notification-preferences": {
+      "get": {
+        "description": "Return the notification types the current user has muted.",
+        "operationId": "get_notification_preferences_api_v1_users_me_notification_preferences_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Notification Preferences",
+        "tags": [
+          "users"
+        ]
+      },
+      "put": {
+        "description": "Mute or unmute notification types for the current user.",
+        "operationId": "update_notification_preferences_api_v1_users_me_notification_preferences_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationPreferences"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Notification Preferences",
         "tags": [
           "users"
         ]

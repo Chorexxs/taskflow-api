@@ -322,6 +322,8 @@ Leyenda de permisos: **Público**, **Auth** (cualquier autenticado), **Member**,
 |---|---|---|---|---|---|
 | GET | `/users/me` | Auth | — | `UserOut` | 200, 401 |
 | PUT | `/users/me` | Owner | `{email?, password?, current_password?}` | `UserOut` | 200, 401, 409, 422 |
+| GET | `/users/me/notification-preferences` | Auth | — | `{muted_types}` | 200, 401 |
+| PUT | `/users/me/notification-preferences` | Auth | `{muted_types:["assigned"\|"commented"\|"mentioned"]}` | `{muted_types}` | 200, 401, 422 |
 
 > Target: `current_password` obligatorio para cambiar contraseña/email; al cambiar contraseña se revocan sesiones.
 
@@ -429,10 +431,13 @@ si hay más de un proyecto con ese nombre, responde `409`.
 |---|---|---|---|---|---|
 | GET | `/notifications/` | Owner | `is_read,page,page_size` | `Paginated<NotificationOut>` | 200 |
 | GET | `/notifications/unread-count` | Owner | — | `{count}` | 200 |
-
 | PATCH | `/notifications/{id}/read` | Owner | — | `NotificationOut` | 200, 403, 404 |
 | PATCH | `/notifications/read-all` | Owner | — | — | 204 |
 | GET | `/notifications/stream` | Owner | — | `text/event-stream` | 200 (P4) |
+
+Cada evento usa una `dedupe_key` única (por usuario, tipo y entidad/evento), de
+modo que reintentos o dobles clics no crean notificaciones duplicadas. Los tipos
+silenciados con `/users/me/notification-preferences` se omiten al crearlas.
 
 ### 7.9 Sistema
 
