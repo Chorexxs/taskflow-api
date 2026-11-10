@@ -345,6 +345,6 @@ CORS_ORIGINS=http://localhost:5173
 ## Tech Stack Reference
 
 - FastAPI, SQLAlchemy 2, Pydantic v2, Alembic, PostgreSQL.
-- JWT (`python-jose`), bcrypt, slowapi, structlog, Sentry, Redis.
+- JWT (`PyJWT`), bcrypt, slowapi, structlog, Sentry, Redis.
 - React 18, Vite, React Router, TanStack Query, Tailwind CSS 4, Lucide, React Hot Toast, @dnd-kit.
 - pytest, Vitest, Testing Library, GitHub Actions.

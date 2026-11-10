@@ -16,14 +16,14 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | Servicio | URL | Descripción |
 |---|---|---|
 | **Frontend** | https://taskflow-api-tau.vercel.app | Interfaz React |
-| **Preview InsForge** | https://wrm6rjkp.insforge.site | Último build desplegado vía InsForge/Vercel |
+| **Preview InsForge** | https://<insforge-project-id>.insforge.site | Último build desplegado vía InsForge/Vercel |
 | **API** | https://taskflow-api-gkgl.onrender.com/api/v1 | Backend REST |
 | **Swagger** | https://taskflow-api-gkgl.onrender.com/docs | Documentación interactiva |
 | **Health** | https://taskflow-api-gkgl.onrender.com/health | Estado del servidor |
 | **Liveness** | https://taskflow-api-gkgl.onrender.com/health/live | Proceso vivo |
 | **Readiness** | https://taskflow-api-gkgl.onrender.com/health/ready | DB accesible |
 
-> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend Vercel **live y actualizado** en `https://taskflow-api-tau.vercel.app`, con `VITE_API_URL` correcto y headers de seguridad. El preview `https://wrm6rjkp.insforge.site` sirve el mismo build. Smoke test de producción: **13/13**. B-02 resuelto; solo queda autenticar el MCP de Vercel en OpenCode. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
+> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend Vercel **live y actualizado** en `https://taskflow-api-tau.vercel.app`, con `VITE_API_URL` correcto y headers de seguridad. El preview `https://<insforge-project-id>.insforge.site` sirve el mismo build. Smoke test de producción: **13/13**. B-02 resuelto; solo queda autenticar el MCP de Vercel en OpenCode. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
 
 ---
 
@@ -50,7 +50,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Backend** | Python 3.12, FastAPI, Uvicorn |
 | **ORM / DB** | SQLAlchemy 2, PostgreSQL 15, Alembic |
 | **Validación** | Pydantic v2, pydantic-settings |
-| **Auth** | JWT (`python-jose`), bcrypt, access 15 min + refresh 7 días |
+| **Auth** | JWT (`PyJWT`), bcrypt, access 15 min + refresh 7 días |
 | **Seguridad** | SlowAPI, headers de seguridad, lockout de cuenta, CORS por allowlist |
 | **Observabilidad** | structlog (JSON + request ID), Sentry opcional |
 | **Frontend** | React 18, Vite 5, React Router 7 |
@@ -294,7 +294,7 @@ Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y 
 - Git: `Chorexxs/taskflow-api` conectado; un push a `main` despliega automáticamente.
 - `vercel.json`: rewrite SPA a `/` + headers de seguridad (CSP, HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`).
 - `.vercelignore`: excluye secretos, `.env.local`, backend, tests y specs del upload.
-- Preview alternativo: `https://wrm6rjkp.insforge.site` (mismo build).
+- Preview alternativo: `https://<insforge-project-id>.insforge.site` (mismo build).
 
 ```bash
 # Deploy manual desde la raíz del repositorio
@@ -307,20 +307,20 @@ Estado: **live y verificado** (B-02 resuelto).
 
 PostgreSQL gestionado. Proyecto nuevo: `c7578dc0-d532-4463-88f1-09c6e54356f7`.
 
-- **URL del proyecto:** `https://wrm6rjkp.eu-central.insforge.app`
-- **DB host:** `wrm6rjkp.eu-central.database.insforge.app`
+- **URL del proyecto:** `https://<insforge-project-id>.eu-central.insforge.app`
+- **DB host:** `<insforge-project-id>.eu-central.database.insforge.app`
 - **Región:** `eu-central`
 - **Estado:** esquema migrado a `d4e5f6a7b8c9` (11 tablas).
 
 ```bash
 # Project API key (ik_) + URL del proyecto:
 npx @insforge/cli link \
-  --api-base-url https://wrm6rjkp.eu-central.insforge.app \
+  --api-base-url https://<insforge-project-id>.eu-central.insforge.app \
   --api-key ik_...
 
 # La contraseña real de la DB:
 curl -H "Authorization: Bearer $INSFORGE_API_KEY" \
-  https://wrm6rjkp.eu-central.insforge.app/api/metadata/database-password
+  https://<insforge-project-id>.eu-central.insforge.app/api/metadata/database-password
 ```
 
 Con un **user API key** (`uak_`) también se puede usar el flujo de plataforma:
@@ -414,7 +414,7 @@ alembic/                 # migraciones
 - Rate limiting con Redis para múltiples instancias (P2); hoy memoria por proceso.
 - Tests de integración contra PostgreSQL y umbral de cobertura en CI (P6).
 - Auditoría WCAG completa y tema claro/oscuro (P5); la UI es dark-only.
-- `ruff`/`mypy` configurados en `pyproject.toml` pero aún no enforced en CI (P6).
+- Gates de seguridad en CI: `gitleaks` (pre-commit y CI), `pip-audit` y dependencias al día (P8).
 
 El detalle y el orden están en [`specs/taskflow/tasks.md`](./specs/taskflow/tasks.md).
 

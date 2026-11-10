@@ -25,7 +25,7 @@
 
 ### Autenticación y seguridad
 
-- **python-jose[cryptography]** — JWT HS256.
+- **PyJWT** — JWT HS256.
 - **bcrypt** — hashing de contraseñas.
 - **email-validator** — validación de emails.
 - **slowapi** — rate limiting por IP.

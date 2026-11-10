@@ -12,7 +12,7 @@
 
 Implementado en P1:
 
-- `POST /auth/refresh` acepta `{"refresh_token": "..."}` en el body y rota el token.
+- `POST /auth/refresh` acepta `{"refresh_token": "..."}` en el body y rota el token; el token en query string se rechaza con `422`.
 - `POST /auth/logout` revoca access + refresh y es idempotente (204).
 - CORS con allowlist (`CORS_ORIGINS`).
 - Uploads con nombre saneado, clave única, límite en streaming y allowlist MIME/extensión.
@@ -96,7 +96,7 @@ Content-Type: application/json
 
 Reglas:
 
-- El refresh va en el **body**, nunca en query string.
+- El refresh va en el **body**, nunca en query string; enviarlo en la URL devuelve `422` y no consume el token.
 - El token anterior se revoca y se emite uno nuevo (rotación).
 - Si se reutiliza un refresh revocado → `401` y se revoca la familia. La
   implementación incrementa `token_version`, por lo que también invalidan los
@@ -156,7 +156,7 @@ Un recurso de otro equipo se trata como `404` (no se filtra su existencia), salv
 
 - `code`: estable, para programar.
 - `message`: legible, sin datos sensibles.
-- `details`: opcional, validación o contexto.
+- `details`: opcional, validación o contexto. En errores `422` nunca incluye el valor enviado (`input`), para no reflejar contraseñas.
 - `request_id`: mismo valor que `X-Request-ID`.
 
 ### 3.2 Status codes
@@ -313,7 +313,7 @@ Leyenda de permisos: **Público**, **Auth** (cualquier autenticado), **Member**,
 |---|---|---|---|---|---|
 | POST | `/auth/register` | Público | `{email, password}` | `UserOut` | 201, 409, 422, 429 |
 | POST | `/auth/login` | Público | form `username,password` | `Token` | 200, 401, 423, 429 |
-| POST | `/auth/refresh` | Público (refresh) | `{refresh_token}` | `Token` | 200, 401, 429 |
+| POST | `/auth/refresh` | Público (refresh) | `{refresh_token}` | `Token` | 200, 401, 422, 429 |
 | POST | `/auth/logout` | Auth | `{refresh_token}` | — | 204, 401 |
 
 ### 7.2 Users
@@ -580,7 +580,7 @@ cabeceras) y cae a polling cada 30 s si el stream falla.
 
 | Elemento | Estado actual | Target | Estrategia |
 |---|---|---|---|
-| Refresh body | Body JSON preferido; query deprecada | Solo body | Query oculta del schema; warning temporal |
+| Refresh body | Solo body | Solo body | Query eliminada (T-083); `422` si llega en la URL |
 | Logout | Revoca access y refresh | Revoca ambos | Implementado e idempotente |
 | `DELETE /projects` | Archiva | Archive explícito + restore | Alias documentado; `/archive` y `/restore` disponibles |
 | Lookup por nombre/título | Compatibilidad con warning; nombres/títulos ambiguos → 409 | id/slug | Proyectos ya tienen slug; retirar en v2 |

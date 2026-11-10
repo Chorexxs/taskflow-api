@@ -30,11 +30,13 @@
 
 **Completadas (P4):** `T-057` (notificaciones paginadas y contador de no leídas), `T-058` (deduplicación por evento y preferencias de tipo silenciado), `T-059` (SSE autenticado con heartbeat y `Last-Event-ID`), `T-060` (cliente SSE con fallback a polling), `T-061` (activity con actor, etiquetas legibles y paginación en UI), `T-062` (búsqueda con debounce 300 ms y paginación del tablero).
 
+**Completadas (P8, auditoría 2026-11-10):** `T-083` (refresh rechaza el token en query string), `T-084` (fail-fast de `SECRET_KEY` fuera de development/test), `T-085` (CI con permisos mínimos y acciones fijadas por SHA), `T-086` (`/docs`, `/redoc` y `/openapi.json` deshabilitados en producción), `T-087` (gitleaks en pre-commit y CI), `T-088` (pip-audit en CI), `T-089` (dependencias con CVE actualizadas: `python-multipart`, `pytest`, `pydantic-settings`), `T-090` (migración de `python-jose` a `PyJWT`), `T-091` (host de InsForge redactado en documentación), `T-092` (los 422 no reflejan el valor enviado).
+
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
 **Pendientes de P0:** `T-003` (labels/milestones), `T-004` (aceptación formal de ADRs), `T-007` (pre-commit completo), `T-009` (staging), `T-010` (política de release).
 
-Verificación actual: `pytest -q` → **101 passed**; `npm run test` → **12 passed**; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge real migrado a `d4e5f6a7b8c9` con smoke test **12/12**; Render live con smoke test de producción **13/13** y CORS verificado.
+Verificación actual: `pytest -q` → **165 passed**; `npm run test` → **23 passed**; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge real migrado a `d4e5f6a7b8c9` con smoke test **12/12**; Render live con smoke test de producción **13/13** y CORS verificado.
 
 ---
 
@@ -187,6 +189,25 @@ Verificación actual: `pytest -q` → **101 passed**; `npm run test` → **12 pa
 | ID | Tarea | Prio | Dep. | Tamaño | Refs | Aceptación |
 |---|---|---|---|---|---|---|
 | T-081 | Endurecer SSE: Redis pub/sub, backoff, límites y carga | C | T-059, T-060 | L | FR-NOT-05, ADR-002 | 500 conexiones simuladas estables; reconexión < 5 s |
+
+---
+
+## P8 — Hallazgos de la auditoría de seguridad (2026-11-10)
+
+Origen: [`specs/audit/security-audit.md`](../audit/security-audit.md), modo `incident`.
+
+| ID | Tarea | Prioridad | Dep. | Tamaño | Refs | Aceptación |
+|---|---|---|---|---|---|---|
+| T-083 | Refresh: rechazar el token en query string | SEC-3 | T-011 | XS | FR-AUTH-03 | Token en query → 422 y sin rotarlo; body → 200 |
+| T-084 | Fail-fast de `SECRET_KEY` fuera de development/test | SEC-3 | T-017 | XS | NFR-SEC-02 | `ENVIRONMENT=staging` sin clave → `RuntimeError`; dev/test conservan fallback |
+| T-085 | CI con permisos mínimos y acciones fijadas por SHA | SEC-3 | T-074 | XS | NFR-MAINT-03 | `permissions: contents: read`; 0 acciones sin SHA |
+| T-086 | Deshabilitar `/docs`, `/redoc` y `/openapi.json` en producción | SEC-3 | T-032 | XS | NFR-SEC-05, FR-API-03 | 404 en producción; habilitados en dev/test; snapshot intacto |
+| T-087 | gitleaks en pre-commit y CI con allowlist documentada | SEC-3 | T-074 | S | SPEC-AUDIT-SEC §13 | Historial limpio; un token real sigue fallando el escaneo |
+| T-088 | pip-audit como gate de dependencias | SEC-3 | T-072 | S | NFR-MAINT-04 | `pip-audit -r requirements.txt` sin vulnerabilidades |
+| T-089 | Actualizar dependencias con CVE (`python-multipart`, `pytest`, `pydantic-settings`) | SEC-2 | T-072 | XS | NFR-MAINT-04 | Versiones corregidas fijadas; suite verde |
+| T-090 | Migrar `python-jose` → `PyJWT` (CVE sin parche y `ecdsa` transitiva) | SEC-1 | T-089 | S | NFR-SEC-07 | 0 CVEs en JWT; refresh, revocación y reutilización verdes |
+| T-091 | Redactar el host real de InsForge en documentación | SEC-4 | — | XS | SEC-4.1 | `git grep` del host → 0 ocurrencias |
+| T-092 | Los errores 422 no reflejan el valor enviado | SEC-4 | T-039 | XS | FR-API-01, SEC-4.2 | `details` sin `input`; la contraseña no aparece en la respuesta |
 
 ---
 

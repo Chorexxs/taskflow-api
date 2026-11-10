@@ -9,15 +9,15 @@ Estos bloqueos requieren credenciales o acciones manuales que no están disponib
 ## B-01 — InsForge: RESUELTO
 
 **Proyecto:** `c7578dc0-d532-4463-88f1-09c6e54356f7`
-**URL:** `https://wrm6rjkp.eu-central.insforge.app`
-**DB host:** `wrm6rjkp.eu-central.database.insforge.app`
+**URL:** `https://<insforge-project-id>.eu-central.insforge.app`
+**DB host:** `<insforge-project-id>.eu-central.database.insforge.app`
 **Región:** `eu-central`
 
 La `ik_` key es una **project API key**, no una `uak_` de usuario. Se enlazó correctamente con:
 
 ```bash
 npx @insforge/cli link \
-  --api-base-url https://wrm6rjkp.eu-central.insforge.app \
+  --api-base-url https://<insforge-project-id>.eu-central.insforge.app \
   --api-key ik_...
 ```
 
@@ -68,9 +68,9 @@ Se actualizaron las variables del servicio `srv-d82qnghj2pic73aqr5l0`:
 
 ```bash
 ENVIRONMENT=production
-DATABASE_URL=postgresql://postgres:<db-password>@wrm6rjkp.eu-central.database.insforge.app:5432/insforge?sslmode=require
+DATABASE_URL=postgresql://postgres:<db-password>@<insforge-project-id>.eu-central.database.insforge.app:5432/insforge?sslmode=require
 DB_SSLMODE=require
-CORS_ORIGINS=https://taskflow-api-tau.vercel.app,https://wrm6rjkp.insforge.site
+CORS_ORIGINS=https://taskflow-api-tau.vercel.app,https://<insforge-project-id>.insforge.site
 STORAGE_BACKEND=database
 ```
 
@@ -88,7 +88,7 @@ Smoke test de producción: **13/13** (health, registro, login, equipo, proyecto,
 CORS:
 
 ```text
-Origin https://wrm6rjkp.insforge.site → permitido
+Origin https://<insforge-project-id>.insforge.site → permitido
 Origin https://taskflow-api-tau.vercel.app → permitido
 Origin https://evil.example → sin cabecera CORS
 ```

@@ -67,7 +67,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 
 | Control | Estado | Evidencia |
 |---|---|---|
-| Sin algoritmos propios | ✅ | `python-jose`, `bcrypt` |
+| Sin algoritmos propios | ✅ | `PyJWT`, `bcrypt` |
 | Secretos fuera del código | ✅ | `.env`, fail-fast en producción |
 | `SECRET_KEY` sin fallback en producción | ✅ | `app/config.py` |
 | TLS en despliegue | ✅ | Render/Vercel/InsForge; HSTS |

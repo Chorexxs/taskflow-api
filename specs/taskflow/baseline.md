@@ -24,7 +24,7 @@ Verificación actual: **101 tests backend**, **12 tests frontend**, build de pro
 |---|---|
 | Backend | FastAPI + Uvicorn, Python 3.11 en Docker/CI (local con trazas de 3.12) |
 | ORM/DB | SQLAlchemy 2 + PostgreSQL (InsForge, `us-east`) + Alembic (2 migraciones) |
-| Auth | JWT `python-jose`, bcrypt, access 15 min, refresh 7 días, revocación en DB |
+| Auth | JWT `PyJWT`, bcrypt, access 15 min, refresh 7 días, revocación en DB |
 | Frontend | React 18 + Vite 5 + React Router 7 + TanStack Query 5 + Tailwind 4 |
 | UI | Tema oscuro por defecto, Lucide, React Hot Toast, `@dnd-kit` |
 | API | 38 endpoints bajo `/api/v1` |

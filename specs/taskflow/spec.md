@@ -128,7 +128,7 @@ Prioridad MoSCoW: **M** must, **S** should, **C** could.
 |---|---|---|---|
 | FR-AUTH-01 | Registro con email único y contraseña | M | Email normalizado a minúsculas; contraseña 8–128 caracteres; 201 con `UserOut`; email duplicado → 409; rate limit 5/min/IP |
 | FR-AUTH-02 | Login con access + refresh | M | Credenciales válidas → 200 con `access_token`, `refresh_token`, `token_type=bearer`; credenciales inválidas → 401 genérico; cuenta bloqueada → 423; rate limit 10/min/IP |
-| FR-AUTH-03 | Refresh con rotación | M | `POST /auth/refresh` acepta `{"refresh_token": "..."}` en body; valida tipo `refresh`, expiración, revocación y usuario activo; revoca el anterior y emite par nuevo; reutilización → 401 y revocación de la familia (S) |
+| FR-AUTH-03 | Refresh con rotación | M | `POST /auth/refresh` acepta `{"refresh_token": "..."}` en body; valida tipo `refresh`, expiración, revocación y usuario activo; revoca el anterior y emite par nuevo; reutilización → 401 y revocación de la familia (S); token en query string → 422 |
 | FR-AUTH-04 | Logout real | M | `POST /auth/logout` con access en header y refresh en body; revoca ambos; 204; idempotente |
 | FR-AUTH-05 | Sesión automática en el cliente | M | Si el access expira o una request devuelve 401, el cliente refresca una sola vez y reintenta; si falla, limpia sesión y redirige a login |
 | FR-AUTH-06 | Bloqueo y rate limiting | M | 5 fallos consecutivos → bloqueo 15 min; contador se resetea al login exitoso; límites respaldados por Redis y consistentes entre instancias |
@@ -245,9 +245,9 @@ Prioridad MoSCoW: **M** must, **S** should, **C** could.
 
 | ID | Requisito | Prio | Criterio de aceptación |
 |---|---|---|---|
-| FR-API-01 | Error envelope único | M | Todos los errores usan `{error:{code,message,details,request_id}}`; status correcto (400/401/403/404/409/422/423/429/500) |
+| FR-API-01 | Error envelope único | M | Todos los errores usan `{error:{code,message,details,request_id}}`; status correcto (400/401/403/404/409/422/423/429/500); `details` de 422 omite el valor enviado (`input`) |
 | FR-API-02 | Paginación uniforme | M | Listas devuelven `{items,total,page,pages,has_next}`; parámetros `page`, `page_size` |
-| FR-API-03 | OpenAPI como contrato | M | `/openapi.json` generado; snapshot en CI; cambios revisados |
+| FR-API-03 | OpenAPI como contrato | M | `/openapi.json` generado en desarrollo/test; snapshot en CI; deshabilitado con `/docs` y `/redoc` en producción; cambios revisados |
 | FR-API-04 | Semántica HTTP | M | 201 creación, 204 sin contenido, 409 conflicto, 422 validación; `DELETE` documentado |
 | FR-API-05 | Rate limit headers | S | `X-RateLimit-*` y `Retry-After` en 429 |
 | FR-API-06 | Idempotencia | C | `Idempotency-Key` en POST críticos (subida, creación) |
