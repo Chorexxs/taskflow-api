@@ -274,7 +274,7 @@ Reglas:
 - Para uploads, usar `tmp_path` y `monkeypatch` de `UPLOAD_DIR`/`MAX_FILE_SIZE`.
 - No usar servicios externos reales.
 - Frontend: Vitest + Testing Library + jsdom; mockear `../api` y `react-hot-toast`.
-- Los tests actuales usan SQLite; P6 migrará integración a PostgreSQL (ADR-008).
+- Los tests de integración usan PostgreSQL vía `TEST_DATABASE_URL`, con el esquema creado por Alembic y tablas truncadas entre tests (ADR-008). `TEST_USE_SQLITE=1` es solo un atajo para runs unitarios.
 
 ---
 

@@ -162,7 +162,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | SEC-ASVS-02 | Checksum de adjuntos pendiente | Baja | T-055 |
 | SEC-ASVS-03 | Carrera teórica al degradar/expulsar al último admin | Baja | T-082/constraint futuro |
 | SEC-ASVS-04 | Sin prueba de restore de backups | Media | T-080 |
-| SEC-ASVS-05 | Integración de tests aún en SQLite | Media | T-077 |
+| SEC-ASVS-05 | Integración de tests en SQLite | ✅ Resuelto (T-077): PostgreSQL con migraciones | — |
 
 ## Firma
 

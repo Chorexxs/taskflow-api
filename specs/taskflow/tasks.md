@@ -22,7 +22,7 @@
 
 **Parcial (P4):** `T-054` (se implementó almacenamiento persistente en PostgreSQL en lugar de S3 por falta de credenciales).
 
-**Completadas (P6):** `T-072` (dependencias backend fijadas + React Router parcheado), `T-073` (Python 3.12), `T-074` (ruff y mypy fijados y ejecutados en CI), `T-075` (Docker non-root + HEALTHCHECK), `T-078` (snapshot OpenAPI + check en CI), `T-079` (health live/ready).
+**Completadas (P6):** `T-072` (dependencias backend fijadas + React Router parcheado), `T-073` (Python 3.12), `T-074` (ruff y mypy fijados y ejecutados en CI), `T-075` (Docker non-root + HEALTHCHECK), `T-077` (tests de integración sobre PostgreSQL con esquema Alembic y truncado por test), `T-078` (snapshot OpenAPI + check en CI), `T-079` (health live/ready).
 
 **Completadas (P5):** `T-066` (auditoría WCAG de flujos críticos en `a11y-audit.md`, skip link y nombres accesibles), `T-063` (cliente API con refresh single-flight, retry en 401, errores tipados y AbortController), `T-064` (AuthContext endurecido: permisos visuales desde `user`, sin `user_id` en storage), `T-067` (cabeceras y buscadores responsive; tablero usable desde 360 px), `T-071` (acciones de admin ocultas en tablero y miembros), `T-069` (tests de flujos críticos con MSW: login, tablero, tarea, comentarios y notificaciones), `T-068` (estados de error consistentes con reintento en dashboard, equipo, tablero y tarea), `T-065` (decisión dark-only), `T-070` (eliminados axios y ThemeContext muerto).
 
@@ -36,7 +36,7 @@
 
 **Pendientes de P0:** `T-003` (labels/milestones), `T-004` (aceptación formal de ADRs), `T-007` (pre-commit completo), `T-009` (staging), `T-010` (política de release).
 
-Verificación actual: `pytest -q` → **165 passed**; `npm run test` → **23 passed**; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge real migrado a `d4e5f6a7b8c9` con smoke test **12/12**; Render live con smoke test de producción **13/13** y CORS verificado.
+Verificación actual: `pytest -q` → **166 passed** sobre PostgreSQL 15; `npm run test` → **23 passed**; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge real migrado a `d4e5f6a7b8c9` con smoke test **12/12**; Render live con smoke test de producción **13/13** y CORS verificado.
 
 ---
 
