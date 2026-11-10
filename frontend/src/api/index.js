@@ -40,7 +40,76 @@ async function parseResponse(response) {
   return response.text();
 }
 
-async function request(path, { method = 'GET', token, body, headers = {}, signal } = {}) {
+function emitSessionEvent(name, detail) {
+  if (typeof window !== 'undefined' && window.dispatchEvent) {
+    window.dispatchEvent(new CustomEvent(name, { detail }));
+  }
+}
+
+function clearStoredSession() {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user_id');
+}
+
+let refreshPromise = null;
+
+/**
+ * Refresh the session once for every caller (single-flight) and persist the
+ * rotated pair. Throws `ApiError` when the refresh token is no longer valid.
+ */
+async function refreshSession() {
+  if (refreshPromise) return refreshPromise;
+
+  const refreshToken =
+    typeof localStorage !== 'undefined'
+      ? localStorage.getItem('refresh_token')
+      : null;
+  if (!refreshToken) {
+    clearStoredSession();
+    emitSessionEvent('taskflow:logout');
+    throw new ApiError('Session expired', { status: 401, code: 'UNAUTHORIZED' });
+  }
+
+  refreshPromise = (async () => {
+    const response = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    const data = await parseResponse(response);
+    if (!response.ok) {
+      const errorPayload = data?.error || {};
+      throw new ApiError(errorPayload.message || 'Session expired', {
+        status: response.status,
+        code: errorPayload.code || 'UNAUTHORIZED',
+        details: errorPayload.details,
+        data,
+      });
+    }
+
+    localStorage.setItem('access_token', data.access_token);
+    localStorage.setItem('refresh_token', data.refresh_token);
+    emitSessionEvent('taskflow:session', data);
+    return data.access_token;
+  })().finally(() => {
+    refreshPromise = null;
+  });
+
+  try {
+    return await refreshPromise;
+  } catch (error) {
+    clearStoredSession();
+    emitSessionEvent('taskflow:logout');
+    throw error;
+  }
+}
+
+async function request(
+  path,
+  { method = 'GET', token, body, headers = {}, signal, retry = false } = {},
+) {
   const isFormData = body instanceof FormData;
   const isUrlEncoded = body instanceof URLSearchParams;
 
@@ -67,6 +136,19 @@ async function request(path, { method = 'GET', token, body, headers = {}, signal
   const data = await parseResponse(response);
 
   if (!response.ok) {
+    const isAuthEndpoint = path.startsWith('/api/v1/auth/');
+    if (response.status === 401 && token && !retry && !isAuthEndpoint) {
+      const newToken = await refreshSession();
+      return request(path, {
+        method,
+        token: newToken,
+        body,
+        headers,
+        signal,
+        retry: true,
+      });
+    }
+
     const errorPayload = data?.error || {};
     const detail = data?.detail;
     const message =
@@ -87,13 +169,17 @@ async function request(path, { method = 'GET', token, body, headers = {}, signal
   return data;
 }
 
-async function requestBlob(path, { token, signal } = {}) {
+async function requestBlob(path, { token, signal, retry = false } = {}) {
   const response = await fetch(`${API_URL}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     signal,
   });
 
   if (!response.ok) {
+    if (response.status === 401 && token && !retry) {
+      const newToken = await refreshSession();
+      return requestBlob(path, { token: newToken, signal, retry: true });
+    }
     let data = null;
     try {
       data = await response.json();

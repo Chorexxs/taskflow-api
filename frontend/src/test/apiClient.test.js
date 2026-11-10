@@ -62,6 +62,53 @@ describe('API client', () => {
     await expect(api.tasks.delete('token', 'team', 'project', 'task')).resolves.toBeNull()
   })
 
+  it('refreshes once on 401 and retries the original request', async () => {
+    localStorage.setItem('refresh_token', 'old-refresh')
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ detail: 'expired' }, 401))
+      .mockResolvedValueOnce(
+        jsonResponse({ access_token: 'new-access', refresh_token: 'new-refresh' }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ id: 1, email: 'user@example.com' }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = await api.users.me('old-access')
+
+    expect(user.email).toBe('user@example.com')
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(fetchMock.mock.calls[2][1].headers.Authorization).toBe('Bearer new-access')
+    expect(localStorage.getItem('access_token')).toBe('new-access')
+    expect(localStorage.getItem('refresh_token')).toBe('new-refresh')
+  })
+
+  it('clears the session when the refresh token is rejected', async () => {
+    localStorage.setItem('access_token', 'old-access')
+    localStorage.setItem('refresh_token', 'old-refresh')
+    localStorage.setItem('user_id', '1')
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ detail: 'expired' }, 401))
+      .mockResolvedValueOnce(jsonResponse({ detail: 'reuse' }, 401))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(api.users.me('old-access')).rejects.toThrow()
+
+    expect(localStorage.getItem('access_token')).toBeNull()
+    expect(localStorage.getItem('refresh_token')).toBeNull()
+    expect(localStorage.getItem('user_id')).toBeNull()
+  })
+
+  it('does not retry auth endpoints with a refresh', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ detail: 'bad credentials' }, 401))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(api.auth.login({ email: 'a@b.c', password: 'x' })).rejects.toThrow()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   it('parses SSE data frames and ignores heartbeats', () => {
     expect(
       parseSseFrame('id: 7\nevent: notification\ndata: {"id":7,"message":"Hi"}'),

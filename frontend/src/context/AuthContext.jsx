@@ -149,6 +149,30 @@ export function AuthProvider({ children }) {
   }, []);
 
   /**
+   * Effect: Adopt sessions refreshed by the API client (same tab) and clear
+   * state when the client detects an unrecoverable 401.
+   */
+  useEffect(() => {
+    const onSession = (event) => {
+      if (event.detail?.access_token) setAccessToken(event.detail.access_token);
+      if (event.detail?.refresh_token) setRefreshToken(event.detail.refresh_token);
+    };
+    const onLogout = () => {
+      setUser(null);
+      setAccessToken(null);
+      setRefreshToken(null);
+      localStorage.removeItem('user_id');
+    };
+
+    window.addEventListener('taskflow:session', onSession);
+    window.addEventListener('taskflow:logout', onLogout);
+    return () => {
+      window.removeEventListener('taskflow:session', onSession);
+      window.removeEventListener('taskflow:logout', onLogout);
+    };
+  }, []);
+
+  /**
    * Login user with email and password.
    * 
    * @async
