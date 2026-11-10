@@ -31,6 +31,18 @@ El paquete documenta dos estados:
 | 6 | [`data-model.md`](./data-model.md) | Modelo actual y objetivo, constraints, índices y migraciones | Antes de cambiar la DB |
 | 7 | [`contracts/api.md`](./contracts/api.md) | Convenciones HTTP, errores, paginación, auth y catálogo de endpoints | Antes de cambiar la API |
 
+### Auditorías bajo demanda
+
+Fuera del ciclo funcional, pero con la misma constitución como norma superior:
+
+| Spec | Qué revisa | Activación |
+|---|---|---|
+| [`../audit/code-audit.md`](../audit/code-audit.md) | Código, arquitectura, escalabilidad, tests y contratos | `audita el código` / `/audit-code` |
+| [`../audit/security-audit.md`](../audit/security-audit.md) | Secretos, authn/authz, uploads, dependencias, CI/CD y privacidad | `audita la seguridad` / `/audit-security` |
+
+> No se ejecutan de forma autónoma: solo cuando el usuario lo ordena. Son de
+> solo lectura y no atacan producción.
+
 ---
 
 ## Flujo de trabajo

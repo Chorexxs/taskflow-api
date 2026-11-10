@@ -34,6 +34,24 @@ TaskFlow es una API REST para gestión de tareas en equipo, con frontend React. 
 
 No se acepta código sin spec ni cambios de contrato sin actualizar la documentación.
 
+### Auditorías bajo demanda
+
+Los specs de auditoría viven en [`specs/audit/`](./specs/audit/) y **no se
+ejecutan de forma autónoma**. Solo se activan cuando el usuario lo ordena:
+
+| Spec | Activación | Comando OpenCode |
+|---|---|---|
+| [`code-audit.md`](./specs/audit/code-audit.md) | `audita el código` | `/audit-code [alcance]` |
+| [`security-audit.md`](./specs/audit/security-audit.md) | `audita la seguridad` | `/audit-security [alcance]` |
+
+Reglas:
+
+1. Leer estos specs no es una orden de ejecución.
+2. La auditoría es de solo lectura; no modifica código ni credenciales.
+3. No se ataca producción ni se exfiltran datos.
+4. Los secretos se reportan redactados.
+5. Un hallazgo `CA-0`/`SEC-0` se reporta de inmediato.
+
 ---
 
 ## Build / Lint / Test Commands
@@ -131,6 +149,7 @@ frontend/src/
 └── main.jsx
 
 specs/taskflow/          # SDD (constitution, baseline, spec, plan, tasks, data, API)
+specs/audit/             # Auditorías bajo demanda (código y ciberseguridad)
 tests/                   # pytest
 alembic/                 # migraciones
 uploads/                 # adjuntos locales (dev; producción requiere storage)

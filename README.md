@@ -368,6 +368,7 @@ frontend/src/
 └── main.jsx
 
 specs/taskflow/          # SDD: constitución, baseline, spec, plan, tasks, datos, API
+specs/audit/             # Auditorías bajo demanda: código y ciberseguridad
 tests/                   # pytest
 alembic/                 # migraciones
 ```
@@ -387,6 +388,16 @@ alembic/                 # migraciones
 | [`contracts/api.md`](./specs/taskflow/contracts/api.md) | Contrato HTTP |
 | [`contracts/openapi.json`](./specs/taskflow/contracts/openapi.json) | Snapshot OpenAPI verificado en CI |
 | [`blockers.md`](./specs/taskflow/blockers.md) | Bloqueos de despliegue y credenciales |
+
+### Auditorías bajo demanda
+
+| Spec | Contenido | Activación |
+|---|---|---|
+| [`specs/audit/code-audit.md`](./specs/audit/code-audit.md) | Calidad, arquitectura, escalabilidad, tests y contratos | `audita el código` o `/audit-code` |
+| [`specs/audit/security-audit.md`](./specs/audit/security-audit.md) | Secretos, authn/authz, uploads, dependencias, CI/CD y privacidad | `audita la seguridad` o `/audit-security` |
+
+> Estos specs **no se ejecutan solos**: solo cuando el usuario da la orden.
+> Son de solo lectura y nunca atacan producción.
 
 ---
 
