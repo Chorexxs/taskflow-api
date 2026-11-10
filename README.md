@@ -23,7 +23,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Liveness** | https://taskflow-api-gkgl.onrender.com/health/live | Proceso vivo |
 | **Readiness** | https://taskflow-api-gkgl.onrender.com/health/ready | DB accesible |
 
-> **Estado de despliegue:** la base de datos de InsForge ya está migrada y verificada con un smoke test real (12/12). El frontend actualizado está publicado en `https://wrm6rjkp.insforge.site` (deployment gestionado por InsForge/Vercel). La API de Render sigue respondiendo `503` hasta que se actualice su `DATABASE_URL` y se redepliegue. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
+> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend actualizado en `https://wrm6rjkp.insforge.site` (InsForge/Vercel). Smoke test de producción: **13/13**. El proyecto Vercel `taskflow-api-tau.vercel.app` sigue pendiente de `vercel login`/token para actualizarse directamente. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
 
 ---
 
@@ -269,7 +269,7 @@ npm run build
 
 Estado actual: **101 tests backend** y **12 tests frontend**. Los tests de integración usan SQLite en memoria; P6 los migrará a PostgreSQL (ADR-008).
 
-Además se ejecutó un **smoke test end-to-end contra InsForge real**: 12/12 comprobaciones (health, registro, login, equipo, proyecto, tarea, comentario, adjunto en PostgreSQL, descarga, búsqueda, notificaciones y error envelope).
+Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y otro contra la **API de producción en Render** (13/13): health, registro, login, equipo, proyecto, tarea, comentario, adjunto en PostgreSQL, descarga, búsqueda, notificaciones, perfil y error envelope. También se verificó CORS para las dos URLs de frontend y el rechazo de un origen no permitido.
 
 ---
 
@@ -284,7 +284,7 @@ Además se ejecutó un **smoke test end-to-end contra InsForge real**: 12/12 com
   - Sin `CORS_ORIGINS`, la app **no arranca en producción** (fail-fast).
 - Ejecutar `alembic upgrade head` antes del despliegue. `alembic/env.py` usa `DATABASE_URL`.
 - Los adjuntos se guardan en PostgreSQL por defecto (`STORAGE_BACKEND=database`), por lo que sobreviven a los redeploys. Cambiar a `local` solo para desarrollo.
-- El servicio actual de Render responde `503` en `/health/ready` hasta configurar la base de datos nueva. Ver [`blockers.md`](./specs/taskflow/blockers.md).
+- Estado actual: `/health/ready` → `200`, base de datos conectada y smoke test de producción **13/13**.
 
 ### Frontend — Vercel
 
@@ -392,7 +392,7 @@ alembic/                 # migraciones
 
 ## Limitaciones conocidas y próximos pasos
 
-- **Despliegue pendiente:** la DB de InsForge ya está migrada y verificada, pero Render necesita la nueva `DATABASE_URL`/`DB_SSLMODE=require` y un redeploy. Vercel CLI sigue deslogueado. Ver [`blockers.md`](./specs/taskflow/blockers.md).
+- **Vercel existente pendiente:** `taskflow-api-tau.vercel.app` necesita `vercel login` o un `VERCEL_TOKEN` para actualizarse. El preview `wrm6rjkp.insforge.site` ya está online y funciona contra la API de Render. Ver [`blockers.md`](./specs/taskflow/blockers.md).
 - Migración a cookies `httpOnly` o decisión formal (ADR-001).
 - Adjuntos en object storage S3-compatible (la alternativa actual es PostgreSQL) (P4).
 - Notificaciones en tiempo real con SSE (P4); hoy polling cada 30 s.

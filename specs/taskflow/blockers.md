@@ -85,24 +85,36 @@ El deployment de Vercel quedó `READY` (id `2b6e8f98-...`), pero pertenece a un 
 
 ---
 
-## B-03 — Render: variables de entorno
+## B-03 — Render: RESUELTO
 
-El backend necesita, en el servicio de Render:
+Se actualizaron las variables del servicio `srv-d82qnghj2pic73aqr5l0`:
 
 ```bash
 ENVIRONMENT=production
-SECRET_KEY=<32+ caracteres>
 DATABASE_URL=postgresql://postgres:<db-password>@wrm6rjkp.eu-central.database.insforge.app:5432/insforge?sslmode=require
 DB_SSLMODE=require
 CORS_ORIGINS=https://taskflow-api-tau.vercel.app,https://wrm6rjkp.insforge.site
 STORAGE_BACKEND=database
 ```
 
-La `db-password` real (32 caracteres) está en `.env` y se obtiene de `GET https://wrm6rjkp.eu-central.insforge.app/api/metadata/database-password`.
+Deploy `dep-dbpetfo8v5cc73e2lgug` → **live**.
 
-Sin `CORS_ORIGINS`, la app falla al arrancar por diseño (fail-fast).
+**Verificado:**
 
-**Impacto:** Render sigue con la URL anterior y responde `503`; el preview nuevo no puede cargar datos hasta actualizar estas variables y redeployar.
+```text
+GET https://taskflow-api-gkgl.onrender.com/health/ready
+→ 200 {"status":"ready","database":"connected"}
+```
+
+Smoke test de producción: **13/13** (health, registro, login, equipo, proyecto, tarea, comentario, adjunto, descarga, búsqueda, notificaciones, perfil, error envelope).
+
+CORS:
+
+```text
+Origin https://wrm6rjkp.insforge.site → permitido
+Origin https://taskflow-api-tau.vercel.app → permitido
+Origin https://evil.example → sin cabecera CORS
+```
 
 ---
 
