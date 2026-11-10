@@ -33,6 +33,7 @@ verificados y firmados. Si algo falla, se aplica el rollback de
 - [ ] `python scripts/export_openapi.py --check` → snapshot al día.
 - [x] `alembic upgrade head` → aplicado en local (PostgreSQL 15).
 - [ ] `alembic downgrade -1` + `upgrade head` → reversible.
+- [x] `alembic current` en producción = `head` (`c9d0e1f2a3b4`).
 - [ ] `pip-audit -r requirements.txt` y `npm audit --omit=dev` → sin vulnerabilidades.
 - [ ] `gitleaks detect` → historial limpio.
 - [ ] `CHANGELOG.md` actualizado y `spec.md`/`contracts/api.md`/`data-model.md` si cambió el contrato.
@@ -42,6 +43,7 @@ verificados y firmados. Si algo falla, se aplica el rollback de
 ## 3. Pre-release (datos y seguridad)
 
 - [ ] Backup verificado de InsForge antes de una migración destructiva.
+- [x] Backup comprimido de InsForge antes de migrar (2026-11-10, `pg_dump -Fc`).
 - [ ] Migración revisada: `upgrade` y `downgrade` documentados; sin `create_all`.
 - [x] Sin secretos ni PII en el diff, logs o capturas.
 - [x] Permisos verificados en servidor (matriz 401/403/404).
@@ -94,11 +96,15 @@ la fecha, el commit desplegado y los valores obtenidos:
 | 2026-11-10 | pre-T-094 | `/health` | 1541,9 ms | 1000 ms | ❌ (Redis bloqueaba 4 s) |
 | 2026-11-10 | pre-T-094 | `/health/live` | 244,9 ms | 1000 ms | ✅ |
 | 2026-11-10 | pre-T-094 | `/health/ready` | 867,5 ms | 1000 ms | ✅ |
+| 2026-11-10 | `641fb26` | `/health` | 865,7 ms | 1000 ms | ✅ |
+| 2026-11-10 | `641fb26` | `/health/live` | 245,6 ms | 1000 ms | ✅ |
+| 2026-11-10 | `641fb26` | `/health/ready` | 827,5 ms | 1000 ms | ✅ |
+| 2026-11-10 | `641fb26` | `/users/me` | 845,2 ms | 1000 ms | ✅ |
+| 2026-11-10 | `641fb26` | `/notifications/unread-count` | 974,2 ms | 1000 ms | ✅ |
 
-> T-094 eliminó el bloqueo de Redis y T-093 corrigió el 500 de los endpoints
-> limitados (`eb9815b`). El redeploy de Render sigue pendiente: ver **B-05** en
-> `blockers.md`. Repetir la medición tras el redeploy y actualizar esta tabla
-> antes de aprobar la release.
+> El umbral de producción es 1000 ms porque la medición cruza WAN hasta
+> `eu-central`; el gate de 300 ms se valida en local/staging. El p95 de Render
+> incluye además el arranque en frío.
 
 ### Smoke de carga SSE (T-081)
 
@@ -127,6 +133,10 @@ El handshake p95 incluye la autenticación contra PostgreSQL de 500 clientes
 simultáneos con un pool de 30 conexiones; no es la latencia de entrega de
 eventos. La entrega event-driven se valida con los tests de pub/sub y de
 reconciliación.
+
+En producción se validaron 3 conexiones simultáneas (límite por defecto de 5 por
+usuario): **3/3 abiertas, 0 errores**. La prueba de 500 se ejecuta en local por el
+rate limit de 10/min por IP de producción.
 
 ---
 
@@ -159,7 +169,7 @@ reconciliación.
 | 12 | Notificaciones y contador | 200 |
 | 13 | Envelope de error (`404` de otro equipo) | `error.code` y `request_id` |
 
-- [ ] 13/13 correctos.
+- [x] 13/13 correctos. Verificado con `scripts/smoke_release.py` → **14/14** (incluye cabeceras de rate limit).
 - [ ] `/api/v1/users/me` con el token del smoke → 200.
 - [ ] Logs sin secretos, tokens ni emails completos.
 - [ ] Monitorización 30 min: 5xx, login/refresh y latencia.

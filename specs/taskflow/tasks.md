@@ -22,9 +22,7 @@
 
 **Parcial (P4):** `T-054` (se implementó almacenamiento persistente en PostgreSQL en lugar de S3 por falta de credenciales).
 
-**Completadas (P6):** `T-072` (dependencias backend fijadas + React Router parcheado), `T-073` (Python 3.12), `T-074` (ruff y mypy fijados y ejecutados en CI), `T-075` (Docker non-root + HEALTHCHECK), `T-076` (CI frontend con lint/build y umbrales de cobertura: 80 % backend, 70 % frontend), `T-077` (tests de integración sobre PostgreSQL con esquema Alembic y truncado por test), `T-078` (snapshot OpenAPI + check en CI), `T-079` (health live/ready).
-
-**Parcial (P6):** `T-080` (checklist de release y smoke de performance en `release-checklist.md` + `scripts/smoke_performance.py`; verificación post-deploy pendiente por **B-05**, Render no redeploya).
+**Completadas (P6):** `T-072` (dependencias backend fijadas + React Router parcheado), `T-073` (Python 3.12), `T-074` (ruff y mypy fijados y ejecutados en CI), `T-075` (Docker non-root + HEALTHCHECK), `T-076` (CI frontend con lint/build y umbrales de cobertura: 80 % backend, 70 % frontend), `T-077` (tests de integración sobre PostgreSQL con esquema Alembic y truncado por test), `T-078` (snapshot OpenAPI + check en CI), `T-079` (health live/ready), `T-080` (release checklist, `smoke_release.py` 14/14, `smoke_performance.py` y verificación post-deploy).
 
 **Completadas (P5):** `T-066` (auditoría WCAG de flujos críticos en `a11y-audit.md`, skip link y nombres accesibles), `T-063` (cliente API con refresh single-flight, retry en 401, errores tipados y AbortController), `T-064` (AuthContext endurecido: permisos visuales desde `user`, sin `user_id` en storage), `T-067` (cabeceras y buscadores responsive; tablero usable desde 360 px), `T-071` (acciones de admin ocultas en tablero y miembros), `T-069` (tests de flujos críticos con MSW: login, tablero, tarea, comentarios y notificaciones), `T-068` (estados de error consistentes con reintento en dashboard, equipo, tablero y tarea), `T-065` (decisión dark-only), `T-070` (eliminados axios y ThemeContext muerto).
 
@@ -38,13 +36,15 @@
 
 **Completada (P7):** `T-081` (SSE endurecido: Redis pub/sub con fallback en proceso, límites de conexión, sesiones DB cortas, heartbeats, reconciliación, backoff y prueba de carga 500/500).
 
+**Completada (P9):** `T-095` (sincronizar InsForge con `alembic upgrade head` antes del deploy; causa raíz de B-05).
+
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
 **Completada (P0):** `T-007` (pre-commit con `ruff`, `ruff format`, `gitleaks`, eslint y mypy; `pre-commit run --all-files` verde), `T-004` (ADR-001…011 aceptados con responsable y desviaciones documentadas), `T-010` (política de ramas, PR, release y rollback en `CONTRIBUTING.md`), `T-009` (entornos local/CI/preview/staging/producción en `environments.md`).
 
 **Pendientes de P0:** `T-003` (labels/milestones; requiere `gh` autenticado, ver **B-06**).
 
-Verificación actual: `pytest -q` → **174 passed** sobre PostgreSQL 15 con **86 % de cobertura**; `npm run test` → **43 passed**; `npm run lint` → limpio; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge real migrado a `d4e5f6a7b8c9` con smoke test **12/12**; Render live con smoke test de producción **13/13** y CORS verificado. Smoke de performance local (T-080): p95 < 33 ms en lecturas. Carga SSE (T-081): **500/500 conexiones, 0 errores**.
+Verificación actual: `pytest -q` → **174 passed** sobre PostgreSQL 15 con **86 % de cobertura**; `npm run test` → **43 passed**; `npm run lint` → limpio; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge migrado a `c9d0e1f2a3b4`; Render live con smoke de release **14/14**, register 201/login 200 y CORS verificado. Smoke de performance local (T-080): p95 < 33 ms en lecturas. Carga SSE (T-081): **500/500 conexiones, 0 errores**.
 
 ---
 
@@ -229,6 +229,7 @@ con `headers_enabled` rompía cualquier respuesta 2xx de un endpoint limitado, y
 |---|---|---|---|---|---|---|
 | T-093 | Corregir 500 en respuestas 2xx de endpoints con rate limit | S0 | T-031 | XS | FR-AUTH-06, NFR-SEC-04 | Registro/login 2xx con cabeceras `X-RateLimit-*`; test de regresión |
 | T-094 | `/health` no debe bloquear si Redis no está configurado o no responde | S1 | T-079 | XS | NFR-PERF-01, NFR-OBS-03 | `/health` < 300 ms sin `REDIS_URL`; timeouts cortos si existe |
+| T-095 | Sincronizar migraciones de producción antes del deploy | S0 | T-024 | XS | NFR-REL-04 | `alembic current` = head; registro/login 2xx |
 
 ---
 

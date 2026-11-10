@@ -9,7 +9,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 - `CONTRIBUTING.md` con política de ramas, PR, release y rollback (T-010).
 - `specs/taskflow/environments.md` con local, CI, preview, staging y producción (T-009).
-- `specs/taskflow/release-checklist.md` y `scripts/smoke_performance.py` (T-080).
+- `specs/taskflow/release-checklist.md`, `scripts/smoke_performance.py` y `scripts/smoke_release.py` (T-080).
 - ADRs 002, 003, 006 y 007 aceptados con responsable y desviaciones documentadas (T-004).
 - SSE event-driven con Redis pub/sub y fallback en proceso; límites de 500 conexiones/5 por usuario con 503 + `Retry-After`; sesiones DB cortas, reconciliación cada 30 s y backoff exponencial en el cliente (T-081).
 - `scripts/sse_load_test.py` para validar 500 conexiones simultáneas.
@@ -78,6 +78,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Corregido
 
+- Producción desincronizada: InsForge estaba en `d4e5f6a7b8c9` y el código esperaba `c9d0e1f2a3b4`; se aplicó `alembic upgrade head` tras un backup y se verificó registro/login (T-095, B-05 resuelto).
 - Rate limiting: las respuestas 2xx de endpoints limitados ya no devuelven 500; slowapi recibe `response` e inyecta `X-RateLimit-*` (T-093).
 - `/health`: solo consulta Redis si `REDIS_URL` existe y con timeout de 200 ms; sin Redis responde `not_configured` sin bloquear (T-094).
 
@@ -89,7 +90,6 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Pendiente
 
-- Redeploy de Render para desplegar el fix de rate limiting (**B-05**).
 - T-003: labels/milestones/issues requieren credenciales de GitHub (**B-06**).
 - T-054: migración de adjuntos a object storage S3-compatible (requiere credenciales).
 - P7: reevaluar cookies `httpOnly` + CSRF (ADR-001).

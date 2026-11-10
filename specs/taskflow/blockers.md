@@ -35,7 +35,7 @@ GET /api/metadata/database-connection-string
 
 **Estado verificado:**
 
-- `alembic current` → `d4e5f6a7b8c9 (head)`.
+- `alembic current` → `c9d0e1f2a3b4 (head)` (actualizado el 2026-11-10 desde `d4e5f6a7b8c9`).
 - 11 tablas creadas (`users`, `teams`, `team_members`, `projects`, `tasks`, `comments`, `attachments`, `activity_logs`, `notifications`, `revoked_tokens`, `alembic_version`).
 - Smoke test real contra InsForge: **12/12 checks** (health, registro, login, equipo, proyecto, tarea, comentario, subida/descarga de adjunto, búsqueda, notificaciones, error envelope).
 - La app puede conectarse con SQLAlchemy usando `DB_SSLMODE=require`.
@@ -113,36 +113,43 @@ Docker Desktop no está iniciado, así que la imagen no se pudo construir localm
 
 ---
 
-## B-05 — Render no redeploya el fix de rate limiting
+## B-05 — Producción desincronizada (RESUELTO)
 
-**Estado:** abierto (2026-11-10)
-**Severidad:** S0 en producción
+**Estado:** resuelto (2026-11-10)
+**Severidad:** fue S0 en producción
 
-`POST /api/v1/auth/register` con datos válidos devuelve **500** en producción. La
-causa es T-093: con el rate limiter activo, slowapi lanzaba
-`parameter 'response' must be an instance of starlette.responses.Response` al
-inyectar cabeceras en respuestas 2xx.
+Síntoma: `POST /api/v1/auth/register` y login con credenciales válidas devolvían
+**500**; `/health` sí respondía 200.
 
-El fix está en `main` (`eb9815b`, T-093 + T-094) y verificado:
+Causa raíz (dos problemas acumulados):
 
-- `pytest -q` → 169 passed; local `register` → 201 con `X-RateLimit-*`.
-- CI de GitHub Actions #114 y #115 → verdes.
-- Smoke de performance local: p95 < 33 ms.
+1. **Rate limiting (T-093):** con el limiter activo, slowapi lanzaba
+   `parameter 'response' must be an instance of starlette.responses.Response` al
+   inyectar cabeceras en respuestas 2xx. Corregido en `eb9815b`.
+2. **Migraciones desfasadas:** InsForge estaba en `d4e5f6a7b8c9` y el código
+   esperaba `c9d0e1f2a3b4`. Faltaban `projects.slug`,
+   `users.muted_notification_types` y `notifications.dedupe_key`, por lo que el
+   INSERT de registro y el SELECT de login fallaban.
 
-Producción sigue sirviendo la versión anterior después de 15 minutos. No hay
-`RENDER_API_KEY` ni deploy hook disponibles en el entorno del agente, y
-`gh` no está instalado. **Acción manual requerida:** redeploy del servicio
-`srv-d82qnghj2pic73aqr5l0` en Render desde `main` (o habilitar Auto-Deploy) y
-repetir el smoke de release.
+Resolución aplicada:
 
-Verificación tras el redeploy:
+- Backup comprimido antes de migrar (`pg_dump -Fc`, 292 KB).
+- `alembic upgrade head` sobre InsForge → `c9d0e1f2a3b4 (head)`.
+- Redeploy de Render desde `main` (`641fb26`).
 
-```bash
-curl -i -X POST https://taskflow-api-gkgl.onrender.com/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"release-check@example.com","password":"ReleaseCheck1!"}'
-# Esperado: 201 + X-RateLimit-Limit
+Verificación:
+
+```text
+GET  /health/ready                          → 200
+POST /api/v1/auth/register                  → 201 + X-RateLimit-Limit: 5
+POST /api/v1/auth/login                     → 200
+python scripts/smoke_release.py             → 14/14
+python scripts/smoke_performance.py         → p95 < 1000 ms (WAN)
+SSE (3 conexiones)                          → 3/3 abiertas
 ```
+
+**Lección:** el runbook debe comprobar `alembic current == head` en producción
+antes de dar un deploy por bueno. Añadido a la checklist de release.
 
 ---
 

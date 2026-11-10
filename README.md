@@ -23,7 +23,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Liveness** | https://taskflow-api-gkgl.onrender.com/health/live | Proceso vivo |
 | **Readiness** | https://taskflow-api-gkgl.onrender.com/health/ready | DB accesible |
 
-> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend Vercel **live** en `https://taskflow-api-tau.vercel.app`. El último smoke completo fue **13/13**, pero el 2026-11-10 se detectó que producción sigue sirviendo una versión anterior: `POST /auth/register` devuelve 500 por el bug de rate limiting (T-093). El fix está en `main` y CI verde; falta el redeploy de Render (**B-05**). Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
+> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend Vercel **live** en `https://taskflow-api-tau.vercel.app`. Producción verificada el 2026-11-10 tras aplicar las migraciones pendientes: **register 201**, **login 200**, smoke de release **14/14**, performance p95 < 1000 ms (WAN) y SSE 3/3. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
 
 ---
 
@@ -314,7 +314,7 @@ Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y 
   - Sin `CORS_ORIGINS`, la app **no arranca en producción** (fail-fast).
 - Ejecutar `alembic upgrade head` antes del despliegue. `alembic/env.py` usa `DATABASE_URL`.
 - Los adjuntos se guardan en PostgreSQL por defecto (`STORAGE_BACKEND=database`), por lo que sobreviven a los redeploys. Cambiar a `local` solo para desarrollo.
-- Estado actual: `/health/ready` → `200`; pendiente el redeploy del fix de rate limiting (**B-05**).
+- Estado actual: `/health/ready` → `200`, base de datos en `c9d0e1f2a3b4 (head)`, registro/login y smoke de release **14/14** verificados.
 
 ### Frontend — Vercel
 
@@ -340,7 +340,7 @@ PostgreSQL gestionado. Proyecto nuevo: `c7578dc0-d532-4463-88f1-09c6e54356f7`.
 - **URL del proyecto:** `https://<insforge-project-id>.eu-central.insforge.app`
 - **DB host:** `<insforge-project-id>.eu-central.database.insforge.app`
 - **Región:** `eu-central`
-- **Estado:** esquema migrado a `d4e5f6a7b8c9` (11 tablas).
+- **Estado:** esquema migrado a `c9d0e1f2a3b4` (head; 11 tablas + columnas de slug, preferencias, checksum y auditoría).
 
 ```bash
 # Project API key (ik_) + URL del proyecto:

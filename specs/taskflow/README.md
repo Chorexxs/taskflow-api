@@ -121,7 +121,7 @@ Este paquete vive en `specs/taskflow/` y es la fuente de verdad del ciclo. `READ
 | P3 — API/datos | ✅ Ejecutado | IDs/slugs, paginación, errores, permisos, borrados, archivado, actividad y búsqueda |
 | P4 — Colaboración/storage | ✅ Ejecutado | Notificaciones, menciones, SSE + polling, activity; S3 queda parcial en T-054 (PostgreSQL por defecto) |
 | P5 — Frontend | ✅ Ejecutado | Cliente API, AuthContext, a11y, responsive, estados de error, MSW y dark-only |
-| P6 — Ops/release | ✅ Ejecutado | Ruff/mypy, CI completo, runbook, health, gitleaks/pip-audit, checklist y smoke de performance; verificación post-deploy pendiente (**B-05**) |
+| P6 — Ops/release | ✅ Ejecutado | Ruff/mypy, CI completo, runbook, health, gitleaks/pip-audit, checklist, smoke funcional 14/14 y smoke de performance; verificación post-deploy completada |
 | P7 — Realtime | ✅ Ejecutado | SSE con Redis pub/sub, fallback en proceso, límites de conexión, backoff y prueba de 500 conexiones (T-081) |
 | P8 — Auditoría de seguridad | ✅ Ejecutado | T-083…T-092 |
 | P9 — Smoke de release | ✅ Ejecutado | T-093 (rate limit 500) y T-094 (health bloqueado por Redis) |
