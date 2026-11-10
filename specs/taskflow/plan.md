@@ -119,6 +119,7 @@
 ### ADR-001 - Transporte de tokens en el navegador
 
 **Estado:** aceptado con alternativa (2026-11-10). Sustituye la propuesta híbrida.
+**Responsable:** responsable del proyecto.
 
 **Contexto:** hoy los tokens viven en `localStorage`, accesibles a cualquier XSS. El refresh ya funciona en body y el cliente lo renueva de forma proactiva con single-flight.
 
@@ -145,7 +146,8 @@
 
 ### ADR-002 — Tiempo real
 
-**Estado:** propuesto.
+**Estado:** aceptado (2026-11-10).
+**Responsable:** responsable del proyecto.
 
 **Contexto:** “notificaciones en tiempo real” hoy es polling cada 30 s.
 
@@ -156,13 +158,16 @@
 - Redis pub/sub para fan-out entre instancias.
 - Si SSE falla o el proxy lo corta, el cliente vuelve a polling.
 
+**Implementado (T-059/T-060):** endpoint SSE autenticado con heartbeat, `Last-Event-ID` y cliente con fallback a polling. El fan-out con Redis pub/sub, el backoff y las pruebas de carga de conexiones quedan como endurecimiento en T-081 (P7, opcional).
+
 **Consecuencias:** endpoint autenticado, heartbeat, límites de conexiones, tests de reconexión.
 
 ---
 
 ### ADR-003 — Almacenamiento de adjuntos
 
-**Estado:** propuesto.
+**Estado:** aceptado con enmienda (2026-11-10).
+**Responsable:** responsable del proyecto.
 
 **Contexto:** Render tiene filesystem efímero; los archivos se pierden en redeploy. Además, `file_path` se expone y hay path traversal.
 
@@ -172,6 +177,8 @@
 - Validación de MIME/extensión, tamaño y checksum.
 - Limpieza de huérfanos.
 
+**Enmienda (T-053/T-054):** se implementó la abstracción `StorageService` (`put`/`get`/`delete`) con dos backends: `local` (solo desarrollo) y `database` (PostgreSQL, `attachments.content`). En producción se usa `STORAGE_BACKEND=database` porque el S3-compatible no estaba disponible (credenciales). La migración a S3 queda como parcial en T-054; al activarse no requiere cambiar la API porque la interfaz ya es la misma.
+
 **Consecuencias:** nueva dependencia/configuración; migración de archivos existentes; tests con storage fake.
 
 ---
@@ -179,6 +186,7 @@
 ### ADR-004 — Migraciones
 
 **Estado:** aceptado.
+**Responsable:** responsable del proyecto.
 
 **Decisión:** Alembic es la única fuente de esquema en producción.
 - Eliminar `create_all` del lifespan fuera de tests.
@@ -192,6 +200,7 @@
 ### ADR-005 — Envelope de errores
 
 **Estado:** aceptado.
+**Responsable:** responsable del proyecto.
 
 **Decisión:**
 
@@ -214,13 +223,16 @@
 
 ### ADR-006 — Tema e idioma
 
-**Estado:** propuesto.
+**Estado:** aceptado (2026-11-10).
+**Responsable:** responsable del proyecto.
 
 **Contexto:** `ThemeContext` no está montado; la app siempre es oscura. La UI está en inglés y la documentación en español.
 
 **Decisión propuesta:**
 - **Tema:** declarar **solo oscuro** en este ciclo y eliminar `ThemeContext`/código muerto; el tema claro se evalúa como feature posterior. Alternativa: implementar tokens claros y toggle, pero implica auditoría de contraste.
-- **Idioma:** mantener UI en inglés y documentación en español; centralizar strings si se国际化 en el futuro.
+- **Idioma:** mantener UI en inglés y documentación en español; centralizar strings si se internacionaliza en el futuro.
+
+**Implementado (T-065/T-070):** la UI es dark-only y se eliminó `ThemeContext` y el código muerto; `axios` se retiró en favor de `fetch`.
 
 **Consecuencias:** menos código muerto; si se quiere tema claro, se añade con una spec propia.
 
@@ -228,11 +240,14 @@
 
 ### ADR-007 — Invitaciones
 
-**Estado:** propuesto.
+**Estado:** aceptado (2026-11-10).
+**Responsable:** responsable del proyecto.
 
 **Contexto:** “invitar” hoy requiere que el usuario exista; no hay email.
 
 **Decisión propuesta:** renombrar la feature a **“añadir miembro existente”** y documentarlo. Las invitaciones reales (token + email) quedan como `Could` y requieren proveedor de email y tabla `team_invites`.
+
+**Implementado:** la feature se documenta y nombra como “añadir miembro existente”; no hay invitaciones por email ni tabla `team_invites` en este ciclo.
 
 **Consecuencias:** se corrige la promesa de la UI/docs; no se añade infraestructura de email en este ciclo.
 
@@ -241,6 +256,7 @@
 ### ADR-008 — Base de datos de tests
 
 **Estado:** aceptado.
+**Responsable:** responsable del proyecto.
 
 **Decisión:** tests de integración contra **PostgreSQL** (servicio de CI o contenedor). SQLite solo para tests unitarios puros que no dependan de SQL específico.
 
@@ -251,6 +267,7 @@
 ### ADR-009 — Dependencias
 
 **Estado:** aceptado.
+**Responsable:** responsable del proyecto.
 
 **Decisión:**
 - Backend: versiones fijadas en `requirements.txt` (o `pyproject.toml` + lock). Renovate/Dependabot semanal.
@@ -263,6 +280,7 @@
 ### ADR-010 — Rate limiting
 
 **Estado:** aceptado.
+**Responsable:** responsable del proyecto.
 
 **Decisión:** slowapi con storage Redis (`RATE_LIMIT_STORAGE_URI`) para consistencia multi-instancia.
 - Límites en auth y endpoints costosos.
@@ -274,6 +292,7 @@
 ### ADR-011 — Lookup de recursos
 
 **Estado:** aceptado.
+**Responsable:** responsable del proyecto.
 
 **Decisión:** `id` y `slug` son identificadores; nombres/títulos son datos, no claves.
 - `teams`: id o slug.

@@ -7,16 +7,18 @@
 | ADR | Decisión | Estado |
 |---|---|---|
 | ADR-001 | Transporte de tokens: Bearer + auto-refresh y single-flight; cookies `httpOnly` se reevalúan en P7 | Aceptado (alternativa) |
-| ADR-002 | Tiempo real con SSE para notificaciones (fallback polling) | Propuesto |
-| ADR-003 | Adjuntos en object storage S3-compatible (InsForge) | Propuesto |
+| ADR-002 | Tiempo real con SSE para notificaciones (fallback polling); Redis pub/sub y carga en T-081 | Aceptado |
+| ADR-003 | Adjuntos: `StorageService` con backend PostgreSQL por defecto; S3-compatible pendiente de credenciales (T-054) | Aceptado con enmienda |
 | ADR-004 | Alembic como única fuente de esquema; sin `create_all` en producción | Aceptado |
 | ADR-005 | Envelope de errores `{error:{code,message,details,request_id}}` | Aceptado |
-| ADR-006 | Solo tema oscuro + UI en inglés en este ciclo | Propuesto |
-| ADR-007 | “Invitar” se renombra a “añadir miembro existente” | Propuesto |
+| ADR-006 | Solo tema oscuro + UI en inglés en este ciclo | Aceptado |
+| ADR-007 | “Invitar” se renombra a “añadir miembro existente” | Aceptado |
 | ADR-008 | Tests de integración contra PostgreSQL | Aceptado |
 | ADR-009 | Dependencias fijadas + Renovate/Dependabot; Python 3.12 | Aceptado |
 | ADR-010 | Rate limiting con Redis para múltiples instancias | Aceptado |
 | ADR-011 | Identificadores `id`/`slug`; nombres/títulos deprecados | Aceptado |
+
+**Revisión formal (T-004, 2026-11-10):** los 11 ADRs quedan aceptados y con responsable asignado (responsable del proyecto). Los ADRs que estaban `propuesto` se aceptaron con la implementación ya realizada y las desviaciones documentadas: ADR-002 (SSE implementado, pub/sub en T-081), ADR-003 (PostgreSQL en lugar de S3 por falta de credenciales) y ADR-006/007 (dark-only y “añadir miembro existente”).
 
 ---
 
@@ -94,10 +96,12 @@
 
 ## Decisiones pendientes
 
-1. **ADR-001:** cookies `httpOnly` vs Bearer + localStorage.
-2. **ADR-002:** SSE vs WebSockets vs polling.
-3. **ADR-003:** proveedor de object storage.
-4. **ADR-006:** tema claro/oscuro y idioma de UI.
-5. **ADR-007:** invitaciones reales por email o renombrar la feature.
+No quedan ADRs en estado `propuesto`: ADR-001…011 están aceptados (T-004). Las
+siguientes decisiones son evoluciones fuera de este ciclo y no bloquean el
+release:
+
+1. **ADR-001:** reevaluar cookies `httpOnly` + CSRF en P7.
+2. **ADR-003:** migrar adjuntos a object storage S3-compatible cuando haya credenciales (T-054).
+3. **ADR-002:** fan-out con Redis pub/sub y prueba de carga de SSE (T-081).
 
 Para cambiar una decisión: actualizar el ADR, la spec y el plan antes de implementar.
