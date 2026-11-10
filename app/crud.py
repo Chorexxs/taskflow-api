@@ -52,16 +52,16 @@ def get_current_user_from_token(
 ) -> models.User:
     """
     FastAPI dependency wrapper for getting current user in routes.
-    
+
     This is a simple wrapper around get_current_user that can be used
     as a FastAPI dependency when you need the User object in a route.
-    
+
     Args:
         current_user (User): The authenticated user from JWT token (injected by get_current_user).
-    
+
     Returns:
         User: The authenticated user object.
-    
+
     Example:
         @router.get("/profile")
         def get_profile(user: User = Depends(get_current_user_from_token)):
@@ -73,18 +73,18 @@ def get_current_user_from_token(
 def get_user_by_email(db: Session, email: str):
     """
     Retrieve a user by their email address.
-    
+
     Used for authentication and user lookup. Email lookups are
     case-sensitive in most databases, but could be adapted for
     case-insensitive matching.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         email (str): The user's email address to search for.
-    
+
     Returns:
         User | None: The user if found, None otherwise.
-    
+
     Example:
         >>> user = get_user_by_email(db, "user@example.com")
         >>> if user:
@@ -96,16 +96,16 @@ def get_user_by_email(db: Session, email: str):
 def get_user_by_id(db: Session, user_id: int):
     """
     Retrieve a user by their ID.
-    
+
     Used when you have a user ID and need to fetch the full user object.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         user_id (int): The user's unique identifier.
-    
+
     Returns:
         User | None: The user if found, None otherwise.
-    
+
     Example:
         >>> user = get_user_by_id(db, 123)
     """
@@ -115,20 +115,20 @@ def get_user_by_id(db: Session, user_id: int):
 def create_user(db: Session, user: schemas.UserCreate):
     """
     Create a new user in the database.
-    
+
     Hashes the password using bcrypt before storing. The user is created
     with default values: is_active=True, is_blocked=False, failed_login_attempts=0.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         user (UserCreate): Schema containing email and password.
-    
+
     Returns:
         User: The newly created user object with ID and timestamps.
-    
+
     Raises:
         sqlalchemy.exc.IntegrityError: If email already exists (unique constraint).
-    
+
     Example:
         >>> user_data = UserCreate(email="new@example.com", password="secure123")
         >>> new_user = create_user(db, user_data)
@@ -144,18 +144,18 @@ def create_user(db: Session, user: schemas.UserCreate):
 def update_user(db: Session, user_id: int, user_update: schemas.UserUpdate):
     """
     Update an existing user's email or password.
-    
+
     Only updates fields that are provided (not None). If password is provided,
     it gets rehashed. Email updates are rare and should be validated.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         user_id (int): ID of the user to update.
         user_update (UserUpdate): Schema with new email and/or password.
-    
+
     Returns:
         User | None: Updated user object, or None if user not found.
-    
+
     Example:
         >>> update = UserCreate(email="new@example.com", password="newpass")
         >>> updated = update_user(db, 123, update)
@@ -179,18 +179,18 @@ def update_user(db: Session, user_id: int, user_update: schemas.UserUpdate):
 def authenticate_user(db: Session, email: str, password: str):
     """
     Authenticate a user with email and password.
-    
+
     This is a convenience function that checks both email existence
     and password validity. Used in the login endpoint.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         email (str): User's email address.
         password (str): Plain text password to verify.
-    
+
     Returns:
         User | bool: User object if authentication succeeds, False otherwise.
-    
+
     Example:
         >>> result = authenticate_user(db, "user@example.com", "password123")
         >>> if result:
@@ -207,23 +207,23 @@ def authenticate_user(db: Session, email: str, password: str):
 def create_team(db: Session, team: schemas.TeamCreate, user_id: int):
     """
     Create a new team and add the creator as admin.
-    
+
     Creates a team with the given name, slug, and description, then
     automatically creates a TeamMember record with admin role for
     the creator. Uses two commits to ensure team exists before
     adding member.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         team (TeamCreate): Schema with team details.
         user_id (int): ID of the user creating the team (will be admin).
-    
+
     Returns:
         Team: The newly created team object.
-    
+
     Raises:
         sqlalchemy.exc.IntegrityError: If slug already exists (unique constraint).
-    
+
     Example:
         >>> team_data = TeamCreate(name="My Team", slug="my-team", description="A team")
         >>> new_team = create_team(db, team_data, user_id=1)
@@ -270,14 +270,14 @@ def update_team(db: Session, team_id: int, team_update: schemas.TeamUpdate):
 def get_team_by_id(db: Session, team_id: int):
     """
     Retrieve a team by its numeric ID.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         team_id (int): The team's unique identifier.
-    
+
     Returns:
         Team | None: The team if found, None otherwise.
-    
+
     Example:
         >>> team = get_team_by_id(db, 1)
     """
@@ -287,16 +287,16 @@ def get_team_by_id(db: Session, team_id: int):
 def get_team_by_slug(db: Session, slug: str):
     """
     Retrieve a team by its URL-friendly slug.
-    
+
     Used for team lookups using the human-readable identifier.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         slug (str): The team's unique slug.
-    
+
     Returns:
         Team | None: The team if found, None otherwise.
-    
+
     Example:
         >>> team = get_team_by_slug(db, "my-team")
     """
@@ -306,17 +306,17 @@ def get_team_by_slug(db: Session, slug: str):
 def get_teams_by_user(db: Session, user_id: int):
     """
     Get all teams a user is a member of.
-    
+
     Performs a JOIN between teams and team_members tables to find
     all teams where the user has membership.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         user_id (int): The user's ID.
-    
+
     Returns:
         list[Team]: List of teams the user belongs to.
-    
+
     Example:
         >>> teams = get_teams_by_user(db, user_id=1)
         >>> for team in teams:
@@ -330,9 +330,7 @@ def get_teams_by_user(db: Session, user_id: int):
     )
 
 
-def get_teams_by_user_paginated(
-    db: Session, user_id: int, page: int, page_size: int
-):
+def get_teams_by_user_paginated(db: Session, user_id: int, page: int, page_size: int):
     """Return a page of teams for a user, ordered by name."""
     query = (
         db.query(models.Team)
@@ -346,21 +344,21 @@ def get_teams_by_user_paginated(
 def add_member(db: Session, team_id: int, user_id: int, role: str):
     """
     Add a user to a team with a specific role.
-    
+
     Creates a new TeamMember record. The role can be "admin" or "member".
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         team_id (int): ID of the team to add the member to.
         user_id (int): ID of the user to add.
         role (str): Role to assign ("admin" or "member").
-    
+
     Returns:
         TeamMember: The newly created member record.
-    
+
     Raises:
         sqlalchemy.exc.IntegrityError: If user is already a member.
-    
+
     Example:
         >>> add_member(db, team_id=1, user_id=2, role="member")
     """
@@ -378,7 +376,7 @@ def add_member(db: Session, team_id: int, user_id: int, role: str):
 def remove_member(db: Session, team_id: int, user_id: int, changed_by: int | None = None):
     """
     Remove a user from a team.
-    
+
     Deletes the TeamMember record and unassigns every task the user had in the
     team's projects, so a former member never keeps work assigned. Also
     invalidates cached team data.
@@ -429,6 +427,7 @@ def remove_member(db: Session, team_id: int, user_id: int, changed_by: int | Non
         db.delete(member)
         db.commit()
         from app.cache import cache_service
+
         cache_service.invalidate_team(team_id)
     return member
 
@@ -436,14 +435,14 @@ def remove_member(db: Session, team_id: int, user_id: int, changed_by: int | Non
 def get_team_members(db: Session, team_id: int):
     """
     Get all members of a team.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         team_id (int): ID of the team.
-    
+
     Returns:
         list[TeamMember]: List of all team members.
-    
+
     Example:
         >>> members = get_team_members(db, team_id=1)
         >>> for m in members:
@@ -465,15 +464,15 @@ def get_team_members_paginated(db: Session, team_id: int, page: int, page_size: 
 def get_team_member(db: Session, team_id: int, user_id: int):
     """
     Get a specific member of a team.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         team_id (int): ID of the team.
         user_id (int): ID of the user.
-    
+
     Returns:
         TeamMember | None: The member record if found, None otherwise.
-    
+
     Example:
         >>> member = get_team_member(db, team_id=1, user_id=2)
     """
@@ -506,16 +505,16 @@ def count_team_admins(db: Session, team_id: int) -> int:
 def update_member_role(db: Session, team_id: int, user_id: int, role: str):
     """
     Update a member's role in a team.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         team_id (int): ID of the team.
         user_id (int): ID of the user.
         role (str): New role to assign ("admin" or "member").
-    
+
     Returns:
         TeamMember | None: Updated member record, or None if not found.
-    
+
     Example:
         >>> update_member_role(db, team_id=1, user_id=2, role="admin")
     """
@@ -529,11 +528,7 @@ def update_member_role(db: Session, team_id: int, user_id: int, role: str):
 
 def slugify(value: str) -> str:
     """Convert a display name into a URL-friendly slug."""
-    normalized = (
-        unicodedata.normalize("NFKD", value)
-        .encode("ascii", "ignore")
-        .decode("ascii")
-    )
+    normalized = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
     slug = re.sub(r"[^a-z0-9]+", "-", normalized.lower()).strip("-")
     return slug[:240].strip("-") or "project"
 
@@ -617,14 +612,14 @@ def create_project(db: Session, project: schemas.ProjectCreate, team_id: int, us
 def get_project_by_id(db: Session, project_id: int):
     """
     Retrieve a project by its ID.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         project_id (int): The project's unique identifier.
-    
+
     Returns:
         Project | None: The project if found, None otherwise.
-    
+
     Example:
         >>> project = get_project_by_id(db, 1)
     """
@@ -646,18 +641,18 @@ def get_project_by_slug(db: Session, team_id: int, slug: str):
 def get_projects_by_team(db: Session, team_id: int, include_archived: bool = False):
     """
     Get all projects in a team.
-    
+
     By default, only returns active projects. Set include_archived=True
     to also return archived projects.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         team_id (int): ID of the team.
         include_archived (bool): If True, include archived projects. Default False.
-    
+
     Returns:
         list[Project]: List of projects in the team.
-    
+
     Example:
         >>> active = get_projects_by_team(db, team_id=1)
         >>> all = get_projects_by_team(db, team_id=1, include_archived=True)
@@ -682,18 +677,18 @@ def get_projects_by_team_paginated(
 def update_project(db: Session, project_id: int, project_update: schemas.ProjectUpdate):
     """
     Update a project's details.
-    
+
     Only updates fields that are provided (not None). Name, description,
     and status can all be updated.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         project_id (int): ID of the project to update.
         project_update (ProjectUpdate): Schema with fields to update.
-    
+
     Returns:
         Project | None: Updated project, or None if not found.
-    
+
     Example:
         >>> update = ProjectUpdate(name="New Name", status=ProjectStatus.archived)
         >>> updated = update_project(db, 1, update)
@@ -710,6 +705,7 @@ def update_project(db: Session, project_id: int, project_update: schemas.Project
     db.commit()
     db.refresh(db_project)
     from app.cache import cache_service
+
     cache_service.invalidate_project(project_id)
     return db_project
 
@@ -717,17 +713,17 @@ def update_project(db: Session, project_id: int, project_update: schemas.Project
 def archive_project(db: Session, project_id: int):
     """
     Archive a project.
-    
+
     Sets the project status to "archived". Archived projects are hidden
     by default but can be retrieved with include_archived=True.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         project_id (int): ID of the project to archive.
-    
+
     Returns:
         Project | None: Updated project, or None if not found.
-    
+
     Example:
         >>> archive_project(db, project_id=1)
     """
@@ -737,6 +733,7 @@ def archive_project(db: Session, project_id: int):
         db.commit()
         db.refresh(db_project)
         from app.cache import cache_service
+
         cache_service.invalidate_project(project_id)
     return db_project
 
@@ -749,6 +746,7 @@ def restore_project(db: Session, project_id: int):
         db.commit()
         db.refresh(db_project)
         from app.cache import cache_service
+
         cache_service.invalidate_project(project_id)
     return db_project
 
@@ -756,19 +754,19 @@ def restore_project(db: Session, project_id: int):
 def create_task(db: Session, task: schemas.TaskCreate, project_id: int, user_id: int):
     """
     Create a new task within a project.
-    
+
     Creates a task with the given title, description, priority, and optional
     due date and assignee. The task is created with status "todo".
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         task (TaskCreate): Schema with task details.
         project_id (int): ID of the project to create the task in.
         user_id (int): ID of the user creating the task.
-    
+
     Returns:
         Task: The newly created task object.
-    
+
     Example:
         >>> task_data = TaskCreate(
         ...     title="Fix bug",
@@ -796,22 +794,27 @@ def create_task(db: Session, task: schemas.TaskCreate, project_id: int, user_id:
 def get_task_by_id(db: Session, task_id: int):
     """
     Retrieve a task by its ID with assignee loaded.
-    
+
     Uses joinedload to eagerly load the assignee relationship,
     preventing N+1 queries when accessing task.assignee.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         task_id (int): The task's unique identifier.
-    
+
     Returns:
         Task | None: The task with assignee loaded, or None if not found.
-    
+
     Example:
         >>> task = get_task_by_id(db, 1)
         >>> print(task.assignee.email)  # No additional query
     """
-    return db.query(models.Task).options(joinedload(models.Task.assignee)).filter(models.Task.id == task_id).first()
+    return (
+        db.query(models.Task)
+        .options(joinedload(models.Task.assignee))
+        .filter(models.Task.id == task_id)
+        .first()
+    )
 
 
 def get_tasks_by_project(
@@ -829,14 +832,14 @@ def get_tasks_by_project(
 ):
     """
     Get paginated and filtered tasks for a project.
-    
+
     This is the main function for listing tasks. Supports:
     - Filtering by status, priority, assignee, due dates
     - Sorting by multiple fields
     - Pagination with configurable page size
-    
+
     Uses joinedload to prevent N+1 queries on assignee.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         project_id (int): ID of the project.
@@ -849,10 +852,10 @@ def get_tasks_by_project(
         order (str): Sort order ("asc" or "desc").
         page (int): Page number (1-indexed).
         page_size (int): Items per page (max 100).
-    
+
     Returns:
         dict: Dictionary with items (list of tasks), total count, page info.
-    
+
     Example:
         >>> result = get_tasks_by_project(
         ...     db, project_id=1,
@@ -865,8 +868,12 @@ def get_tasks_by_project(
         ... )
         >>> print(result["total"])  # Total matching tasks
     """
-    query = db.query(models.Task).options(joinedload(models.Task.assignee)).filter(models.Task.project_id == project_id)
-    
+    query = (
+        db.query(models.Task)
+        .options(joinedload(models.Task.assignee))
+        .filter(models.Task.project_id == project_id)
+    )
+
     # Apply filters
     if status:
         query = query.filter(models.Task.status == status)
@@ -878,7 +885,7 @@ def get_tasks_by_project(
         query = query.filter(models.Task.due_date <= due_before)
     if due_after:
         query = query.filter(models.Task.due_date >= due_after)
-    
+
     # Determine sort column
     order_col: Any
     if sort_by == "title":
@@ -891,38 +898,43 @@ def get_tasks_by_project(
         order_col = models.Task.status
     else:
         order_col = models.Task.created_at
-    
+
     # Apply sorting
     if order == "asc":
         query = query.order_by(order_col.asc())
     else:
         query = query.order_by(order_col.desc())
-    
+
     # Get total count (before pagination)
     total = query.count()
-    
+
     # Apply pagination
     offset = (page - 1) * page_size
     items = query.offset(offset).limit(page_size).all()
-    
-    return {"items": items, "total": total, "page": page, "pages": (total + page_size - 1) // page_size}
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "pages": (total + page_size - 1) // page_size,
+    }
 
 
 def update_task(db: Session, task_id: int, task_update: schemas.TaskUpdate):
     """
     Update a task's details.
-    
+
     Only updates fields that are provided (not None). Supports updating
     title, description, status, priority, and due_date.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         task_id (int): ID of the task to update.
         task_update (TaskUpdate): Schema with fields to update.
-    
+
     Returns:
         Task | None: Updated task, or None if not found.
-    
+
     Example:
         >>> update = TaskUpdate(status=TaskStatus.done, priority=TaskPriority.low)
         >>> updated = update_task(db, 1, update)
@@ -985,17 +997,17 @@ def update_task_status(
 def assign_task(db: Session, task_id: int, user_id: int | None):
     """
     Assign or unassign a task.
-    
+
     Set user_id to a user ID to assign, or None to unassign.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         task_id (int): ID of the task.
         user_id (int | None): User ID to assign, or None to unassign.
-    
+
     Returns:
         Task | None: Updated task, or None if not found.
-    
+
     Example:
         >>> # Assign to user
         >>> assign_task(db, task_id=1, user_id=2)
@@ -1013,17 +1025,17 @@ def assign_task(db: Session, task_id: int, user_id: int | None):
 def delete_task(db: Session, task_id: int):
     """
     Delete a task.
-    
+
     Permanently removes the task from the database. This also deletes
     associated comments, attachments, and activity logs due to CASCADE.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         task_id (int): ID of the task to delete.
-    
+
     Returns:
         Task | None: The deleted task, or None if not found.
-    
+
     Example:
         >>> delete_task(db, task_id=1)
     """
@@ -1037,16 +1049,16 @@ def delete_task(db: Session, task_id: int):
 def create_comment(db: Session, comment: schemas.CommentCreate, task_id: int, user_id: int):
     """
     Create a comment on a task.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         comment (CommentCreate): Schema with comment content.
         task_id (int): ID of the task to comment on.
         user_id (int): ID of the user creating the comment.
-    
+
     Returns:
         Comment: The newly created comment.
-    
+
     Example:
         >>> comment_data = CommentCreate(content="This looks great!")
         >>> new_comment = create_comment(db, comment_data, task_id=1, user_id=1)
@@ -1065,11 +1077,11 @@ def create_comment(db: Session, comment: schemas.CommentCreate, task_id: int, us
 def get_comment_by_id(db: Session, comment_id: int):
     """
     Retrieve a comment by its ID.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         comment_id (int): The comment's unique identifier.
-    
+
     Returns:
         Comment | None: The comment if found, None otherwise.
     """
@@ -1116,15 +1128,15 @@ def get_comments_by_task(
 def update_comment(db: Session, comment_id: int, content: str):
     """
     Update a comment's content.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         comment_id (int): ID of the comment to update.
         content (str): New comment content.
-    
+
     Returns:
         Comment | None: Updated comment, or None if not found.
-    
+
     Example:
         >>> update_comment(db, comment_id=1, content="Updated content")
     """
@@ -1139,11 +1151,11 @@ def update_comment(db: Session, comment_id: int, content: str):
 def delete_comment(db: Session, comment_id: int):
     """
     Delete a comment.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         comment_id (int): ID of the comment to delete.
-    
+
     Returns:
         Comment | None: The deleted comment, or None if not found.
     """
@@ -1165,11 +1177,11 @@ def log_activity(
 ):
     """
     Create an activity log entry for audit purposes.
-    
+
     Records actions performed on entities like tasks, projects, and teams.
     The old_value and new_value fields store string representations
     of the changes (e.g., JSON for complex values).
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         entity_type (str): Type of entity ("task", "project", "team", etc.)
@@ -1178,10 +1190,10 @@ def log_activity(
         user_id (int): ID of the user who performed the action.
         old_value (str | None): Previous value as string.
         new_value (str | None): New value as string.
-    
+
     Returns:
         ActivityLog: The newly created activity log entry.
-    
+
     Example:
         >>> log_activity(
         ...     db,
@@ -1229,9 +1241,13 @@ def get_activity_by_task(db: Session, task_id: int, page: int = 1, page_size: in
     """Get a page of activity logs for a task, newest first."""
     from sqlalchemy.orm import selectinload
 
-    query = db.query(models.ActivityLog).options(selectinload(models.ActivityLog.user)).filter(
-        models.ActivityLog.entity_type == "task",
-        models.ActivityLog.entity_id == task_id,
+    query = (
+        db.query(models.ActivityLog)
+        .options(selectinload(models.ActivityLog.user))
+        .filter(
+            models.ActivityLog.entity_type == "task",
+            models.ActivityLog.entity_id == task_id,
+        )
     )
     return _paginate_activity(query, page, page_size)
 
@@ -1240,20 +1256,20 @@ def get_activity_by_project(db: Session, project_id: int, page: int = 1, page_si
     """Get a page of activity logs for a project, newest first."""
     from sqlalchemy.orm import selectinload
 
-    query = db.query(models.ActivityLog).options(selectinload(models.ActivityLog.user)).filter(
-        models.ActivityLog.entity_type == "project",
-        models.ActivityLog.entity_id == project_id,
+    query = (
+        db.query(models.ActivityLog)
+        .options(selectinload(models.ActivityLog.user))
+        .filter(
+            models.ActivityLog.entity_type == "project",
+            models.ActivityLog.entity_id == project_id,
+        )
     )
     return _paginate_activity(query, page, page_size)
 
 
 def _like_pattern(query: str) -> str:
     """Build a safe LIKE pattern by escaping user wildcards."""
-    escaped = (
-        query.replace("\\", "\\\\")
-        .replace("%", "\\%")
-        .replace("_", "\\_")
-    )
+    escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     return f"%{escaped}%"
 
 
@@ -1327,10 +1343,10 @@ def create_attachment(
 ):
     """
     Create an attachment record for an uploaded file.
-    
+
     Note: This only creates the database record. The actual file
     should be saved to disk separately.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         task_id (int): ID of the task to attach the file to.
@@ -1339,10 +1355,10 @@ def create_attachment(
         file_path (str): Path where the file is stored.
         file_size (int): Size of the file in bytes.
         mime_type (str): MIME type of the file.
-    
+
     Returns:
         Attachment: The newly created attachment record.
-    
+
     Example:
         >>> create_attachment(
         ...     db, task_id=1, user_id=1,
@@ -1371,11 +1387,11 @@ def create_attachment(
 def get_attachment_by_id(db: Session, attachment_id: int):
     """
     Retrieve an attachment by its ID.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         attachment_id (int): The attachment's unique identifier.
-    
+
     Returns:
         Attachment | None: The attachment if found, None otherwise.
     """
@@ -1385,20 +1401,18 @@ def get_attachment_by_id(db: Session, attachment_id: int):
 def get_attachments_by_task(db: Session, task_id: int):
     """
     Get all attachments for a task.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         task_id (int): ID of the task.
-    
+
     Returns:
         list[Attachment]: List of attachments for the task.
     """
     return db.query(models.Attachment).filter(models.Attachment.task_id == task_id).all()
 
 
-def get_attachments_by_task_paginated(
-    db: Session, task_id: int, page: int, page_size: int
-):
+def get_attachments_by_task_paginated(db: Session, task_id: int, page: int, page_size: int):
     """Return a page of attachments, ordered by upload time."""
     query = (
         db.query(models.Attachment)
@@ -1411,14 +1425,14 @@ def get_attachments_by_task_paginated(
 def delete_attachment(db: Session, attachment_id: int):
     """
     Delete an attachment record.
-    
+
     Note: This only deletes the database record. The actual file
     should be deleted from disk separately.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         attachment_id (int): ID of the attachment to delete.
-    
+
     Returns:
         Attachment | None: The deleted attachment, or None if not found.
     """
@@ -1510,7 +1524,7 @@ def get_notifications_by_user(
 ):
     """
     Get a page of notifications for a user, optionally filtered by read status.
-    
+
     Returns a pagination envelope compatible with the rest of the API.
     """
     query = db.query(models.Notification).filter(models.Notification.user_id == user_id)
@@ -1549,11 +1563,11 @@ def count_unread_notifications(db: Session, user_id: int) -> int:
 def get_notification_by_id(db: Session, notification_id: int):
     """
     Retrieve a notification by its ID.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         notification_id (int): The notification's unique identifier.
-    
+
     Returns:
         Notification | None: The notification if found, None otherwise.
     """
@@ -1563,11 +1577,11 @@ def get_notification_by_id(db: Session, notification_id: int):
 def mark_notification_read(db: Session, notification_id: int):
     """
     Mark a single notification as read.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         notification_id (int): ID of the notification to mark as read.
-    
+
     Returns:
         Notification | None: Updated notification, or None if not found.
     """
@@ -1582,21 +1596,20 @@ def mark_notification_read(db: Session, notification_id: int):
 def mark_all_notifications_read(db: Session, user_id: int):
     """
     Mark all notifications for a user as read.
-    
+
     Uses a bulk update operation for efficiency.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         user_id (int): ID of the user.
-    
+
     Returns:
         None: This function doesn't return anything.
-    
+
     Example:
         >>> mark_all_notifications_read(db, user_id=1)
     """
     db.query(models.Notification).filter(
-        models.Notification.user_id == user_id,
-        models.Notification.is_read.is_(False)
+        models.Notification.user_id == user_id, models.Notification.is_read.is_(False)
     ).update({"is_read": True})
     db.commit()

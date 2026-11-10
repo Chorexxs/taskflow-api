@@ -10,10 +10,13 @@ def _headers(token: str) -> dict:
 
 
 def _register_and_login(client: TestClient, email: str) -> dict:
-    assert client.post(
-        "/api/v1/auth/register",
-        json={"email": email, "password": "password123"},
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": "password123"},
+        ).status_code
+        == 201
+    )
     response = client.post(
         "/api/v1/auth/login",
         data={"username": email, "password": "password123"},
@@ -28,21 +31,30 @@ def _register_and_login(client: TestClient, email: str) -> dict:
 def _setup(client: TestClient):
     owner = _register_and_login(client, "prefs-owner@example.com")
     member = _register_and_login(client, "prefs-member@example.com")
-    assert client.post(
-        "/api/v1/teams/",
-        json={"name": "Prefs", "slug": "prefs"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/prefs/members",
-        json={"email": "prefs-member@example.com", "role": "member"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/prefs/projects/",
-        json={"name": "Prefs Project"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/",
+            json={"name": "Prefs", "slug": "prefs"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/prefs/members",
+            json={"email": "prefs-member@example.com", "role": "member"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/prefs/projects/",
+            json={"name": "Prefs Project"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
     task = client.post(
         "/api/v1/teams/prefs/projects/Prefs Project/tasks/",
         json={"title": "Prefs Task", "assigned_to": member["id"]},
@@ -63,9 +75,7 @@ def _assign(client: TestClient, token: str, task_id: int, user_id: int | None):
 def test_muted_type_does_not_create_notifications(client: TestClient, db_session):
     owner, member, task = _setup(client)
 
-    assert _assign(
-        client, owner["access_token"], task["id"], owner["id"]
-    ).status_code == 200
+    assert _assign(client, owner["access_token"], task["id"], owner["id"]).status_code == 200
     muted = client.put(
         "/api/v1/users/me/notification-preferences",
         json={"muted_types": ["assigned"]},
@@ -74,9 +84,7 @@ def test_muted_type_does_not_create_notifications(client: TestClient, db_session
     assert muted.status_code == 200
     assert muted.json() == {"muted_types": ["assigned"]}
 
-    assert _assign(
-        client, owner["access_token"], task["id"], member["id"]
-    ).status_code == 200
+    assert _assign(client, owner["access_token"], task["id"], member["id"]).status_code == 200
     assert (
         db_session.query(models.Notification)
         .filter(
@@ -94,9 +102,7 @@ def test_muted_type_does_not_create_notifications(client: TestClient, db_session
         headers=_headers(member["access_token"]),
     )
     _assign(client, owner["access_token"], task["id"], owner["id"])
-    assert _assign(
-        client, owner["access_token"], task["id"], member["id"]
-    ).status_code == 200
+    assert _assign(client, owner["access_token"], task["id"], member["id"]).status_code == 200
 
     assert (
         db_session.query(models.Notification)

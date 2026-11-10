@@ -30,16 +30,16 @@ router = APIRouter()
 def get_team_from_id_or_slug(db: Session, team_id_or_slug: str) -> models.Team:
     """
     Resolve a team identifier to a Team object.
-    
+
     Accepts either a numeric team ID or a URL-friendly slug.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         team_id_or_slug (str): The team identifier (ID or slug).
-    
+
     Returns:
         Team: The Team object if found.
-    
+
     Raises:
         HTTPException 404: If team not found.
     """
@@ -85,7 +85,7 @@ def create_team(
     existing_team = crud.get_team_by_slug(db, team.slug)
     if existing_team:
         raise HTTPException(status_code=400, detail="Team slug already exists")
-    
+
     return crud.create_team(db, team, current_user.id)
 
 
@@ -113,9 +113,7 @@ def get_teams(
         >>> curl -X GET https://api.taskflow.com/api/v1/teams/?page=1&page_size=20 \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
-    items, total, pages = crud.get_teams_by_user_paginated(
-        db, current_user.id, page, page_size
-    )
+    items, total, pages = crud.get_teams_by_user_paginated(db, current_user.id, page, page_size)
     return {
         "items": items,
         "total": total,
@@ -237,7 +235,11 @@ def update_team(
     return updated
 
 
-@router.post("/{team_id_or_slug}/members", response_model=schemas.TeamMemberOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{team_id_or_slug}/members",
+    response_model=schemas.TeamMemberOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def invite_member(
     team_id_or_slug: str,
     member_data: schemas.TeamMemberAdd,
@@ -317,9 +319,7 @@ def list_members(
     """
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     get_current_team_member(team_id_or_slug, db, current_user)
-    items, total, pages = crud.get_team_members_paginated(
-        db, team.id, page, page_size
-    )
+    items, total, pages = crud.get_team_members_paginated(db, team.id, page, page_size)
     return {
         "items": items,
         "total": total,
@@ -447,5 +447,13 @@ def update_member_role(
 
     old_role = member.role
     updated_member = crud.update_member_role(db, team.id, user_id, role_update.role.value)
-    crud.log_activity(db, "team_member", user_id, "role_changed", current_user.id, old_role, role_update.role.value)
+    crud.log_activity(
+        db,
+        "team_member",
+        user_id,
+        "role_changed",
+        current_user.id,
+        old_role,
+        role_update.role.value,
+    )
     return updated_member

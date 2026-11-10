@@ -31,10 +31,12 @@ router = APIRouter()
 logger = get_logger(__name__)
 
 
-def get_project_from_id_or_name(db: Session, project_id_or_name: str, team_id: int) -> models.Project:
+def get_project_from_id_or_name(
+    db: Session, project_id_or_name: str, team_id: int
+) -> models.Project:
     """
     Resolve a project identifier to a Project object.
-    
+
     Accepts a numeric project ID, the team-scoped slug (preferred) or a legacy
     name. Ambiguous legacy names return 409.
 
@@ -83,7 +85,7 @@ def get_project_from_id_or_name(db: Session, project_id_or_name: str, team_id: i
 def get_task_from_id_or_title(db: Session, task_id_or_title: str, project_id: int) -> models.Task:
     """
     Resolve a task identifier to a Task object.
-    
+
     Accepts a numeric task ID (preferred) or a legacy title. Titles are not
     keys: an ambiguous title returns 409 and every legacy lookup is logged as
     deprecated.
@@ -161,6 +163,7 @@ def create_task(
         ...   -d '{"title":"Fix login bug","priority":"high","assigned_to":2}'
     """
     from app.dependencies import get_team_from_id_or_slug
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
 
@@ -228,16 +231,27 @@ def list_tasks(
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
     from app.dependencies import get_team_from_id_or_slug
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     if page_size > 100:
         page_size = 100
-    
+
     # Convert string to int for assigned_to filter
     assigned_to_param = int(assigned_to) if assigned_to and assigned_to.isdigit() else None
-    
+
     return crud.get_tasks_by_project(
-        db, project.id, status, priority, assigned_to_param, due_before, due_after, sort_by, order, page, page_size
+        db,
+        project.id,
+        status,
+        priority,
+        assigned_to_param,
+        due_before,
+        due_after,
+        sort_by,
+        order,
+        page,
+        page_size,
     )
 
 
@@ -252,10 +266,10 @@ def get_task(
 ):
     """
     Get task details.
-    
+
     Returns detailed information about a specific task,
     including assignee information.
-    
+
     Args:
         team_id_or_slug (str): The team identifier (ID or slug).
         project_id_or_name (str): The project identifier (ID or name).
@@ -263,11 +277,12 @@ def get_task(
         db (Session): Database session (injected by FastAPI).
         current_user (User): The authenticated user.
         member (TeamMember): Team membership check (injected via dependency).
-    
+
     Returns:
         TaskOut: Task details with assignee information.
     """
     from app.dependencies import get_team_from_id_or_slug
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     return get_task_from_id_or_title(db, task_id_or_title, project.id)
@@ -285,11 +300,11 @@ def update_task(
 ):
     """
     Update a task's details.
-    
+
     Only the task creator or a team admin can update tasks.
     Only provided fields are updated.
     Changes are logged to the activity log.
-    
+
     Args:
         team_id_or_slug (str): The team identifier (ID or slug).
         project_id_or_name (str): The project identifier (ID or name).
@@ -298,18 +313,19 @@ def update_task(
         db (Session): Database session (injected by FastAPI).
         current_user (User): The authenticated user.
         member (TeamMember): Team membership check (injected via dependency).
-    
+
     Returns:
         TaskOut: Updated task.
-    
+
     Raises:
         HTTPException 403: If user is not creator or admin.
     """
     from app.dependencies import get_team_from_id_or_slug
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
-    
+
     # The creator and team admins can edit every field. Any other team member
     # may only move the task between Kanban columns (status-only update).
     is_privileged = task.created_by == current_user.id or member.role == "admin"
@@ -320,7 +336,7 @@ def update_task(
                 status_code=403,
                 detail="Only the creator or an admin can edit task fields; members may only change status",
             )
-    
+
     # Track old values for activity log
     old_values = {}
     if task_update.title is not None and task_update.title != task.title:
@@ -329,14 +345,16 @@ def update_task(
         old_values["status"] = task.status
     if task_update.priority is not None and task_update.priority.value != task.priority:
         old_values["priority"] = task.priority
-    
+
     updated_task = crud.update_task(db, task.id, task_update)
-    
+
     # Log activity for changed fields
     for field, old_val in old_values.items():
         new_val = getattr(updated_task, field)
-        crud.log_activity(db, "task", updated_task.id, f"updated_{field}", current_user.id, old_val, new_val)
-    
+        crud.log_activity(
+            db, "task", updated_task.id, f"updated_{field}", current_user.id, old_val, new_val
+        )
+
     return updated_task
 
 
@@ -391,10 +409,10 @@ def delete_task(
 ):
     """
     Delete a task.
-    
+
     Only the task creator or a team admin can delete tasks.
     This permanently removes the task and associated data.
-    
+
     Args:
         team_id_or_slug (str): The team identifier (ID or slug).
         project_id_or_name (str): The project identifier (ID or name).
@@ -402,21 +420,24 @@ def delete_task(
         db (Session): Database session (injected by FastAPI).
         current_user (User): The authenticated user.
         member (TeamMember): Team membership check (injected via dependency).
-    
+
     Returns:
         None: Returns 204 No Content on success.
-    
+
     Raises:
         HTTPException 403: If user is not creator or admin.
     """
     from app.dependencies import get_team_from_id_or_slug
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
-    
+
     # Check permissions: creator or admin can delete
     if task.created_by != current_user.id and member.role != "admin":
-        raise HTTPException(status_code=403, detail="Only the creator or admin can delete this task")
+        raise HTTPException(
+            status_code=403, detail="Only the creator or admin can delete this task"
+        )
 
     # Remove attachment files before the DB cascade deletes their rows.
     for attachment in crud.get_attachments_by_task(db, task.id):
@@ -446,7 +467,7 @@ def assign_task(
 
     The task creator or a team admin can assign tasks. The assignee must be a
     member of the team. A notification is sent to the assigned user.
-    
+
     Args:
         team_id_or_slug (str): The team identifier (ID or slug).
         project_id_or_name (str): The project identifier (ID or name).
@@ -464,6 +485,7 @@ def assign_task(
         HTTPException 403: If the caller is neither the creator nor an admin.
     """
     from app.dependencies import get_team_from_id_or_slug
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
@@ -479,16 +501,18 @@ def assign_task(
         team_member = crud.get_team_member(db, team.id, assignment.user_id)
         if not team_member:
             raise HTTPException(status_code=400, detail="User is not a member of this team")
-    
+
     old_assignee = task.assigned_to
     updated_task = crud.assign_task(db, task.id, assignment.user_id)
-    
+
     # Log activity and create notification on assignment change
     if old_assignee != assignment.user_id:
         old_val = str(old_assignee) if old_assignee else None
         new_val = str(assignment.user_id) if assignment.user_id else None
-        crud.log_activity(db, "task", updated_task.id, "assigned", current_user.id, old_val, new_val)
-        
+        crud.log_activity(
+            db, "task", updated_task.id, "assigned", current_user.id, old_val, new_val
+        )
+
         # Notify the newly assigned user
         if assignment.user_id:
             assignee = crud.get_user_by_id(db, assignment.user_id)
@@ -502,7 +526,7 @@ def assign_task(
                     message=f"You have been assigned to task: {updated_task.title}",
                     dedupe_key=f"assigned:{updated_task.id}:{assignment.user_id}",
                 )
-    
+
     return updated_task
 
 
@@ -519,10 +543,10 @@ def get_task_activity(
 ):
     """
     Get activity logs for a task.
-    
+
     Returns all activity events related to the task, such as
     creation, updates, and assignments. Ordered by creation date.
-    
+
     Args:
         team_id_or_slug (str): The team identifier (ID or slug).
         project_id_or_name (str): The project identifier (ID or name).
@@ -530,11 +554,12 @@ def get_task_activity(
         db (Session): Database session (injected by FastAPI).
         current_user (User): The authenticated user.
         member (TeamMember): Team membership check (injected via dependency).
-    
+
     Returns:
         PaginatedActivityResponse: Page of activity logs plus metadata.
     """
     from app.dependencies import get_team_from_id_or_slug
+
     page = max(page, 1)
     page_size = min(max(page_size, 1), 100)
     team = get_team_from_id_or_slug(db, team_id_or_slug)

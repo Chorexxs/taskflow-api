@@ -30,10 +30,12 @@ router = APIRouter()
 logger = get_logger(__name__)
 
 
-def get_project_from_id_or_slug(db: Session, project_id_or_slug: str, team_id: int) -> models.Project:
+def get_project_from_id_or_slug(
+    db: Session, project_id_or_slug: str, team_id: int
+) -> models.Project:
     """
     Resolve a project identifier to a Project object.
-    
+
     Accepts a numeric project ID, the team-scoped slug (preferred) or a legacy
     name. Name lookups are deprecated and ambiguous names return 409.
 
@@ -110,12 +112,15 @@ def create_project(
         ...   -d '{"name":"Website Redesign","description":"Redesign company website"}'
     """
     from app.dependencies import get_team_from_id_or_slug
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     try:
         new_project = crud.create_project(db, project, team.id, current_user.id)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    crud.log_activity(db, "project", new_project.id, "created", current_user.id, None, new_project.name)
+    crud.log_activity(
+        db, "project", new_project.id, "created", current_user.id, None, new_project.name
+    )
     return new_project
 
 
@@ -149,6 +154,7 @@ def list_projects(
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
     from app.dependencies import get_team_from_id_or_slug
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     items, total, pages = crud.get_projects_by_team_paginated(
         db, team.id, page, page_size, include_archived=include_archived
@@ -191,6 +197,7 @@ def get_project(
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
     from app.dependencies import get_team_from_id_or_slug
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     return get_project_from_id_or_slug(db, project_id_or_slug, team.id)
 
@@ -228,6 +235,7 @@ def update_project(
         ...   -d '{"name":"New Name","status":"archived"}'
     """
     from app.dependencies import get_team_from_id_or_slug
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_slug(db, project_id_or_slug, team.id)
     return crud.update_project(db, project.id, project_update)
@@ -263,11 +271,14 @@ def archive_project(
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
     from app.dependencies import get_team_from_id_or_slug
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_slug(db, project_id_or_slug, team.id)
     old_status = project.status
     crud.archive_project(db, project.id)
-    crud.log_activity(db, "project", project.id, "archived", current_user.id, old_status, "archived")
+    crud.log_activity(
+        db, "project", project.id, "archived", current_user.id, old_status, "archived"
+    )
 
 
 @router.post("/{project_id_or_slug}/archive", response_model=schemas.ProjectOut)
@@ -284,7 +295,9 @@ def archive_project_endpoint(
     old_status = project.status
     if old_status != "archived":
         project = crud.archive_project(db, project.id)
-        crud.log_activity(db, "project", project.id, "archived", current_user.id, old_status, "archived")
+        crud.log_activity(
+            db, "project", project.id, "archived", current_user.id, old_status, "archived"
+        )
     return project
 
 
@@ -302,7 +315,9 @@ def restore_project_endpoint(
     old_status = project.status
     if old_status != "active":
         project = crud.restore_project(db, project.id)
-        crud.log_activity(db, "project", project.id, "restored", current_user.id, old_status, "active")
+        crud.log_activity(
+            db, "project", project.id, "restored", current_user.id, old_status, "active"
+        )
     return project
 
 
@@ -337,6 +352,7 @@ def get_project_activity(
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
     from app.dependencies import get_team_from_id_or_slug
+
     page = max(page, 1)
     page_size = min(max(page_size, 1), 100)
     team = get_team_from_id_or_slug(db, team_id_or_slug)

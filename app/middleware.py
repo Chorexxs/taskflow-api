@@ -26,19 +26,19 @@ logger = get_logger(__name__)
 class LoggingMiddleware(BaseHTTPMiddleware):
     """
     Middleware for logging HTTP requests and responses.
-    
+
     This middleware:
     - Generates a unique request ID for each request
     - Logs request method, path, status code, and duration
     - Adds request ID to response headers for tracing
     - Logs errors with full stack traces
-    
+
     The middleware uses structlog for structured JSON logging,
     making it easy to parse logs in production environments.
-    
+
     Attributes:
         None: This class doesn't define class-level attributes.
-    
+
     Example:
         Log output example:
         {
@@ -50,21 +50,21 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             "request_id": "550e8400-e29b-41d4-a716-446655440000"
         }
     """
-    
+
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
         Process the request and log the result.
-        
+
         Generates a unique request ID, times the request execution,
         and logs the outcome with relevant metadata.
-        
+
         Args:
             request (Request): The incoming HTTP request.
             call_next (Callable): The next middleware or route handler.
-        
+
         Returns:
             Response: The HTTP response with X-Request-ID header added.
-        
+
         Raises:
             Exception: Any exception from the request processing is logged
                       and re-raised for handling by error handlers.
@@ -72,17 +72,17 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         # Generate unique request ID for tracing
         request_id = str(uuid.uuid4())
         request_id_context.set(request_id)
-        
+
         # Record start time for duration calculation
         start_time = time.time()
-        
+
         try:
             # Process the request through the application
             response = await call_next(request)
-            
+
             # Calculate request duration
             duration = time.time() - start_time
-            
+
             # Log successful request
             logger.info(
                 "request_completed",
@@ -92,16 +92,16 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 duration_ms=round(duration * 1000, 2),
                 request_id=request_id,
             )
-            
+
             # Add request ID to response headers for client tracing
             response.headers["X-Request-ID"] = request_id
-            
+
             return response
-            
+
         except Exception as exc:
             # Calculate duration even for failed requests
             duration = time.time() - start_time
-            
+
             # Log error with full details
             logger.error(
                 "request_failed",

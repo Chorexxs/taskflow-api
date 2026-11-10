@@ -103,7 +103,7 @@ def update_current_user(
         existing_user = crud.get_user_by_email(db, email=user_update.email)
         if existing_user and existing_user.id != current_user.id:
             raise HTTPException(status_code=400, detail="Email already in use")
-    
+
     # Update the user
     updated_user = crud.update_user(db, current_user.id, user_update)
     if not updated_user:
@@ -121,9 +121,7 @@ def update_current_user(
 def _preferences_payload(user: User) -> dict:
     return {
         "muted_types": [
-            value
-            for value in (user.muted_notification_types or "").split(",")
-            if value
+            value for value in (user.muted_notification_types or "").split(",") if value
         ]
     }
 

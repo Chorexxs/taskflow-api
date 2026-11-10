@@ -49,7 +49,7 @@ from app.database import Base
 class User(Base):
     """
     User model representing a registered user in the system.
-    
+
     Attributes:
         id (Integer): Primary key, auto-generated
         email (String): Unique email address, used for login
@@ -59,13 +59,14 @@ class User(Base):
         failed_login_attempts (Integer): Count of consecutive failed logins
         locked_until (DateTime): If blocked, when the lock expires
         created_at (DateTime): Account creation timestamp
-    
+
     Relationships:
         - created_teams: Teams created by this user
         - team_memberships: TeamMember records for teams this user belongs to
-    
+
     Table: users
     """
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -79,24 +80,20 @@ class User(Base):
     # existing session can be invalidated at once.
     token_version = Column(Integer, nullable=False, default=0, server_default="0")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     password_changed_at = Column(DateTime(timezone=True), nullable=True)
     # Comma-separated notification types the user does not want to receive.
-    muted_notification_types = Column(
-        String(200), nullable=False, default="", server_default=""
-    )
+    muted_notification_types = Column(String(200), nullable=False, default="", server_default="")
 
 
 class Team(Base):
     """
     Team model representing a group of users working together.
-    
+
     A team has members with different roles (admin, member) and contains
     projects. Teams are identified by a unique slug for URLs.
-    
+
     Attributes:
         id (Integer): Primary key, auto-generated
         name (String): Team display name
@@ -104,16 +101,17 @@ class Team(Base):
         description (String): Optional team description
         created_by (Integer): Foreign key to User who created the team
         created_at (DateTime): Team creation timestamp
-    
+
     Relationships:
         - members: TeamMember records for all team members
         - creator: User who created the team
         - projects: All projects in this team
-    
+
     Table: teams
     Indexes:
         - slug: Unique index for slug lookups
     """
+
     __tablename__ = "teams"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -122,9 +120,7 @@ class Team(Base):
     description = Column(String(500), nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     members = relationship("TeamMember", back_populates="team", cascade="all, delete-orphan")
     creator = relationship("User")
@@ -133,24 +129,25 @@ class Team(Base):
 class TeamMember(Base):
     """
     TeamMember model representing the many-to-many relationship between users and teams.
-    
+
     This is a junction table that connects users to teams with a specific role.
     Uses composite primary key (team_id, user_id) to ensure uniqueness.
-    
+
     Attributes:
         team_id (Integer): Foreign key to Team
         user_id (Integer): Foreign key to User
         role (String): User's role in the team ("admin" or "member")
         joined_at (DateTime): When the user joined the team
-    
+
     Relationships:
         - team: The Team this member belongs to
         - user: The User who is a member
-    
+
     Table: team_members
     Indexes:
         - role: Index for role-based queries
     """
+
     __tablename__ = "team_members"
     __table_args__ = (
         CheckConstraint("role IN ('admin', 'member')", name="ck_team_members_role"),
@@ -170,9 +167,9 @@ class TeamMember(Base):
 class Project(Base):
     """
     Project model representing a project within a team.
-    
+
     Projects organize tasks and can be archived when no longer active.
-    
+
     Attributes:
         id (Integer): Primary key, auto-generated
         team_id (Integer): Foreign key to the team this project belongs to
@@ -182,38 +179,37 @@ class Project(Base):
         status (String): Project status ("active" or "archived")
         created_by (Integer): Foreign key to User who created the project
         created_at (DateTime): Project creation timestamp
-    
+
     Relationships:
         - team: The Team this project belongs to
         - creator: User who created the project
         - tasks: All tasks in this project
-    
+
     Table: projects
     Indexes:
         - ix_projects_team_status: Composite index for filtering by team and status
         - uq_projects_team_slug: Unique slug per team
     """
+
     __tablename__ = "projects"
     __table_args__ = (
-        CheckConstraint(
-            "status IN ('active', 'archived')", name="ck_projects_status"
-        ),
+        CheckConstraint("status IN ('active', 'archived')", name="ck_projects_status"),
         Index("ix_projects_team_status", "team_id", "status"),
         Index("ix_projects_team_status_created", "team_id", "status", "created_at"),
         UniqueConstraint("team_id", "slug", name="uq_projects_team_slug"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    team_id = Column(
+        Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     name = Column(String(255), nullable=False)
     slug = Column(String(255), nullable=False, index=True)
     description = Column(String(500), nullable=True)
     status = Column(String(20), default="active", index=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     team = relationship("Team")
     creator = relationship("User")
@@ -222,10 +218,10 @@ class Project(Base):
 class Task(Base):
     """
     Task model representing a task within a project.
-    
+
     Tasks have status (todo, in_progress, done), priority (low, medium, high),
     can be assigned to team members, and have due dates.
-    
+
     Attributes:
         id (Integer): Primary key, auto-generated
         project_id (Integer): Foreign key to the project this task belongs to
@@ -238,12 +234,12 @@ class Task(Base):
         created_by (Integer): Foreign key to User who created the task
         created_at (DateTime): Task creation timestamp
         updated_at (DateTime): Last update timestamp
-    
+
     Relationships:
         - project: The Project this task belongs to
         - creator: User who created the task
         - assignee: User assigned to this task
-    
+
     Table: tasks
     Indexes:
         - ix_tasks_project_status: Composite index for filtering by project and status
@@ -252,14 +248,11 @@ class Task(Base):
         - ix_tasks_due_date: Index for filtering by due date
         - ix_tasks_created_at: Index for sorting by creation date
     """
+
     __tablename__ = "tasks"
     __table_args__ = (
-        CheckConstraint(
-            "status IN ('todo', 'in_progress', 'done')", name="ck_tasks_status"
-        ),
-        CheckConstraint(
-            "priority IN ('low', 'medium', 'high')", name="ck_tasks_priority"
-        ),
+        CheckConstraint("status IN ('todo', 'in_progress', 'done')", name="ck_tasks_status"),
+        CheckConstraint("priority IN ('low', 'medium', 'high')", name="ck_tasks_priority"),
         Index("ix_tasks_project_status", "project_id", "status"),
         Index("ix_tasks_project_priority", "project_id", "priority"),
         Index("ix_tasks_project_assignee_status", "project_id", "assigned_to", "status"),
@@ -289,9 +282,9 @@ class Task(Base):
 class Comment(Base):
     """
     Comment model representing a comment on a task.
-    
+
     Comments allow team members to discuss task details.
-    
+
     Attributes:
         id (Integer): Primary key, auto-generated
         task_id (Integer): Foreign key to the task this comment belongs to
@@ -299,17 +292,16 @@ class Comment(Base):
         content (String): Comment text (max 2000 chars)
         created_at (DateTime): Comment creation timestamp
         updated_at (DateTime): Last update timestamp
-    
+
     Relationships:
         - task: The Task this comment belongs to
         - author: User who wrote the comment
-    
+
     Table: comments
     """
+
     __tablename__ = "comments"
-    __table_args__ = (
-        Index("ix_comments_task_created", "task_id", "created_at"),
-    )
+    __table_args__ = (Index("ix_comments_task_created", "task_id", "created_at"),)
 
     id = Column(Integer, primary_key=True, index=True)
     task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
@@ -325,10 +317,10 @@ class Comment(Base):
 class Attachment(Base):
     """
     Attachment model representing a file attached to a task.
-    
+
     Stores metadata about uploaded files. The actual file content
     is stored on disk, not in the database.
-    
+
     Attributes:
         id (Integer): Primary key, auto-generated
         task_id (Integer): Foreign key to the task this attachment belongs to
@@ -338,17 +330,16 @@ class Attachment(Base):
         file_size (Integer): File size in bytes
         mime_type (String): MIME type of the file
         created_at (DateTime): Upload timestamp
-    
+
     Relationships:
         - task: The Task this attachment belongs to
         - uploader: User who uploaded the file
-    
+
     Table: attachments
     """
+
     __tablename__ = "attachments"
-    __table_args__ = (
-        Index("ix_attachments_task_created", "task_id", "created_at"),
-    )
+    __table_args__ = (Index("ix_attachments_task_created", "task_id", "created_at"),)
 
     id = Column(Integer, primary_key=True, index=True)
     task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
@@ -368,9 +359,9 @@ class Attachment(Base):
 class ActivityLog(Base):
     """
     ActivityLog model representing an audit entry for entity changes.
-    
+
     Tracks all changes to tasks, projects, and team memberships for audit purposes.
-    
+
     Attributes:
         id (Integer): Primary key, auto-generated
         entity_type (String): Type of entity ("task", "project", "team", etc.)
@@ -380,12 +371,12 @@ class ActivityLog(Base):
         old_value (String): Previous value (JSON string for complex values)
         new_value (String): New value (JSON string for complex values)
         created_at (DateTime): When the change occurred
-    
+
     Relationships:
         - user: User who made the change
-    
+
     Table: activity_logs
-    
+
     Example:
         >>> # Task assignment logged
         >>> ActivityLog(
@@ -397,6 +388,7 @@ class ActivityLog(Base):
         ...     new_value="user@example.com"
         ... )
     """
+
     __tablename__ = "activity_logs"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -419,10 +411,10 @@ class ActivityLog(Base):
 class Notification(Base):
     """
     Notification model representing a user notification.
-    
+
     Notifications are created when something happens that the user
     should be aware of (e.g., task assignment, comment mention).
-    
+
     Attributes:
         id (Integer): Primary key, auto-generated
         user_id (Integer): Foreign key to User who receives the notification
@@ -432,12 +424,13 @@ class Notification(Base):
         message (String): Human-readable notification message
         is_read (Boolean): Whether the user has read the notification
         created_at (DateTime): When the notification was created
-    
+
     Relationships:
         - user: User who receives the notification
-    
+
     Table: notifications
     """
+
     __tablename__ = "notifications"
     __table_args__ = (
         CheckConstraint(
@@ -464,26 +457,25 @@ class Notification(Base):
 class RevokedToken(Base):
     """
     RevokedToken model representing a token that has been invalidated.
-    
+
     Stores tokens that have been revoked (logged out, refreshed, etc.)
     to prevent their reuse. Expired tokens are periodically cleaned up.
-    
+
     Attributes:
         id (Integer): Primary key, auto-generated
         token (String): The actual JWT token string
         token_type (String): Type of token ("access" or "refresh")
         revoked_at (DateTime): When the token was revoked
         expires_at (DateTime): When the token expires (for cleanup)
-    
+
     Table: revoked_tokens
     Indexes:
         - token: Unique index for quick lookups
     """
+
     __tablename__ = "revoked_tokens"
     __table_args__ = (
-        CheckConstraint(
-            "token_type IN ('access', 'refresh')", name="ck_revoked_tokens_type"
-        ),
+        CheckConstraint("token_type IN ('access', 'refresh')", name="ck_revoked_tokens_type"),
     )
 
     id = Column(Integer, primary_key=True, index=True)

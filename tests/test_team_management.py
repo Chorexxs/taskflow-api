@@ -18,16 +18,22 @@ def _headers(token: str) -> dict:
 def _team_with_member(client: TestClient):
     admin_token = _login(client, "team-admin@example.com")
     member_token = _login(client, "team-member@example.com")
-    assert client.post(
-        "/api/v1/teams/",
-        json={"name": "Original Name", "slug": "editable-team", "description": "Original"},
-        headers=_headers(admin_token),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/editable-team/members",
-        json={"email": "team-member@example.com", "role": "member"},
-        headers=_headers(admin_token),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/",
+            json={"name": "Original Name", "slug": "editable-team", "description": "Original"},
+            headers=_headers(admin_token),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/editable-team/members",
+            json={"email": "team-member@example.com", "role": "member"},
+            headers=_headers(admin_token),
+        ).status_code
+        == 201
+    )
     return admin_token, member_token
 
 

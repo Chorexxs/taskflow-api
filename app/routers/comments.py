@@ -30,27 +30,29 @@ _MENTION_PATTERN = re.compile(r"@([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}
 router = APIRouter()
 
 
-def get_task_from_params(db: Session, team_id_or_slug: str, project_id_or_name: str, task_id_or_title: str):
+def get_task_from_params(
+    db: Session, team_id_or_slug: str, project_id_or_name: str, task_id_or_title: str
+):
     """
     Resolve task from URL parameters.
-    
+
     Helper function that combines team, project, and task resolution.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         team_id_or_slug (str): The team identifier.
         project_id_or_name (str): The project identifier.
         task_id_or_title (str): The task identifier.
-    
+
     Returns:
         Task: The resolved Task object.
-    
+
     Raises:
         HTTPException 404: If any entity is not found.
     """
     from app.dependencies import get_team_from_id_or_slug
     from app.routers.tasks import get_project_from_id_or_name, get_task_from_id_or_title
-    
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
@@ -222,11 +224,11 @@ def update_comment(
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
     if comment.task_id != task.id:
         raise HTTPException(status_code=404, detail="Comment not found")
-    
+
     # Check if user is the author
     if comment.author_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only edit your own comments")
-    
+
     return crud.update_comment(db, comment.id, comment_update.content)
 
 
@@ -268,14 +270,16 @@ def delete_comment(
     comment = crud.get_comment_by_id(db, comment_id)
     if not comment:
         raise HTTPException(status_code=404, detail="Comment not found")
-    
+
     # Verify comment belongs to the task
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
     if comment.task_id != task.id:
         raise HTTPException(status_code=404, detail="Comment not found")
-    
+
     # Check permissions: author or admin can delete
     if comment.author_id != current_user.id and member.role != "admin":
-        raise HTTPException(status_code=403, detail="Only the author or admin can delete this comment")
-    
+        raise HTTPException(
+            status_code=403, detail="Only the author or admin can delete this comment"
+        )
+
     crud.delete_comment(db, comment.id)

@@ -8,10 +8,13 @@ def _headers(token: str) -> dict:
 
 
 def _register_and_login(client: TestClient, email: str) -> dict:
-    assert client.post(
-        "/api/v1/auth/register",
-        json={"email": email, "password": "password123"},
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": "password123"},
+        ).status_code
+        == 201
+    )
     response = client.post(
         "/api/v1/auth/login",
         data={"username": email, "password": "password123"},
@@ -31,37 +34,52 @@ def _assert_page(body: dict, *, total: int, page: int, pages: int, items: int):
 def _setup(client: TestClient):
     owner = _register_and_login(client, "pager-owner@example.com")
     for index in range(3):
-        assert client.post(
-            "/api/v1/teams/",
-            json={"name": f"Pager {index}", "slug": f"pager-{index}"},
-            headers=_headers(owner["access_token"]),
-        ).status_code == 201
+        assert (
+            client.post(
+                "/api/v1/teams/",
+                json={"name": f"Pager {index}", "slug": f"pager-{index}"},
+                headers=_headers(owner["access_token"]),
+            ).status_code
+            == 201
+        )
 
     _register_and_login(client, "pager-member@example.com")
-    assert client.post(
-        "/api/v1/teams/pager-0/members",
-        json={"email": "pager-member@example.com", "role": "member"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/pager-0/members",
+            json={"email": "pager-member@example.com", "role": "member"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
     _register_and_login(client, "pager-member2@example.com")
-    assert client.post(
-        "/api/v1/teams/pager-0/members",
-        json={"email": "pager-member2@example.com", "role": "member"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/pager-0/members",
+            json={"email": "pager-member2@example.com", "role": "member"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
 
     for index in range(3):
-        assert client.post(
-            "/api/v1/teams/pager-0/projects/",
-            json={"name": f"Pager Project {index}"},
-            headers=_headers(owner["access_token"]),
-        ).status_code == 201
+        assert (
+            client.post(
+                "/api/v1/teams/pager-0/projects/",
+                json={"name": f"Pager Project {index}"},
+                headers=_headers(owner["access_token"]),
+            ).status_code
+            == 201
+        )
 
-    assert client.post(
-        "/api/v1/teams/pager-0/projects/Pager Project 0/tasks/",
-        json={"title": "Pager Task"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/pager-0/projects/Pager Project 0/tasks/",
+            json={"title": "Pager Task"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
     return owner
 
 
@@ -111,17 +129,17 @@ def test_attachments_are_paginated(client: TestClient, tmp_path, monkeypatch):
     monkeypatch.setattr(attachments_module, "UPLOAD_DIR", str(tmp_path))
     monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
     owner = _setup(client)
-    url = (
-        "/api/v1/teams/pager-0/projects/Pager Project 0/tasks/Pager Task"
-        "/attachments/"
-    )
+    url = "/api/v1/teams/pager-0/projects/Pager Project 0/tasks/Pager Task/attachments/"
 
     for name in ("first.txt", "second.txt"):
-        assert client.post(
-            url,
-            files={"file": (name, b"payload", "text/plain")},
-            headers=_headers(owner["access_token"]),
-        ).status_code == 201
+        assert (
+            client.post(
+                url,
+                files={"file": (name, b"payload", "text/plain")},
+                headers=_headers(owner["access_token"]),
+            ).status_code
+            == 201
+        )
 
     body = client.get(
         f"{url}?page=1&page_size=1",

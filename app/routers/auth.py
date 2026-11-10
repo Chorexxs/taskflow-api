@@ -105,7 +105,7 @@ def register(request: Request, user: schemas.UserCreate, db: Session = Depends(g
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+
     # Create the user
     created_user = crud.create_user(db=db, user=user)
     logger.info("auth_register_succeeded", user_id=created_user.id)
@@ -114,7 +114,11 @@ def register(request: Request, user: schemas.UserCreate, db: Session = Depends(g
 
 @router.post("/login", response_model=schemas.Token)
 @rate_limit("10/minute")
-def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
     """
     Authenticate a user and return JWT tokens.
     
@@ -150,7 +154,7 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
     """
     # Look up user by email (username in OAuth2 form is the email)
     user = crud.get_user_by_email(db, email=form_data.username)
-    
+
     # Check if user exists. The attempted email is never logged.
     if not user:
         logger.warning("auth_login_failed", user_id=None, reason="unknown_user")
@@ -159,7 +163,7 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Check if account is locked
     if check_user_locked(db, user):
         logger.warning("auth_login_failed", user_id=user.id, reason="account_locked")
@@ -167,7 +171,7 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
             status_code=status.HTTP_423_LOCKED,
             detail="Account temporarily locked due to too many failed login attempts",
         )
-    
+
     # Verify password
     if not verify_password(form_data.password, user.hashed_password):
         # Record failed attempt (may lock account)
@@ -185,21 +189,17 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Successful login - reset failed attempts
     reset_failed_login(db, user)
     logger.info("auth_login_succeeded", user_id=user.id)
-    
+
     # Generate tokens. `ver` lets a password change invalidate every session.
     token_data = {"sub": user.email, "ver": user.token_version or 0}
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
-    
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    }
+
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
 @router.post("/refresh", response_model=schemas.Token)
@@ -211,13 +211,13 @@ def refresh(
 ):
     """
     Refresh access token using a valid refresh token.
-    
+
     The refresh token must be sent in the JSON body:
     ``{"refresh_token": "..."}``. It is never accepted in the query string
     because tokens in URLs leak through logs, proxies and browser history.
-    
+
     The old refresh token is revoked and a new pair is issued (rotation).
-    
+
     Raises:
         HTTPException 401: If the refresh token is invalid, expired or revoked.
         HTTPException 422: If no refresh token is provided.

@@ -101,13 +101,11 @@ async def iter_notification_events(request: Request, db: Session, user_id: int, 
             )
             for notification in pending:
                 last_id = int(notification.id)
-                payload = schemas.NotificationOut.model_validate(
-                    notification
-                ).model_dump(mode="json")
+                payload = schemas.NotificationOut.model_validate(notification).model_dump(
+                    mode="json"
+                )
                 yield (
-                    f"id: {notification.id}\n"
-                    "event: notification\n"
-                    f"data: {json.dumps(payload)}\n\n"
+                    f"id: {notification.id}\nevent: notification\ndata: {json.dumps(payload)}\n\n"
                 )
             db.expire_all()
         except Exception as exc:  # pragma: no cover - defensive

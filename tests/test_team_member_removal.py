@@ -10,10 +10,13 @@ def _headers(token: str) -> dict:
 
 
 def _register_and_login(client: TestClient, email: str) -> dict:
-    assert client.post(
-        "/api/v1/auth/register",
-        json={"email": email, "password": "password123"},
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": "password123"},
+        ).status_code
+        == 201
+    )
     response = client.post(
         "/api/v1/auth/login",
         data={"username": email, "password": "password123"},
@@ -30,21 +33,30 @@ def test_removed_member_tasks_are_unassigned_and_audited(client: TestClient, db_
     owner = _register_and_login(client, "removal-owner@example.com")
     member = _register_and_login(client, "removal-member@example.com")
 
-    assert client.post(
-        "/api/v1/teams/",
-        json={"name": "Removal Team", "slug": "removal-team"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/removal-team/members",
-        json={"email": "removal-member@example.com", "role": "member"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/removal-team/projects/",
-        json={"name": "Removal Project"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/",
+            json={"name": "Removal Team", "slug": "removal-team"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/removal-team/members",
+            json={"email": "removal-member@example.com", "role": "member"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/removal-team/projects/",
+            json={"name": "Removal Project"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
     task = client.post(
         "/api/v1/teams/removal-team/projects/Removal Project/tasks/",
         json={"title": "Assigned Work", "assigned_to": member["id"]},

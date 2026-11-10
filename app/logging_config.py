@@ -31,24 +31,22 @@ from structlog.types import EventDict
 request_id_context: ContextVar[str] = ContextVar("request_id", default="")
 
 
-def add_request_id(
-    logger: Any, method_name: str, event_dict: EventDict
-) -> EventDict:
+def add_request_id(logger: Any, method_name: str, event_dict: EventDict) -> EventDict:
     """
     Add request ID to log entries.
-    
+
     This processor retrieves the request ID from the context variable
     and adds it to every log entry. If no request ID is set, it generates
     a new UUID for the log entry.
-    
+
     Args:
         logger (Any): The structlog logger instance.
         method_name (str): The logging method name (info, error, etc.).
         event_dict (EventDict): The log entry dictionary to modify.
-    
+
     Returns:
         EventDict: The log entry with request_id added.
-    
+
     Example:
         >>> # Log output:
         >>> # {"event": "message", "request_id": "550e8400-...", ...}
@@ -60,7 +58,7 @@ def add_request_id(
 def configure_logging() -> None:
     """
     Configure structlog for the application.
-    
+
     This function sets up the logging pipeline with the following processors:
     1. merge_contextvars: Merge context variables into the log entry
     2. add_request_id: Add request ID from context
@@ -70,14 +68,14 @@ def configure_logging() -> None:
     6. StackInfoRenderer: Add stack info for exceptions
     7. format_exc_info: Format exception info
     8. JSONRenderer: Output as JSON
-    
+
     The logging is configured to output to stdout in JSON format,
     which works well with container orchestration systems like
     Docker and Kubernetes.
-    
+
     Returns:
         None: This function doesn't return anything.
-    
+
     Example:
         >>> configure_logging()
         >>> logger = get_logger(__name__)
@@ -116,17 +114,17 @@ def configure_logging() -> None:
 def get_logger(name: str = __name__):
     """
     Get a structured logger for the given module.
-    
+
     This is the main entry point for creating loggers in the application.
     The returned logger will use the configuration set up by configure_logging().
-    
+
     Args:
         name (str): The logger name, typically __name__ from the module.
                     This helps identify the source of log entries.
-    
+
     Returns:
         BoundLogger: A structlog logger instance configured for JSON output.
-    
+
     Example:
         >>> logger = get_logger(__name__)
         >>> logger.info("request_received", path="/api/v1/teams/")

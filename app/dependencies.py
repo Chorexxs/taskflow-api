@@ -27,21 +27,21 @@ from app.database import get_db
 def get_team_from_id_or_slug(db: Session, team_id_or_slug: str) -> models.Team:
     """
     Resolve a team identifier to a Team object.
-    
+
     Accepts either a numeric team ID or a URL-friendly slug and returns
     the corresponding Team object. This allows routes to accept both
     identification methods.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         team_id_or_slug (str): The team identifier (either numeric ID or slug string).
-    
+
     Returns:
         Team: The Team object if found.
-    
+
     Raises:
         HTTPException 404: If no team exists with the given ID or slug.
-    
+
     Example:
         # Both of these resolve to the same team:
         # /api/v1/teams/123
@@ -66,26 +66,26 @@ def get_current_team_member(
 ):
     """
     Dependency to ensure the current user is a member of the specified team.
-    
+
     This dependency:
     1. Resolves the team from the ID or slug
     2. Checks if the current user is a member of that team
     3. Returns the TeamMember object with role information
-    
+
     Use this dependency for routes that should be accessible to any team member.
-    
+
     Args:
         team_id_or_slug (str): The team identifier from the URL path.
         db (Session): SQLAlchemy database session (injected).
         current_user (User): The authenticated user (injected via get_current_user).
-    
+
     Returns:
         TeamMember: The TeamMember object containing the user's role in the team.
-    
+
     Raises:
         HTTPException 403: If the user is not a member of the team.
         HTTPException 404: If the team doesn't exist.
-    
+
     Example:
         @router.get("/{team_id_or_slug}/projects")
         def list_projects(
@@ -112,30 +112,30 @@ def get_current_team_admin(
 ):
     """
     Dependency to ensure the current user is an admin of the specified team.
-    
+
     This dependency:
     1. Resolves the team from the ID or slug
     2. Checks if the current user is an admin of that team
-    
+
     Use this dependency for routes that should only be accessible to team admins,
     such as:
     - Adding/removing members
     - Changing member roles
     - Archiving projects
     - Deleting team resources
-    
+
     Args:
         team_id_or_slug (str): The team identifier from the URL path.
         db (Session): SQLAlchemy database session (injected).
         current_user (User): The authenticated user (injected via get_current_user).
-    
+
     Returns:
         TeamMember: The TeamMember object containing the user's admin role.
-    
+
     Raises:
         HTTPException 403: If the user is not a member or not an admin.
         HTTPException 404: If the team doesn't exist.
-    
+
     Example:
         @router.post("/{team_id_or_slug}/members")
         def add_member(

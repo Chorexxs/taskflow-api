@@ -42,20 +42,21 @@ logger = get_logger(__name__)
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
     Middleware to add security headers to all responses.
-    
+
     Adds the following headers:
     - X-Content-Type-Options: nosniff - Prevents MIME type sniffing
     - X-Frame-Options: DENY - Prevents clickjacking attacks
     - Strict-Transport-Security: Forces HTTPS connections
     - X-XSS-Protection: Enables XSS filter in browsers
-    
+
     Args:
         request (Request): The incoming HTTP request.
         call_next: The next middleware/handler in the chain.
-    
+
     Returns:
         Response: The HTTP response with security headers added.
     """
+
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -83,7 +84,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 async def lifespan(app: FastAPI):
     """
     Manage application startup and shutdown events.
-    
+
     This lifespan context manager handles:
     1. Startup:
        - Initialize Sentry if SENTRY_DSN is configured
@@ -91,13 +92,13 @@ async def lifespan(app: FastAPI):
        - Log application start
     2. Shutdown:
        - Log application shutdown
-    
+
     Args:
         app (FastAPI): The FastAPI application instance.
-    
+
     Yields:
         None: Control flows to the application during the "running" phase.
-    
+
     Example:
         The lifespan is automatically invoked by FastAPI on startup/shutdown.
     """
@@ -222,8 +223,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     request.
     """
     details = [
-        {key: value for key, value in error.items() if key != "input"}
-        for error in exc.errors()
+        {key: value for key, value in error.items() if key != "input"} for error in exc.errors()
     ]
     return _error_response(
         422,
@@ -254,18 +254,18 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 async def domain_exception_handler(request: Request, exc: Exception):
     """
     Handle unhandled exceptions in the application.
-    
+
     Catches all unhandled exceptions and:
     - If it's a DomainException, returns a 400 with error details
     - Otherwise, logs the error and returns a generic 500 response
-    
+
     Args:
         request (Request): The incoming HTTP request that caused the error.
         exc (Exception): The unhandled exception.
-    
+
     Returns:
         JSONResponse: 400 for domain errors, 500 for other errors.
-    
+
     Example:
         >>> try:
         ...     something()
@@ -273,6 +273,7 @@ async def domain_exception_handler(request: Request, exc: Exception):
         ...     return domain_exception_handler(request, e)
     """
     from app.exceptions import DomainException
+
     if isinstance(exc, DomainException):
         return _error_response(400, exc.message, code=exc.code)
 
@@ -313,16 +314,30 @@ app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 app.include_router(teams.router, prefix="/api/v1/teams", tags=["teams"])
 
 # Project endpoints: /api/v1/teams/{team_id}/projects/*
-app.include_router(projects.router, prefix="/api/v1/teams/{team_id_or_slug}/projects", tags=["projects"])
+app.include_router(
+    projects.router, prefix="/api/v1/teams/{team_id_or_slug}/projects", tags=["projects"]
+)
 
 # Task endpoints: /api/v1/teams/{team_id}/projects/{project_id}/tasks/*
-app.include_router(tasks.router, prefix="/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks", tags=["tasks"])
+app.include_router(
+    tasks.router,
+    prefix="/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks",
+    tags=["tasks"],
+)
 
 # Comment endpoints: /api/v1/teams/{team_id}/projects/{project_id}/tasks/{task_id}/comments/*
-app.include_router(comments.router, prefix="/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/comments", tags=["comments"])
+app.include_router(
+    comments.router,
+    prefix="/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/comments",
+    tags=["comments"],
+)
 
 # Attachment endpoints: /api/v1/teams/{team_id}/projects/{project_id}/tasks/{task_id}/attachments/*
-app.include_router(attachments.router, prefix="/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/attachments", tags=["attachments"])
+app.include_router(
+    attachments.router,
+    prefix="/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/attachments",
+    tags=["attachments"],
+)
 
 # Notification endpoints: /api/v1/notifications/*
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
@@ -332,13 +347,13 @@ app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["
 def root():
     """
     Root endpoint returning API information.
-    
+
     This is the base endpoint that provides a simple welcome message.
     Used for basic connectivity testing.
-    
+
     Returns:
         dict: Dictionary with a welcome message.
-    
+
     Example:
         >>> curl https://api.taskflow.com/
         {"message": "TaskFlow API"}
@@ -350,18 +365,18 @@ def root():
 def health_check():
     """
     Health check endpoint for monitoring and load balancers.
-    
+
     Checks the status of:
     - Database connection (PostgreSQL)
     - Redis connection (if REDIS_URL is configured)
     - Available disk space
-    
+
     Returns:
         dict: Status of all system components.
-    
+
     Raises:
         JSONResponse: Returns 503 if database is not connected.
-    
+
     Example:
         >>> curl https://api.taskflow.com/health
         {
@@ -377,12 +392,13 @@ def health_check():
         "redis": "unknown",
         "disk": "unknown",
     }
-    
+
     # Check database connection
     try:
         from sqlalchemy import text
 
         from app.database import get_engine
+
         engine = get_engine()
         if engine:
             with engine.connect() as conn:
@@ -391,28 +407,30 @@ def health_check():
     except Exception as e:
         health_status["database"] = f"error: {str(e)}"
         health_status["status"] = "degraded"
-    
+
     # Check Redis connection (optional)
     try:
         import redis
+
         r = redis.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379/0"))
         r.ping()
         health_status["redis"] = "connected"
     except Exception:
         health_status["redis"] = "not_available"
-    
+
     # Check disk space
     try:
         import shutil
+
         total, used, free = shutil.disk_usage("/")
         health_status["disk"] = f"{free // (2**30)}GB free"
     except Exception:
         health_status["disk"] = "unknown"
-    
+
     # Return 503 if degraded
     if health_status["status"] == "degraded":
         return JSONResponse(status_code=503, content=health_status)
-    
+
     return health_status
 
 

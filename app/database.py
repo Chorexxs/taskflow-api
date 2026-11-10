@@ -30,9 +30,9 @@ from app.config import settings
 DATABASE_URL = settings.DATABASE_URL
 if not DATABASE_URL:
     warnings.warn(
-    "DATABASE_URL is not set, database functionality will be unavailable",
-    stacklevel=2,
-)
+        "DATABASE_URL is not set, database functionality will be unavailable",
+        stacklevel=2,
+    )
 
 
 # Declarative base for SQLAlchemy models
@@ -47,17 +47,17 @@ _SessionLocal = None
 def get_engine():
     """
     Get or create the SQLAlchemy database engine.
-    
+
     Creates a singleton engine with the following features:
     - Connection pooling (size configurable)
     - Pre-ping to verify connections
     - PostgreSQL search path configuration
-    
+
     The engine is created once and reused for all connections.
-    
+
     Returns:
         Engine | None: SQLAlchemy engine instance, or None if DATABASE_URL not set.
-    
+
     Example:
         >>> engine = get_engine()
         >>> with engine.connect() as conn:
@@ -67,28 +67,29 @@ def get_engine():
     if _engine is None:
         if not DATABASE_URL:
             warnings.warn(
-    "DATABASE_URL is not set, returning None engine",
-    stacklevel=2,
-)
+                "DATABASE_URL is not set, returning None engine",
+                stacklevel=2,
+            )
             return None
-        
+
         # Configure PostgreSQL-specific settings. Managed providers such as
         # InsForge require TLS; "prefer" also works with local Postgres.
         connect_args = {}
         if DATABASE_URL.startswith("postgresql"):
             connect_args["sslmode"] = settings.DB_SSLMODE
+
             @event.listens_for(Engine, "connect")
             def set_search_path(dbapi_conn, connection_record):
                 """
                 Set PostgreSQL search path to 'public' schema.
-                
+
                 This prevents issues with tables being created in wrong schemas
                 when using PostgreSQL with multiple schemas.
                 """
                 cursor = dbapi_conn.cursor()
                 cursor.execute("SET search_path TO public")
                 cursor.close()
-        
+
         # Create engine with connection pooling
         _engine = create_engine(
             DATABASE_URL,
@@ -103,15 +104,15 @@ def get_engine():
 def get_session_local():
     """
     Get or create the SQLAlchemy session factory.
-    
+
     Creates a singleton session factory bound to the engine.
     Sessions are created with:
     - autocommit=False: Explicit commit required
     - autoflush=False: Manual flush required
-    
+
     Returns:
         sessionmaker | None: Session factory, or None if DATABASE_URL not set.
-    
+
     Example:
         >>> SessionLocal = get_session_local()
         >>> with SessionLocal() as session:
@@ -121,35 +122,31 @@ def get_session_local():
     if _SessionLocal is None:
         if not DATABASE_URL:
             warnings.warn(
-    "DATABASE_URL is not set, returning None session",
-    stacklevel=2,
-)
+                "DATABASE_URL is not set, returning None session",
+                stacklevel=2,
+            )
             return None
-        _SessionLocal = sessionmaker(
-            autocommit=False,
-            autoflush=False,
-            bind=get_engine()
-        )
+        _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=get_engine())
     return _SessionLocal
 
 
 def get_db() -> Generator:
     """
     FastAPI dependency for database session injection.
-    
+
     This is a generator function that FastAPI uses to inject
     a database session into route handlers. The session is
     automatically closed after the request completes.
-    
+
     Yields:
         Session: SQLAlchemy database session.
-    
+
     Returns:
         Generator: A generator that provides the session.
-    
+
     Raises:
         Exception: Any exception from the database operation.
-    
+
     Example:
         >>> @router.get("/users")
         ... def get_users(db: Session = Depends(get_db)):
@@ -166,13 +163,13 @@ def get_db() -> Generator:
 def get_db_context():
     """
     Context manager for database sessions outside of FastAPI routes.
-    
+
     Use this for background tasks, scripts, or other non-route code
     that needs database access.
-    
+
     Yields:
         Session: SQLAlchemy database session.
-    
+
     Example:
         >>> with get_db_context() as db:
         ...     user = db.query(User).first()

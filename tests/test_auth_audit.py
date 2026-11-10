@@ -37,15 +37,11 @@ def audit_log(monkeypatch):
 
 
 def _register(client, email="audit@example.com", password="password123"):
-    return client.post(
-        "/api/v1/auth/register", json={"email": email, "password": password}
-    )
+    return client.post("/api/v1/auth/register", json={"email": email, "password": password})
 
 
 def _login(client, email, password):
-    return client.post(
-        "/api/v1/auth/login", data={"username": email, "password": password}
-    )
+    return client.post("/api/v1/auth/login", data={"username": email, "password": password})
 
 
 def test_auth_events_include_user_id_without_pii(client, audit_log):

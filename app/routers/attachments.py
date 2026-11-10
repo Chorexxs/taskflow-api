@@ -104,24 +104,26 @@ def _task_upload_dir(task_id: int) -> str:
     return task_dir
 
 
-def get_task_from_params(db: Session, team_id_or_slug: str, project_id_or_name: str, task_id_or_title: str):
+def get_task_from_params(
+    db: Session, team_id_or_slug: str, project_id_or_name: str, task_id_or_title: str
+):
     """
     Resolve task from URL parameters.
-    
+
     Helper function that combines team, project, and task resolution.
-    
+
     Args:
         db (Session): SQLAlchemy database session.
         team_id_or_slug (str): The team identifier.
         project_id_or_name (str): The project identifier.
         task_id_or_title (str): The task identifier.
-    
+
     Returns:
         Task: The resolved Task object.
     """
     from app.dependencies import get_team_from_id_or_slug
     from app.routers.tasks import get_project_from_id_or_name, get_task_from_id_or_title
-    
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
@@ -257,7 +259,7 @@ def list_attachments(
 ):
     """
     List all attachments for a task.
-    
+
     Args:
         team_id_or_slug (str): The team identifier (ID or slug).
         project_id_or_name (str): The project identifier (ID or name).
@@ -265,14 +267,12 @@ def list_attachments(
         db (Session): Database session (injected by FastAPI).
         current_user (User): The authenticated user.
         member (TeamMember): Team membership check (injected via dependency).
-    
+
     Returns:
         PaginatedAttachmentResponse: Page of attachments for the task.
     """
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
-    items, total, pages = crud.get_attachments_by_task_paginated(
-        db, task.id, page, page_size
-    )
+    items, total, pages = crud.get_attachments_by_task_paginated(db, task.id, page, page_size)
     return {
         "items": items,
         "total": total,
@@ -294,10 +294,10 @@ def delete_attachment(
 ):
     """
     Delete an attachment.
-    
+
     Only the uploader or a team admin can delete attachments.
     This removes both the database record and the file from disk.
-    
+
     Args:
         attachment_id (int): ID of the attachment to delete.
         team_id_or_slug (str): The team identifier (ID or slug).
@@ -306,33 +306,37 @@ def delete_attachment(
         db (Session): Database session (injected by FastAPI).
         current_user (User): The authenticated user.
         member (TeamMember): Team membership check (injected via dependency).
-    
+
     Returns:
         None: Returns 204 No Content on success.
-    
+
     Raises:
         HTTPException 404: If attachment not found or doesn't belong to task.
         HTTPException 403: If user is not uploader or admin.
     """
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
     attachment = crud.get_attachment_by_id(db, attachment_id)
-    
+
     if not attachment:
         raise HTTPException(status_code=404, detail="Attachment not found")
-    
+
     if attachment.task_id != task.id:
         raise HTTPException(status_code=404, detail="Attachment does not belong to this task")
-    
+
     # Check permissions: uploader or admin can delete
     if attachment.uploaded_by != current_user.id and member.role != "admin":
-        raise HTTPException(status_code=403, detail="Only the uploader or team admin can delete this attachment")
-    
+        raise HTTPException(
+            status_code=403, detail="Only the uploader or team admin can delete this attachment"
+        )
+
     # Remove the local file when this attachment uses the filesystem backend.
     if attachment.file_path and os.path.exists(attachment.file_path):
         os.remove(attachment.file_path)
-    
+
     # Log and delete
-    crud.log_activity(db, "attachment", attachment.id, "deleted", current_user.id, attachment.filename, None)
+    crud.log_activity(
+        db, "attachment", attachment.id, "deleted", current_user.id, attachment.filename, None
+    )
     crud.delete_attachment(db, attachment.id)
 
 
@@ -348,10 +352,10 @@ def download_attachment(
 ):
     """
     Download an attachment.
-    
+
     Returns the file as a downloadable response with proper
     content-disposition header.
-    
+
     Args:
         attachment_id (int): ID of the attachment to download.
         team_id_or_slug (str): The team identifier (ID or slug).
@@ -360,19 +364,19 @@ def download_attachment(
         db (Session): Database session (injected by FastAPI).
         current_user (User): The authenticated user.
         member (TeamMember): Team membership check (injected via dependency).
-    
+
     Returns:
         FileResponse: The file for download.
-    
+
     Raises:
         HTTPException 404: If attachment not found or file doesn't exist.
     """
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
     attachment = crud.get_attachment_by_id(db, attachment_id)
-    
+
     if not attachment or attachment.task_id != task.id:
         raise HTTPException(status_code=404, detail="Attachment not found")
-    
+
     if attachment.content is not None:
         safe_name = attachment.filename.replace('"', "")
         return Response(
@@ -383,9 +387,7 @@ def download_attachment(
 
     if not attachment.file_path or not os.path.exists(attachment.file_path):
         raise HTTPException(status_code=404, detail="File not found")
-    
+
     return FileResponse(
-        path=attachment.file_path,
-        filename=attachment.filename,
-        media_type=attachment.mime_type
+        path=attachment.file_path, filename=attachment.filename, media_type=attachment.mime_type
     )

@@ -8,30 +8,43 @@ def _headers(token: str) -> dict:
 
 
 def _setup_task(client: TestClient):
-    client.post("/api/v1/auth/register", json={"email": "task-life@example.com", "password": "password123"})
+    client.post(
+        "/api/v1/auth/register", json={"email": "task-life@example.com", "password": "password123"}
+    )
     token = client.post(
         "/api/v1/auth/login",
         data={"username": "task-life@example.com", "password": "password123"},
     ).json()["access_token"]
-    assert client.post(
-        "/api/v1/teams/",
-        json={"name": "Task Life", "slug": "task-life"},
-        headers=_headers(token),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/task-life/projects/",
-        json={"name": "Task Project"},
-        headers=_headers(token),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/task-life/projects/Task Project/tasks/",
-        json={"title": "Task With File"},
-        headers=_headers(token),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/",
+            json={"name": "Task Life", "slug": "task-life"},
+            headers=_headers(token),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/task-life/projects/",
+            json={"name": "Task Project"},
+            headers=_headers(token),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/task-life/projects/Task Project/tasks/",
+            json={"title": "Task With File"},
+            headers=_headers(token),
+        ).status_code
+        == 201
+    )
     return token
 
 
-def test_deleting_task_removes_attachment_files(client: TestClient, db_session, tmp_path, monkeypatch):
+def test_deleting_task_removes_attachment_files(
+    client: TestClient, db_session, tmp_path, monkeypatch
+):
     from app.config import settings
     from app.routers import attachments as attachments_module
 

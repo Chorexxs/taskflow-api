@@ -10,10 +10,13 @@ def _headers(token: str) -> dict:
 
 
 def _register_and_login(client: TestClient, email: str) -> dict:
-    assert client.post(
-        "/api/v1/auth/register",
-        json={"email": email, "password": "password123"},
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": "password123"},
+        ).status_code
+        == 201
+    )
     response = client.post(
         "/api/v1/auth/login",
         data={"username": email, "password": "password123"},
@@ -26,21 +29,30 @@ def _setup(client: TestClient):
     owner = _register_and_login(client, "status-owner@example.com")
     member = _register_and_login(client, "status-member@example.com")
 
-    assert client.post(
-        "/api/v1/teams/",
-        json={"name": "Status Team", "slug": "status-team"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/status-team/members",
-        json={"email": "status-member@example.com", "role": "member"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/status-team/projects/",
-        json={"name": "Status Project"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/",
+            json={"name": "Status Team", "slug": "status-team"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/status-team/members",
+            json={"email": "status-member@example.com", "role": "member"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/status-team/projects/",
+            json={"name": "Status Project"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
     task = client.post(
         "/api/v1/teams/status-team/projects/Status Project/tasks/",
         json={"title": "Movable Task"},
@@ -67,9 +79,9 @@ def test_member_can_move_task_and_activity_is_logged(client: TestClient, db_sess
     assert response.json()["status"] == "in_progress"
     assert response.json()["title"] == task["title"]
 
-    member_id = client.get(
-        "/api/v1/users/me", headers=_headers(member["access_token"])
-    ).json()["id"]
+    member_id = client.get("/api/v1/users/me", headers=_headers(member["access_token"])).json()[
+        "id"
+    ]
     log = (
         db_session.query(models.ActivityLog)
         .filter(

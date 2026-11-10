@@ -13,24 +13,33 @@ def _headers(token: str) -> dict:
 
 
 def _setup(client: TestClient):
-    assert client.post(
-        "/api/v1/auth/register",
-        json={"email": "schema@example.com", "password": "password123"},
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/auth/register",
+            json={"email": "schema@example.com", "password": "password123"},
+        ).status_code
+        == 201
+    )
     token = client.post(
         "/api/v1/auth/login",
         data={"username": "schema@example.com", "password": "password123"},
     ).json()["access_token"]
-    assert client.post(
-        "/api/v1/teams/",
-        json={"name": "Schema Team", "slug": "schema-team"},
-        headers=_headers(token),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/schema-team/projects/",
-        json={"name": "Schema Project"},
-        headers=_headers(token),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/",
+            json={"name": "Schema Team", "slug": "schema-team"},
+            headers=_headers(token),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/schema-team/projects/",
+            json={"name": "Schema Project"},
+            headers=_headers(token),
+        ).status_code
+        == 201
+    )
     task = client.post(
         "/api/v1/teams/schema-team/projects/Schema Project/tasks/",
         json={"title": "Schema Task"},

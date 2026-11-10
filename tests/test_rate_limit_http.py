@@ -49,8 +49,6 @@ def test_rate_limit_is_per_endpoint(rate_limited_client):
     for _ in range(10):
         assert _login(rate_limited_client).status_code == 401
 
-    response = rate_limited_client.post(
-        "/api/v1/auth/refresh", json={"refresh_token": "not-a-jwt"}
-    )
+    response = rate_limited_client.post("/api/v1/auth/refresh", json={"refresh_token": "not-a-jwt"})
     # Refresh has its own 30/minute budget, so it is not rate limited yet.
     assert response.status_code == 401

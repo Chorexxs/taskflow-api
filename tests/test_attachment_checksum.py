@@ -10,32 +10,43 @@ def _headers(token: str) -> dict:
 
 
 def _setup(client: TestClient) -> tuple[str, str]:
-    assert client.post(
-        "/api/v1/auth/register",
-        json={"email": "checksum@example.com", "password": "password123"},
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/auth/register",
+            json={"email": "checksum@example.com", "password": "password123"},
+        ).status_code
+        == 201
+    )
     token = client.post(
         "/api/v1/auth/login",
         data={"username": "checksum@example.com", "password": "password123"},
     ).json()["access_token"]
-    assert client.post(
-        "/api/v1/teams/",
-        json={"name": "Checksum", "slug": "checksum"},
-        headers=_headers(token),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/checksum/projects/",
-        json={"name": "Checksum Project"},
-        headers=_headers(token),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/checksum/projects/Checksum Project/tasks/",
-        json={"title": "Checksum Task"},
-        headers=_headers(token),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/",
+            json={"name": "Checksum", "slug": "checksum"},
+            headers=_headers(token),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/checksum/projects/",
+            json={"name": "Checksum Project"},
+            headers=_headers(token),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/checksum/projects/Checksum Project/tasks/",
+            json={"title": "Checksum Task"},
+            headers=_headers(token),
+        ).status_code
+        == 201
+    )
     return token, (
-        "/api/v1/teams/checksum/projects/Checksum Project/tasks/Checksum Task"
-        "/attachments/"
+        "/api/v1/teams/checksum/projects/Checksum Project/tasks/Checksum Task/attachments/"
     )
 
 

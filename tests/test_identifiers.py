@@ -25,10 +25,13 @@ def _headers(token: str) -> dict:
 
 
 def _register_and_login(client: TestClient, email: str) -> dict:
-    assert client.post(
-        "/api/v1/auth/register",
-        json={"email": email, "password": "password123"},
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": "password123"},
+        ).status_code
+        == 201
+    )
     response = client.post(
         "/api/v1/auth/login",
         data={"username": email, "password": "password123"},
@@ -39,11 +42,14 @@ def _register_and_login(client: TestClient, email: str) -> dict:
 
 def _setup(client: TestClient):
     owner = _register_and_login(client, "ids-owner@example.com")
-    assert client.post(
-        "/api/v1/teams/",
-        json={"name": "Identifiers", "slug": "identifiers"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/",
+            json={"name": "Identifiers", "slug": "identifiers"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
     return owner
 
 
@@ -97,13 +103,18 @@ def test_explicit_slug_is_normalized_and_unique(client: TestClient):
 
 def test_same_slug_is_allowed_in_another_team(client: TestClient):
     owner = _setup(client)
-    assert client.post(
-        "/api/v1/teams/",
-        json={"name": "Other Team", "slug": "other-identifiers"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/",
+            json={"name": "Other Team", "slug": "other-identifiers"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
 
-    assert _create_project(client, owner["access_token"], "Shared", slug="shared").status_code == 201
+    assert (
+        _create_project(client, owner["access_token"], "Shared", slug="shared").status_code == 201
+    )
     response = client.post(
         "/api/v1/teams/other-identifiers/projects/",
         json={"name": "Shared", "slug": "shared"},
@@ -128,9 +139,7 @@ def test_ambiguous_project_name_returns_409_and_warns(client: TestClient, monkey
     assert recorder.events == []
 
 
-def test_unique_legacy_project_name_still_works_with_warning(
-    client: TestClient, monkeypatch
-):
+def test_unique_legacy_project_name_still_works_with_warning(client: TestClient, monkeypatch):
     recorder = RecordingLogger()
     monkeypatch.setattr(projects_router, "logger", recorder)
     owner = _setup(client)
@@ -147,9 +156,7 @@ def test_unique_legacy_project_name_still_works_with_warning(
     assert recorder.events[0][0] == "deprecated_project_name_lookup"
 
 
-def test_duplicate_task_titles_return_409_and_id_lookup_works(
-    client: TestClient, monkeypatch
-):
+def test_duplicate_task_titles_return_409_and_id_lookup_works(client: TestClient, monkeypatch):
     recorder = RecordingLogger()
     monkeypatch.setattr(tasks_router, "logger", recorder)
     owner = _setup(client)

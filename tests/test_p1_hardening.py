@@ -39,21 +39,30 @@ def _create_hierarchy(
     slug = "secure-team"
     project_name = "Secure Project"
 
-    assert client.post(
-        "/api/v1/teams/",
-        json={"name": "Secure Team", "slug": slug},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
-    assert client.post(
-        f"/api/v1/teams/{slug}/projects/",
-        json={"name": project_name},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
-    assert client.post(
-        f"/api/v1/teams/{slug}/projects/{project_name}/tasks/",
-        json={"title": task_title},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/",
+            json={"name": "Secure Team", "slug": slug},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            f"/api/v1/teams/{slug}/projects/",
+            json={"name": project_name},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            f"/api/v1/teams/{slug}/projects/{project_name}/tasks/",
+            json={"title": task_title},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
 
     member = None
     if member_email:
@@ -177,10 +186,13 @@ def test_member_cannot_remove_admin(client: TestClient):
     assert response.status_code == 403
 
     # The admin is still a member.
-    assert client.get(
-        f"/api/v1/teams/{slug}",
-        headers=_headers(owner["access_token"]),
-    ).status_code == 200
+    assert (
+        client.get(
+            f"/api/v1/teams/{slug}",
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 200
+    )
 
 
 def test_member_cannot_remove_another_member(client: TestClient):
@@ -190,11 +202,14 @@ def test_member_cannot_remove_another_member(client: TestClient):
         member_email="member-a@example.com",
     )
     member_b = _register_and_login(client, "member-b@example.com")
-    assert client.post(
-        f"/api/v1/teams/{slug}/members",
-        json={"email": "member-b@example.com", "role": "member"},
-        headers=_headers(owner["access_token"]),
-    ).status_code == 201
+    assert (
+        client.post(
+            f"/api/v1/teams/{slug}/members",
+            json={"email": "member-b@example.com", "role": "member"},
+            headers=_headers(owner["access_token"]),
+        ).status_code
+        == 201
+    )
 
     response = client.delete(
         f"/api/v1/teams/{slug}/members/3",
@@ -203,10 +218,13 @@ def test_member_cannot_remove_another_member(client: TestClient):
     assert response.status_code == 403
 
     # Member B is still in the team.
-    assert client.get(
-        f"/api/v1/teams/{slug}/members",
-        headers=_headers(member_b["access_token"]),
-    ).status_code == 200
+    assert (
+        client.get(
+            f"/api/v1/teams/{slug}/members",
+            headers=_headers(member_b["access_token"]),
+        ).status_code
+        == 200
+    )
 
 
 def test_last_admin_cannot_leave_the_team(client: TestClient):
@@ -289,7 +307,9 @@ def upload_dir(tmp_path, monkeypatch):
     return tmp_path
 
 
-def _attachments_url(slug: str = "secure-team", project: str = "Secure Project", task: str = "Secure Task"):
+def _attachments_url(
+    slug: str = "secure-team", project: str = "Secure Project", task: str = "Secure Task"
+):
     return f"/api/v1/teams/{slug}/projects/{project}/tasks/{task}/attachments/"
 
 
@@ -350,7 +370,9 @@ def test_upload_enforces_streaming_size_limit(client: TestClient, upload_dir, mo
     assert not [path for path in upload_dir.rglob("*") if path.is_file()]
 
 
-def test_database_storage_roundtrip_and_delete(client: TestClient, db_session, tmp_path, monkeypatch):
+def test_database_storage_roundtrip_and_delete(
+    client: TestClient, db_session, tmp_path, monkeypatch
+):
     from app import models
     from app.config import settings
     from app.routers import attachments as attachments_module

@@ -27,10 +27,13 @@ class FakeRequest:
 
 
 def _setup(client: TestClient, db_session) -> tuple[str, dict]:
-    assert client.post(
-        "/api/v1/auth/register",
-        json={"email": "sse@example.com", "password": "password123"},
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/auth/register",
+            json={"email": "sse@example.com", "password": "password123"},
+        ).status_code
+        == 201
+    )
     token = client.post(
         "/api/v1/auth/login",
         data={"username": "sse@example.com", "password": "password123"},
@@ -50,9 +53,7 @@ def _setup(client: TestClient, db_session) -> tuple[str, dict]:
     return token, {"id": notification.id, "user_id": user_id}
 
 
-def test_sse_streams_notification_and_heartbeat(
-    client: TestClient, db_session, monkeypatch
-):
+def test_sse_streams_notification_and_heartbeat(client: TestClient, db_session, monkeypatch):
     monkeypatch.setattr(settings, "SSE_POLL_SECONDS", 0.01)
     monkeypatch.setattr(settings, "SSE_HEARTBEAT_SECONDS", 0.03)
     _, notification = _setup(client, db_session)
@@ -73,11 +74,9 @@ def test_sse_streams_notification_and_heartbeat(
         try:
             for _ in range(100):
                 frame = await asyncio.wait_for(generator.__anext__(), timeout=2)
-                data_lines = [
-                    line for line in frame.splitlines() if line.startswith("data: ")
-                ]
+                data_lines = [line for line in frame.splitlines() if line.startswith("data: ")]
                 if data_lines:
-                    payload = json.loads(data_lines[0][len("data: "):])
+                    payload = json.loads(data_lines[0][len("data: ") :])
                 elif frame.strip() == ": heartbeat":
                     heartbeat = True
                 if payload is not None and heartbeat:

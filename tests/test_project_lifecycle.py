@@ -18,21 +18,30 @@ def _headers(token: str) -> dict:
 def _setup_project(client: TestClient):
     admin_token = _login(client, "project-admin@example.com")
     member_token = _login(client, "project-member@example.com")
-    assert client.post(
-        "/api/v1/teams/",
-        json={"name": "Project Team", "slug": "project-team"},
-        headers=_headers(admin_token),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/project-team/members",
-        json={"email": "project-member@example.com", "role": "member"},
-        headers=_headers(admin_token),
-    ).status_code == 201
-    assert client.post(
-        "/api/v1/teams/project-team/projects/",
-        json={"name": "Lifecycle Project"},
-        headers=_headers(admin_token),
-    ).status_code == 201
+    assert (
+        client.post(
+            "/api/v1/teams/",
+            json={"name": "Project Team", "slug": "project-team"},
+            headers=_headers(admin_token),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/project-team/members",
+            json={"email": "project-member@example.com", "role": "member"},
+            headers=_headers(admin_token),
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/teams/project-team/projects/",
+            json={"name": "Lifecycle Project"},
+            headers=_headers(admin_token),
+        ).status_code
+        == 201
+    )
     return admin_token, member_token
 
 
