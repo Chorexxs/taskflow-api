@@ -6,7 +6,7 @@
 
 | ADR | Decisión | Estado |
 |---|---|---|
-| ADR-001 | Transporte de tokens: Bearer + auto-refresh y evaluación de cookies `httpOnly` | Propuesto |
+| ADR-001 | Transporte de tokens: Bearer + auto-refresh y single-flight; cookies `httpOnly` se reevalúan en P7 | Aceptado (alternativa) |
 | ADR-002 | Tiempo real con SSE para notificaciones (fallback polling) | Propuesto |
 | ADR-003 | Adjuntos en object storage S3-compatible (InsForge) | Propuesto |
 | ADR-004 | Alembic como única fuente de esquema; sin `create_all` en producción | Aceptado |
@@ -36,7 +36,7 @@
 - Refresh token (7 días) mantiene la sesión sin pedir credenciales.
 - Rotación: cada refresh invalida el anterior.
 - Revocación en DB para logout y refresh reutilizado.
-- **Pendiente P2:** auto-refresh en el cliente y migración/decidir cookies `httpOnly`.
+- **Implementado:** auto-refresh en el cliente y decisión de mantener Bearer; cookies `httpOnly` se reevalúan en P7 (ADR-001).
 
 ---
 

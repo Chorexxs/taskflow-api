@@ -116,11 +116,11 @@
 
 ## 4. Decisiones de arquitectura (ADRs)
 
-### ADR-001 — Transporte de tokens en el navegador
+### ADR-001 - Transporte de tokens en el navegador
 
-**Estado:** propuesto, pendiente de confirmar antes de P2.
+**Estado:** aceptado con alternativa (2026-11-10). Sustituye la propuesta híbrida.
 
-**Contexto:** hoy los tokens viven en `localStorage`, accesibles a cualquier XSS. El refresh está roto y no hay auto-refresh.
+**Contexto:** hoy los tokens viven en `localStorage`, accesibles a cualquier XSS. El refresh ya funciona en body y el cliente lo renueva de forma proactiva con single-flight.
 
 **Opciones:**
 
@@ -130,12 +130,14 @@
 | B. Access en memoria + refresh en cookie `httpOnly` | XSS no lee refresh; estándar web | Requiere CORS con credenciales, CSRF y cambios en tests |
 | C. Híbrido | API acepta Bearer; navegador usa cookies | Más superficie y documentación |
 
-**Decisión propuesta:** **C híbrido, migrando por fases.**
-- P2: mantener Bearer + auto-refresh y añadir CSP; no romper clientes.
-- P3: el navegador usa cookie `httpOnly`, `Secure`, `SameSite=Lax` para refresh; access en memoria. La API sigue aceptando `Authorization: Bearer` para clientes programáticos.
-- CSRF: `SameSite=Lax` + verificación de `Origin` en métodos mutables + header custom obligatorio.
+**Decisión:** **A con endurecimiento**, registrada como alternativa de T-026.
+- Se mantiene `Authorization: Bearer` con access de 15 min y refresh rotativo de 7 días.
+- El cliente renueva 60 s antes de expirar, con single-flight entre pestañas y reintento único.
+- Logout y cambio de contraseña revocan sesiones; la reutilización de refresh revoca todas las sesiones (T-034).
+- CSP estricta, `Referrer-Policy`, `Permissions-Policy` y CORS por allowlist reducen el impacto de XSS.
+- La migración a cookies `httpOnly` + CSRF se reevalúa en P7. Motivo: el cambio exige coordinación de CORS, CSRF, tests de navegador y logout; no aporta valor suficiente frente al riesgo actual.
 
-**Consecuencias:** CORS con allowlist y `allow_credentials=True`; tests con cookies; logout limpia cookie; documentar el flujo.
+**Consecuencias:** el refresh sigue accesible desde JS si hay XSS (riesgo aceptado y documentado en `security-checklist.md`, SEC-ASVS-01). Cualquier cliente programático sigue funcionando sin cookies. No se activa `allow_credentials`.
 
 **Si se bloquea:** mantener A con auto-refresh y registrar el riesgo residual.
 
