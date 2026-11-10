@@ -8,7 +8,7 @@ This module handles user-related API endpoints:
 All endpoints in this router require authentication.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
@@ -55,6 +55,7 @@ def read_users_me(current_user: User = Depends(get_current_user)):
 @rate_limit("10/minute")
 def update_current_user(
     request: Request,
+    response: Response,
     user_update: schemas.UserUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),

@@ -67,7 +67,12 @@ def _user_id_from_token(db: Session, token: str | None) -> int | None:
 
 @router.post("/register", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
 @rate_limit("5/minute")
-def register(request: Request, user: schemas.UserCreate, db: Session = Depends(get_db)):
+def register(
+    request: Request,
+    response: Response,
+    user: schemas.UserCreate,
+    db: Session = Depends(get_db),
+):
     """
     Register a new user in the system.
     
@@ -116,6 +121,7 @@ def register(request: Request, user: schemas.UserCreate, db: Session = Depends(g
 @rate_limit("10/minute")
 def login(
     request: Request,
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
@@ -206,6 +212,7 @@ def login(
 @rate_limit("30/minute")
 def refresh(
     request: Request,
+    response: Response,
     payload: schemas.RefreshTokenRequest | None = Body(default=None),
     db: Session = Depends(get_db),
 ):
@@ -280,6 +287,7 @@ def refresh(
 @rate_limit("60/minute")
 def logout(
     request: Request,
+    response: Response,
     payload: schemas.LogoutRequest | None = Body(default=None),
     db: Session = Depends(get_db),
 ):

@@ -32,6 +32,8 @@
 
 **Completadas (P8, auditoría 2026-11-10):** `T-083` (refresh rechaza el token en query string), `T-084` (fail-fast de `SECRET_KEY` fuera de development/test), `T-085` (CI con permisos mínimos y acciones fijadas por SHA), `T-086` (`/docs`, `/redoc` y `/openapi.json` deshabilitados en producción), `T-087` (gitleaks en pre-commit y CI), `T-088` (pip-audit en CI), `T-089` (dependencias con CVE actualizadas: `python-multipart`, `pytest`, `pydantic-settings`), `T-090` (migración de `python-jose` a `PyJWT`), `T-091` (host de InsForge redactado en documentación), `T-092` (los 422 no reflejan el valor enviado).
 
+**Completadas (P9, smoke de release 2026-11-10):** `T-093` (rate limit rompía las respuestas 2xx de los endpoints limitados), `T-094` (`/health` no bloquea si Redis no está configurado o no responde).
+
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
 **Completada (P0):** `T-007` (pre-commit con `ruff`, `ruff format`, `gitleaks`, eslint y mypy; `pre-commit run --all-files` verde), `T-004` (ADR-001…011 aceptados con responsable y desviaciones documentadas), `T-010` (política de ramas, PR, release y rollback en `CONTRIBUTING.md`), `T-009` (entornos local/CI/preview/staging/producción en `environments.md`).
@@ -210,6 +212,19 @@ Origen: [`specs/audit/security-audit.md`](../audit/security-audit.md), modo `inc
 | T-090 | Migrar `python-jose` → `PyJWT` (CVE sin parche y `ecdsa` transitiva) | SEC-1 | T-089 | S | NFR-SEC-07 | 0 CVEs en JWT; refresh, revocación y reutilización verdes |
 | T-091 | Redactar el host real de InsForge en documentación | SEC-4 | — | XS | SEC-4.1 | `git grep` del host → 0 ocurrencias |
 | T-092 | Los errores 422 no reflejan el valor enviado | SEC-4 | T-039 | XS | FR-API-01, SEC-4.2 | `details` sin `input`; la contraseña no aparece en la respuesta |
+
+---
+
+## P9 — Hallazgos del smoke de release (2026-11-10)
+
+Origen: smoke de performance y verificación de release (T-080). El rate limiting
+con `headers_enabled` rompía cualquier respuesta 2xx de un endpoint limitado, y
+`/health` bloqueaba hasta 4 s cuando Redis no estaba disponible.
+
+| ID | Tarea | Prioridad | Dep. | Tamaño | Refs | Aceptación |
+|---|---|---|---|---|---|---|
+| T-093 | Corregir 500 en respuestas 2xx de endpoints con rate limit | S0 | T-031 | XS | FR-AUTH-06, NFR-SEC-04 | Registro/login 2xx con cabeceras `X-RateLimit-*`; test de regresión |
+| T-094 | `/health` no debe bloquear si Redis no está configurado o no responde | S1 | T-079 | XS | NFR-PERF-01, NFR-OBS-03 | `/health` < 300 ms sin `REDIS_URL`; timeouts cortos si existe |
 
 ---
 

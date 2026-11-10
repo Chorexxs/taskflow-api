@@ -137,6 +137,7 @@ async def upload_attachment(
     project_id_or_name: str,
     task_id_or_title: str,
     request: Request,
+    response: Response,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),

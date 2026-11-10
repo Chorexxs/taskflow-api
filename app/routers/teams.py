@@ -15,7 +15,7 @@ Teams allow users to collaborate on projects. Each team has members
 with roles (admin or member) that determine their permissions.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -129,6 +129,7 @@ def search_in_team(
     team_id_or_slug: str,
     q: str,
     request: Request,
+    response: Response,
     page: int = 1,
     page_size: int = 10,
     db: Session = Depends(get_db),

@@ -15,7 +15,7 @@ import json
 import time
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -125,6 +125,7 @@ async def iter_notification_events(request: Request, db: Session, user_id: int, 
 @rate_limit("10/minute")
 async def stream_notifications(
     request: Request,
+    response: Response,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):

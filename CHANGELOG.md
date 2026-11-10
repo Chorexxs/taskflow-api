@@ -68,6 +68,11 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Invalidaciones de React Query migradas a la sintaxis v5.
 - Documentación (`README`, `AGENTS`, `STACK`, `DECISIONS`) alineada con el estado real.
 
+### Corregido
+
+- Rate limiting: las respuestas 2xx de endpoints limitados ya no devuelven 500; slowapi recibe `response` e inyecta `X-RateLimit-*` (T-093).
+- `/health`: solo consulta Redis si `REDIS_URL` existe y con timeout de 200 ms; sin Redis responde `not_configured` sin bloquear (T-094).
+
 ### Eliminado
 
 - `schema.sql` (esquema duplicado y desactualizado).
