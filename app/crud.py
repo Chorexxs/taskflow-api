@@ -31,6 +31,19 @@ from app.database import get_db
 from fastapi import Depends
 
 
+def paginate_query(query, page: int, page_size: int):
+    """Return ``(items, total, pages)`` for a SQLAlchemy query.
+
+    Callers are responsible for validating ``page``/``page_size``; keeping the
+    helper small avoids duplicating the same count/offset logic in every list
+    endpoint.
+    """
+    total = query.count()
+    items = query.offset((page - 1) * page_size).limit(page_size).all()
+    pages = (total + page_size - 1) // page_size
+    return items, total, pages
+
+
 def get_current_user_from_token(
     current_user: models.User = Depends(get_current_user),
 ) -> models.User:
@@ -313,6 +326,19 @@ def get_teams_by_user(db: Session, user_id: int):
     )
 
 
+def get_teams_by_user_paginated(
+    db: Session, user_id: int, page: int, page_size: int
+):
+    """Return a page of teams for a user, ordered by name."""
+    query = (
+        db.query(models.Team)
+        .join(models.TeamMember)
+        .filter(models.TeamMember.user_id == user_id)
+        .order_by(models.Team.name, models.Team.id)
+    )
+    return paginate_query(query, page, page_size)
+
+
 def add_member(db: Session, team_id: int, user_id: int, role: str):
     """
     Add a user to a team with a specific role.
@@ -420,6 +446,16 @@ def get_team_members(db: Session, team_id: int):
         ...     print(f"{m.user.email}: {m.role}")
     """
     return db.query(models.TeamMember).filter(models.TeamMember.team_id == team_id).all()
+
+
+def get_team_members_paginated(db: Session, team_id: int, page: int, page_size: int):
+    """Return a page of team members, ordered by join order."""
+    query = (
+        db.query(models.TeamMember)
+        .filter(models.TeamMember.team_id == team_id)
+        .order_by(models.TeamMember.user_id)
+    )
+    return paginate_query(query, page, page_size)
 
 
 def get_team_member(db: Session, team_id: int, user_id: int):
@@ -559,6 +595,17 @@ def get_projects_by_team(db: Session, team_id: int, include_archived: bool = Fal
     if not include_archived:
         query = query.filter(models.Project.status == "active")
     return query.all()
+
+
+def get_projects_by_team_paginated(
+    db: Session, team_id: int, page: int, page_size: int, include_archived: bool = False
+):
+    """Return a page of projects, ordered by name."""
+    query = db.query(models.Project).filter(models.Project.team_id == team_id)
+    if not include_archived:
+        query = query.filter(models.Project.status == "active")
+    query = query.order_by(models.Project.name, models.Project.id)
+    return paginate_query(query, page, page_size)
 
 
 def update_project(db: Session, project_id: int, project_update: schemas.ProjectUpdate):
@@ -1255,6 +1302,18 @@ def get_attachments_by_task(db: Session, task_id: int):
         list[Attachment]: List of attachments for the task.
     """
     return db.query(models.Attachment).filter(models.Attachment.task_id == task_id).all()
+
+
+def get_attachments_by_task_paginated(
+    db: Session, task_id: int, page: int, page_size: int
+):
+    """Return a page of attachments, ordered by upload time."""
+    query = (
+        db.query(models.Attachment)
+        .filter(models.Attachment.task_id == task_id)
+        .order_by(models.Attachment.id)
+    )
+    return paginate_query(query, page, page_size)
 
 
 def delete_attachment(db: Session, attachment_id: int):

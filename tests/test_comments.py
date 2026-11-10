@@ -90,7 +90,7 @@ def test_removed_member_cannot_edit_comment(client: TestClient):
     members = client.get(
         "/api/v1/teams/test-team/members",
         headers={"Authorization": f"Bearer {exmember_token}"},
-    ).json()
+    ).json()["items"]
     member_id = next(m["user_id"] for m in members if m["user"]["email"] == "exmember@example.com")
     assert client.delete(
         f"/api/v1/teams/test-team/members/{member_id}",

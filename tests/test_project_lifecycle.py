@@ -51,13 +51,13 @@ def test_admin_can_archive_and_restore_project(client: TestClient):
         headers=_headers(admin_token),
     )
     assert default_list.status_code == 200
-    assert default_list.json() == []
+    assert default_list.json()["items"] == []
 
     with_archived = client.get(
         "/api/v1/teams/project-team/projects/?include_archived=true",
         headers=_headers(admin_token),
     )
-    assert [project["status"] for project in with_archived.json()] == ["archived"]
+    assert [project["status"] for project in with_archived.json()["items"]] == ["archived"]
 
     restored = client.post(
         "/api/v1/teams/project-team/projects/Lifecycle Project/restore",
@@ -70,7 +70,7 @@ def test_admin_can_archive_and_restore_project(client: TestClient):
         "/api/v1/teams/project-team/projects/",
         headers=_headers(admin_token),
     )
-    assert [project["status"] for project in default_list.json()] == ["active"]
+    assert [project["status"] for project in default_list.json()["items"]] == ["active"]
 
 
 def test_member_cannot_archive_or_restore_project(client: TestClient):

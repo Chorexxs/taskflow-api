@@ -82,7 +82,7 @@ def test_assign_task_to_member(client: TestClient):
     client.post("/api/v1/teams/test-team/projects/Test Project/tasks/", json={"title": "Task to Assign"}, headers={"Authorization": f"Bearer {owner_token}"})
 
     member_response = client.get("/api/v1/teams/test-team/members", headers={"Authorization": f"Bearer {owner_token}"})
-    member_id = member_response.json()[1]["user_id"]
+    member_id = member_response.json()["items"][1]["user_id"]
 
     response = client.patch(
         "/api/v1/teams/test-team/projects/Test Project/tasks/Task to Assign/assign",

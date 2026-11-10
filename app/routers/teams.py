@@ -15,7 +15,7 @@ Teams allow users to collaborate on projects. Each team has members
 with roles (admin or member) that determine their permissions.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -89,8 +89,10 @@ def create_team(
     return crud.create_team(db, team, current_user.id)
 
 
-@router.get("/", response_model=list[schemas.TeamOut])
+@router.get("/", response_model=schemas.PaginatedTeamResponse)
 def get_teams(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -105,19 +107,22 @@ def get_teams(
         current_user (User): The authenticated user.
     
     Returns:
-        list[TeamOut]: List of teams the user belongs to.
-    
+        PaginatedTeamResponse: Page of teams the user belongs to.
+
     Example:
-        >>> curl -X GET https://api.taskflow.com/api/v1/teams/ \\
+        >>> curl -X GET https://api.taskflow.com/api/v1/teams/?page=1&page_size=20 \\
         ...   -H "Authorization: Bearer eyJhbGc..."
-        
-        Response:
-        [
-            {"id": 1, "name": "My Team", "slug": "my-team", ...},
-            {"id": 2, "name": "Another Team", "slug": "another", ...}
-        ]
     """
-    return crud.get_teams_by_user(db, current_user.id)
+    items, total, pages = crud.get_teams_by_user_paginated(
+        db, current_user.id, page, page_size
+    )
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "pages": pages,
+        "has_next": page < pages,
+    }
 
 
 @router.get("/{team_id_or_slug}/search", response_model=schemas.SearchResult)
@@ -281,9 +286,14 @@ def invite_member(
     return crud.add_member(db, team.id, user.id, member_data.role.value)
 
 
-@router.get("/{team_id_or_slug}/members", response_model=list[schemas.TeamMemberOut])
+@router.get(
+    "/{team_id_or_slug}/members",
+    response_model=schemas.PaginatedTeamMemberResponse,
+)
 def list_members(
     team_id_or_slug: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -299,15 +309,24 @@ def list_members(
         current_user (User): The authenticated user.
     
     Returns:
-        list[TeamMemberOut]: List of team members with user details.
-    
+        PaginatedTeamMemberResponse: Page of members with user details.
+
     Example:
-        >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/members \\
+        >>> curl -X GET "https://api.taskflow.com/api/v1/teams/1/members?page=1&page_size=20" \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     get_current_team_member(team_id_or_slug, db, current_user)
-    return crud.get_team_members(db, team.id)
+    items, total, pages = crud.get_team_members_paginated(
+        db, team.id, page, page_size
+    )
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "pages": pages,
+        "has_next": page < pages,
+    }
 
 
 @router.delete("/{team_id_or_slug}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

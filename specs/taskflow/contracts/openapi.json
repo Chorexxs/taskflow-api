@@ -390,6 +390,43 @@
         "title": "PaginatedActivityResponse",
         "type": "object"
       },
+      "PaginatedAttachmentResponse": {
+        "description": "Paginated list of task attachments.",
+        "properties": {
+          "has_next": {
+            "title": "Has Next",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AttachmentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "title": "Pages",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pages",
+          "has_next"
+        ],
+        "title": "PaginatedAttachmentResponse",
+        "type": "object"
+      },
       "PaginatedCommentResponse": {
         "description": "Paginated list of comments.",
         "properties": {
@@ -553,6 +590,80 @@
           "pages"
         ],
         "title": "PaginatedTaskResponse",
+        "type": "object"
+      },
+      "PaginatedTeamMemberResponse": {
+        "description": "Paginated list of team members.",
+        "properties": {
+          "has_next": {
+            "title": "Has Next",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TeamMemberOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "title": "Pages",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pages",
+          "has_next"
+        ],
+        "title": "PaginatedTeamMemberResponse",
+        "type": "object"
+      },
+      "PaginatedTeamResponse": {
+        "description": "Paginated list of teams.",
+        "properties": {
+          "has_next": {
+            "title": "Has Next",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TeamOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pages": {
+            "title": "Pages",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pages",
+          "has_next"
+        ],
+        "title": "PaginatedTeamResponse",
         "type": "object"
       },
       "ProjectCreate": {
@@ -1716,22 +1827,53 @@
     },
     "/api/v1/teams/": {
       "get": {
-        "description": "List all teams the current user is a member of.\n\nReturns all teams where the current user has membership,\nregardless of their role.\n\nArgs:\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    list[TeamOut]: List of teams the user belongs to.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/ \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"\n    \n    Response:\n    [\n        {\"id\": 1, \"name\": \"My Team\", \"slug\": \"my-team\", ...},\n        {\"id\": 2, \"name\": \"Another Team\", \"slug\": \"another\", ...}\n    ]",
+        "description": "List all teams the current user is a member of.\n\nReturns all teams where the current user has membership,\nregardless of their role.\n\nArgs:\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    PaginatedTeamResponse: Page of teams the user belongs to.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/?page=1&page_size=20 \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
         "operationId": "get_teams_api_v1_teams__get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/TeamOut"
-                  },
-                  "title": "Response Get Teams Api V1 Teams  Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedTeamResponse"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -1896,7 +2038,7 @@
     },
     "/api/v1/teams/{team_id_or_slug}/members": {
       "get": {
-        "description": "List all members of a team.\n\nReturns all members with their roles and user information.\nThe user must be a member of the team to access this endpoint.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    list[TeamMemberOut]: List of team members with user details.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/members \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "description": "List all members of a team.\n\nReturns all members with their roles and user information.\nThe user must be a member of the team to access this endpoint.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    PaginatedTeamMemberResponse: Page of members with user details.\n\nExample:\n    >>> curl -X GET \"https://api.taskflow.com/api/v1/teams/1/members?page=1&page_size=20\" \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
         "operationId": "list_members_api_v1_teams__team_id_or_slug__members_get",
         "parameters": [
           {
@@ -1907,6 +2049,29 @@
               "title": "Team Id Or Slug",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -1914,11 +2079,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/TeamMemberOut"
-                  },
-                  "title": "Response List Members Api V1 Teams  Team Id Or Slug  Members Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedTeamMemberResponse"
                 }
               }
             },
@@ -2119,7 +2280,7 @@
     },
     "/api/v1/teams/{team_id_or_slug}/projects/": {
       "get": {
-        "description": "List all active projects in a team.\n\nReturns all projects with \"active\" status. Archived projects\nare not included by default.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    list[ProjectOut]: List of active projects in the team.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/projects/ \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "description": "List all active projects in a team.\n\nReturns all projects with \"active\" status. Archived projects\nare not included by default.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    PaginatedProjectResponse: Page of active projects in the team.\n\nExample:\n    >>> curl -X GET \"https://api.taskflow.com/api/v1/teams/1/projects/?page=1&page_size=20\" \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
         "operationId": "list_projects_api_v1_teams__team_id_or_slug__projects__get",
         "parameters": [
           {
@@ -2140,6 +2301,29 @@
               "title": "Include Archived",
               "type": "boolean"
             }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -2147,11 +2331,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ProjectOut"
-                  },
-                  "title": "Response List Projects Api V1 Teams  Team Id Or Slug  Projects  Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedProjectResponse"
                 }
               }
             },
@@ -2805,7 +2985,7 @@
     },
     "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/attachments/": {
       "get": {
-        "description": "List all attachments for a task.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    list[AttachmentOut]: List of attachments for the task.",
+        "description": "List all attachments for a task.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    PaginatedAttachmentResponse: Page of attachments for the task.",
         "operationId": "list_attachments_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__attachments__get",
         "parameters": [
           {
@@ -2834,6 +3014,29 @@
               "title": "Task Id Or Title",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -2841,11 +3044,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/AttachmentOut"
-                  },
-                  "title": "Response List Attachments Api V1 Teams  Team Id Or Slug  Projects  Project Id Or Name  Tasks  Task Id Or Title  Attachments  Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/PaginatedAttachmentResponse"
                 }
               }
             },

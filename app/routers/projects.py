@@ -13,7 +13,7 @@ Projects are containers for tasks within a team. They can be archived
 when no longer active, but are not permanently deleted.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -94,10 +94,12 @@ def create_project(
     return new_project
 
 
-@router.get("/", response_model=list[schemas.ProjectOut])
+@router.get("/", response_model=schemas.PaginatedProjectResponse)
 def list_projects(
     team_id_or_slug: str,
     include_archived: bool = False,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
@@ -115,15 +117,24 @@ def list_projects(
         member (TeamMember): Team membership check (injected via dependency).
     
     Returns:
-        list[ProjectOut]: List of active projects in the team.
-    
+        PaginatedProjectResponse: Page of active projects in the team.
+
     Example:
-        >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/projects/ \\
+        >>> curl -X GET "https://api.taskflow.com/api/v1/teams/1/projects/?page=1&page_size=20" \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
     from app.dependencies import get_team_from_id_or_slug
     team = get_team_from_id_or_slug(db, team_id_or_slug)
-    return crud.get_projects_by_team(db, team.id, include_archived=include_archived)
+    items, total, pages = crud.get_projects_by_team_paginated(
+        db, team.id, page, page_size, include_archived=include_archived
+    )
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "pages": pages,
+        "has_next": page < pages,
+    }
 
 
 @router.get("/{project_id_or_slug}", response_model=schemas.ProjectOut)

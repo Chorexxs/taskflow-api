@@ -43,7 +43,7 @@ def test_list_projects(client: TestClient):
     )
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
+    assert len(data["items"]) == 2
 
 
 def test_get_project(client: TestClient):

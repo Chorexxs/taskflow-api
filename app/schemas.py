@@ -820,6 +820,26 @@ class PaginatedProjectResponse(BaseModel):
     has_next: bool
 
 
+class PaginatedTeamResponse(BaseModel):
+    """Paginated list of teams."""
+
+    items: list[TeamOut]
+    total: int
+    page: int
+    pages: int
+    has_next: bool
+
+
+class PaginatedTeamMemberResponse(BaseModel):
+    """Paginated list of team members."""
+
+    items: list[TeamMemberOut]
+    total: int
+    page: int
+    pages: int
+    has_next: bool
+
+
 class SearchResult(BaseModel):
     """Paginated search results for projects and tasks."""
 
@@ -854,6 +874,16 @@ class AttachmentOut(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PaginatedAttachmentResponse(BaseModel):
+    """Paginated list of task attachments."""
+
+    items: list[AttachmentOut]
+    total: int
+    page: int
+    pages: int
+    has_next: bool
 
 
 class NotificationOut(BaseModel):

@@ -45,7 +45,7 @@ def setup_user_with_notification_check(client: TestClient, owner_email: str, mem
 
 
 def _assign_task(client: TestClient, owner_token: str, member_token: str) -> None:
-    members = client.get("/api/v1/teams/test-team/members", headers=_headers(owner_token)).json()
+    members = client.get("/api/v1/teams/test-team/members", headers=_headers(owner_token)).json()["items"]
     member_id = next(member["user_id"] for member in members if member["role"] == "member")
     response = client.patch(
         "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/assign",

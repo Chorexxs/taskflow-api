@@ -386,7 +386,7 @@ def test_duplicate_filenames_get_distinct_storage_keys(client: TestClient, uploa
         headers=_headers(owner["access_token"]),
     )
     assert listed.status_code == 200
-    assert len(listed.json()) == 2
+    assert len(listed.json()["items"]) == 2
 
 
 # ---------------------------------------------------------------------------

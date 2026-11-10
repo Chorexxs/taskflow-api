@@ -18,7 +18,7 @@
 
 **Completadas (P2):** `T-025` (auto-refresh proactivo con single-flight entre pestañas), `T-027` (política de contraseñas), `T-028` (cambio de contraseña con verificación y revocación global de sesiones), `T-029` (limpieza de tokens expirados al arrancar), `T-030` (limiter compartido con storage Redis y fallback en memoria), `T-031` (límites en auth/uploads/búsqueda y `429` con `Retry-After`), `T-032` (CSP, Referrer-Policy y Permissions-Policy), `T-033` (auditoría de auth con `user_id` y sin PII).
 
-**Completadas (P3):** `T-039` (envelope de errores con `detail` compatible), `T-041` (edición de equipo), `T-042` (desasignación de tareas al expulsar), `T-044` (borrado de tarea con limpieza de adjuntos), `T-045` (endpoint atómico de estado Kanban), `T-046` (archivar/restaurar proyecto), `T-047` (actividad con actor y paginación), `T-048` (comentarios paginados y pertenencia al equipo), `T-049` (búsqueda con escape, descripciones y paginación).
+**Completadas (P3):** `T-038` (paginación uniforme en equipos, miembros, proyectos y adjuntos), `T-039` (envelope de errores con `detail` compatible), `T-041` (edición de equipo), `T-042` (desasignación de tareas al expulsar), `T-044` (borrado de tarea con limpieza de adjuntos), `T-045` (endpoint atómico de estado Kanban), `T-046` (archivar/restaurar proyecto), `T-047` (actividad con actor y paginación), `T-048` (comentarios paginados y pertenencia al equipo), `T-049` (búsqueda con escape, descripciones y paginación).
 
 **Parcial (P4):** `T-062` (búsqueda con debounce; controles de paginación en UI pendientes), `T-054` (se implementó almacenamiento persistente en PostgreSQL en lugar de S3 por falta de credenciales), `T-055` (validación MIME/tamaño; checksum pendiente).
 

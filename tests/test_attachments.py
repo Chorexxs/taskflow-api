@@ -32,7 +32,7 @@ def test_list_attachments(client: TestClient):
         headers={"Authorization": f"Bearer {owner_token}"}
     )
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert response.json()["items"] == []
 
 
 def test_member_can_upload_attachment(client: TestClient):

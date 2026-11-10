@@ -53,7 +53,7 @@ def test_task_assignment_logs_activity(client: TestClient):
     client.post("/api/v1/teams/test-team/members", json={"email": "member@example.com", "role": "member"}, headers={"Authorization": f"Bearer {owner_token}"})
     
     member_response = client.get("/api/v1/teams/test-team/members", headers={"Authorization": f"Bearer {owner_token}"})
-    member_id = member_response.json()[1]["user_id"]
+    member_id = member_response.json()["items"][1]["user_id"]
 
     client.patch(
         "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/assign",
@@ -99,7 +99,7 @@ def test_role_change_logs_activity(client: TestClient):
     client.post("/api/v1/teams/test-team/members", json={"email": "roleadmin@example.com", "role": "member"}, headers={"Authorization": f"Bearer {owner_token}"})
     
     member_response = client.get("/api/v1/teams/test-team/members", headers={"Authorization": f"Bearer {owner_token}"})
-    member_id = member_response.json()[1]["user_id"]
+    member_id = member_response.json()["items"][1]["user_id"]
 
     client.patch(
         f"/api/v1/teams/test-team/members/{member_id}",

@@ -148,10 +148,14 @@ export const api = {
 
   teams: {
     list: (token, params = {}) =>
-      request(`/api/v1/teams/${buildQuery(params)}`, { token }),
+      request(`/api/v1/teams/${buildQuery(params)}`, { token }).then(
+        (data) => data.items ?? data,
+      ),
     get: (token, teamId) => request(`/api/v1/teams/${teamId}`, { token }),
     listMembers: (token, teamId, params = {}) =>
-      request(`/api/v1/teams/${teamId}/members${buildQuery(params)}`, { token }),
+      request(`/api/v1/teams/${teamId}/members${buildQuery(params)}`, { token }).then(
+        (data) => data.items ?? data,
+      ),
     create: (token, data) =>
       request('/api/v1/teams/', { method: 'POST', token, body: data }),
     update: (token, teamId, data) =>
@@ -182,7 +186,9 @@ export const api = {
 
   projects: {
     list: (token, teamId, params = {}) =>
-      request(`/api/v1/teams/${teamId}/projects/${buildQuery(params)}`, { token }),
+      request(`/api/v1/teams/${teamId}/projects/${buildQuery(params)}`, {
+        token,
+      }).then((data) => data.items ?? data),
     get: (token, teamId, projectId) =>
       request(`/api/v1/teams/${teamId}/projects/${projectId}`, { token }),
     create: (token, teamId, data) =>
@@ -301,7 +307,7 @@ export const api = {
       request(
         `/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/attachments/${buildQuery(params)}`,
         { token },
-      ),
+      ).then((data) => data.items ?? data),
     download: (token, teamId, projectId, taskId, attachmentId) =>
       requestBlob(
         `/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/attachments/${attachmentId}/download`,

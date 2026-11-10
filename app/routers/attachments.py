@@ -16,7 +16,7 @@ import os
 import re
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, status, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, status, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -231,11 +231,13 @@ async def upload_attachment(
     return attachment
 
 
-@router.get("/", response_model=list[schemas.AttachmentOut])
+@router.get("/", response_model=schemas.PaginatedAttachmentResponse)
 def list_attachments(
     team_id_or_slug: str,
     project_id_or_name: str,
     task_id_or_title: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
@@ -252,10 +254,19 @@ def list_attachments(
         member (TeamMember): Team membership check (injected via dependency).
     
     Returns:
-        list[AttachmentOut]: List of attachments for the task.
+        PaginatedAttachmentResponse: Page of attachments for the task.
     """
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
-    return crud.get_attachments_by_task(db, task.id)
+    items, total, pages = crud.get_attachments_by_task_paginated(
+        db, task.id, page, page_size
+    )
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "pages": pages,
+        "has_next": page < pages,
+    }
 
 
 @router.delete("/{attachment_id}", status_code=status.HTTP_204_NO_CONTENT)
