@@ -10,15 +10,24 @@ Notifications are created when users are assigned to tasks or
 receive comments on tasks they're working on.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+import asyncio
+import json
+import time
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 
+from app.config import settings
 from app.database import get_db
 from app import crud, models, schemas
 from app.auth import get_current_user
+from app.logging_config import get_logger
+from app.rate_limit import rate_limit
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 @router.get("/", response_model=schemas.PaginatedNotificationResponse)
@@ -65,6 +74,92 @@ def get_unread_count(
 ):
     """Return the number of unread notifications for the current user."""
     return {"count": crud.count_unread_notifications(db, current_user.id)}
+
+
+async def iter_notification_events(request: Request, db: Session, user_id: int, start_after: int):
+    """Yield SSE frames with new notifications and periodic heartbeats.
+
+    Extracted from the route so it can be unit-tested without an infinite HTTP
+    response. The caller owns the database session and must close it.
+    """
+    last_id = start_after
+    last_heartbeat = time.monotonic()
+    while True:
+        if await request.is_disconnected():
+            break
+        try:
+            pending = (
+                db.query(models.Notification)
+                .filter(
+                    models.Notification.user_id == user_id,
+                    models.Notification.id > last_id,
+                )
+                .order_by(models.Notification.id)
+                .limit(50)
+                .populate_existing()
+                .all()
+            )
+            for notification in pending:
+                last_id = notification.id
+                payload = schemas.NotificationOut.model_validate(
+                    notification
+                ).model_dump(mode="json")
+                yield (
+                    f"id: {notification.id}\n"
+                    "event: notification\n"
+                    f"data: {json.dumps(payload)}\n\n"
+                )
+            db.expire_all()
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("sse_poll_failed", error=str(exc))
+
+        now = time.monotonic()
+        if now - last_heartbeat >= settings.SSE_HEARTBEAT_SECONDS:
+            yield ": heartbeat\n\n"
+            last_heartbeat = now
+        try:
+            await asyncio.sleep(settings.SSE_POLL_SECONDS)
+        except asyncio.CancelledError:  # pragma: no cover - client closed
+            break
+
+
+@router.get("/stream")
+@rate_limit("10/minute")
+async def stream_notifications(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Stream new notifications as Server-Sent Events.
+
+    The client must send ``Authorization: Bearer`` (EventSource does not allow
+    custom headers, so the frontend uses ``fetch`` with a ReadableStream).
+    ``Last-Event-ID`` resumes after a reconnect; without it only notifications
+    created from now on are streamed. A heartbeat comment keeps proxies from
+    closing idle connections.
+    """
+    header_last_id = request.headers.get("Last-Event-ID", "").strip()
+
+    if header_last_id.isdigit():
+        start_after = int(header_last_id)
+    else:
+        row = (
+            db.query(models.Notification.id)
+            .filter(models.Notification.user_id == current_user.id)
+            .order_by(models.Notification.id.desc())
+            .first()
+        )
+        start_after = row[0] if row else 0
+
+    return StreamingResponse(
+        iter_notification_events(request, db, current_user.id, start_after),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.patch("/{notification_id}/read", response_model=schemas.NotificationOut)

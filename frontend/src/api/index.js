@@ -112,6 +112,72 @@ async function requestBlob(path, { token, signal } = {}) {
   return response.blob();
 }
 
+/**
+ * Parse one SSE frame (already split on the blank line).
+ * Returns the decoded JSON payload or `null` for heartbeats/comments.
+ */
+export function parseSseFrame(frame) {
+  const data = frame
+    .split('\n')
+    .filter((line) => line.startsWith('data: '))
+    .map((line) => line.slice(6))
+    .join('\n');
+  if (!data) return null;
+  try {
+    return JSON.parse(data);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Subscribe to notification SSE with the bearer token.
+ *
+ * EventSource cannot send custom headers, so this uses `fetch` streaming.
+ * Resolves when the stream closes or the caller aborts; rejects on HTTP error
+ * so the caller can fall back to polling.
+ */
+async function streamNotifications(token, { signal, onEvent, onOpen } = {}) {
+  const response = await fetch(`${API_URL}/api/v1/notifications/stream`, {
+    headers: {
+      Accept: 'text/event-stream',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    signal,
+  });
+
+  if (!response.ok || !response.body) {
+    const data = await response.json().catch(() => null);
+    throw new ApiError(data?.detail || 'Notification stream unavailable', {
+      status: response.status,
+      code: data?.error?.code,
+    });
+  }
+
+  onOpen?.();
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let boundary = buffer.indexOf('\n\n');
+      while (boundary !== -1) {
+        const frame = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 2);
+        const payload = parseSseFrame(frame);
+        if (payload) onEvent?.(payload);
+        boundary = buffer.indexOf('\n\n');
+      }
+    }
+  } finally {
+    reader.releaseLock?.();
+  }
+}
+
 export const api = {
   baseURL: API_URL,
 
@@ -329,5 +395,7 @@ export const api = {
       request(`/api/v1/notifications/${id}/read`, { method: 'PATCH', token }),
     markAllRead: (token) =>
       request('/api/v1/notifications/read-all', { method: 'PATCH', token }),
+    stream: (token, { signal, onEvent, onOpen } = {}) =>
+      streamNotifications(token, { signal, onEvent, onOpen }),
   },
 };

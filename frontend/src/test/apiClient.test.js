@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { api } from '../api'
+import { api, parseSseFrame } from '../api'
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -60,5 +60,12 @@ describe('API client', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })))
 
     await expect(api.tasks.delete('token', 'team', 'project', 'task')).resolves.toBeNull()
+  })
+
+  it('parses SSE data frames and ignores heartbeats', () => {
+    expect(
+      parseSseFrame('id: 7\nevent: notification\ndata: {"id":7,"message":"Hi"}'),
+    ).toEqual({ id: 7, message: 'Hi' })
+    expect(parseSseFrame(': heartbeat')).toBeNull()
   })
 })

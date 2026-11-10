@@ -14,7 +14,7 @@
  * - Click outside to close
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
 import toast from 'react-hot-toast';
@@ -31,23 +31,53 @@ import { Bell, CheckCheck, X } from 'lucide-react';
  */
 export default function NotificationsBell() {
   const [showPanel, setShowPanel] = useState(false);
+  const [liveConnected, setLiveConnected] = useState(false);
   const token = localStorage.getItem('access_token');
   const queryClient = useQueryClient();
 
   /**
+   * Subscribe to SSE. If the stream is unavailable the queries below keep
+   * polling every 30 seconds as a fallback.
+   */
+  useEffect(() => {
+    if (!token) return undefined;
+    const controller = new AbortController();
+    const invalidate = () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
+    };
+
+    api.notifications
+      .stream(token, {
+        signal: controller.signal,
+        onOpen: () => setLiveConnected(true),
+        onEvent: invalidate,
+      })
+      .catch(() => {
+        // Network error or unsupported streaming: polling remains active.
+        setLiveConnected(false);
+      });
+
+    return () => {
+      controller.abort();
+      setLiveConnected(false);
+    };
+  }, [token, queryClient]);
+
+  /**
    * Fetch notifications from API.
-   * Auto-refreshes every 30 seconds.
+   * Polls every 30 seconds unless the SSE stream is connected.
    */
   const { data: notificationPage, isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => api.notifications.list(token, { page: 1, page_size: 20 }),
-    refetchInterval: 30000, // 30 seconds
+    refetchInterval: liveConnected ? false : 30000,
   });
 
   const { data: unreadData } = useQuery({
     queryKey: ['notifications-unread'],
     queryFn: () => api.notifications.unreadCount(token),
-    refetchInterval: 30000,
+    refetchInterval: liveConnected ? false : 30000,
   });
 
   const notifications = notificationPage?.items ?? [];

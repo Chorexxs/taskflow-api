@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_STORAGE_URI: str = ""
 
+    # Server-sent events (notifications)
+    SSE_POLL_SECONDS: float = 2.0
+    SSE_HEARTBEAT_SECONDS: float = 15.0
+
     # Optional services
     REDIS_URL: str = "redis://localhost:6379/0"
     SENTRY_DSN: str = ""

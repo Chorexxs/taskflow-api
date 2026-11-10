@@ -439,6 +439,11 @@ Cada evento usa una `dedupe_key` única (por usuario, tipo y entidad/evento), de
 modo que reintentos o dobles clics no crean notificaciones duplicadas. Los tipos
 silenciados con `/users/me/notification-preferences` se omiten al crearlas.
 
+SSE: `GET /notifications/stream` requiere `Authorization: Bearer`, emite
+`event: notification` con `data` JSON, `id` incremental y heartbeats. Reanuda con
+`Last-Event-ID`. El frontend usa `fetch` streaming (EventSource no admite
+cabeceras) y cae a polling cada 30 s si el stream falla.
+
 ### 7.9 Sistema
 
 | Método | Ruta | Permiso | Response |
