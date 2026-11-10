@@ -14,9 +14,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Job de frontend y verificación de migraciones en GitHub Actions.
 - `LICENSE` MIT, `.env.example` actualizado y `frontend/.env.example`.
 - `CHANGELOG.md`.
+- Despliegue Vercel verificado: proyecto `chorexxs-projects/taskflow-api`, root `frontend`, `VITE_API_URL` de producción y repositorio de GitHub conectado.
+- Headers de seguridad en `frontend/vercel.json` (CSP, HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) y `.vercelignore` para excluir secretos del upload.
 
 ### Cambiado
 
+- B-02 resuelto: `taskflow-api-tau.vercel.app` sirve el build actual contra la API de Render; el deploy por CLI y la integración con Git están verificados.
 - `POST /auth/refresh` acepta `{"refresh_token": "..."}` en el body y rota el token.
 - `POST /auth/logout` revoca access y refresh, y es idempotente.
 - Autenticación: comprobación de usuario activo y revocación idempotente.

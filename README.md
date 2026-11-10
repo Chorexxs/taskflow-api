@@ -23,7 +23,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Liveness** | https://taskflow-api-gkgl.onrender.com/health/live | Proceso vivo |
 | **Readiness** | https://taskflow-api-gkgl.onrender.com/health/ready | DB accesible |
 
-> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend actualizado en `https://wrm6rjkp.insforge.site` (InsForge/Vercel). Smoke test de producción: **13/13**. El proyecto Vercel `taskflow-api-tau.vercel.app` sigue pendiente de `vercel login`/token para actualizarse directamente. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
+> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend Vercel **live y actualizado** en `https://taskflow-api-tau.vercel.app`, con `VITE_API_URL` correcto y headers de seguridad. El preview `https://wrm6rjkp.insforge.site` sirve el mismo build. Smoke test de producción: **13/13**. B-02 resuelto; solo queda autenticar el MCP de Vercel en OpenCode. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
 
 ---
 
@@ -288,17 +288,20 @@ Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y 
 
 ### Frontend — Vercel
 
-- Directorio: `frontend/`
-- Variable: `VITE_API_URL=https://taskflow-api-gkgl.onrender.com`
-- `vercel.json` reescribe rutas SPA a `/`.
-- Preview desplegado vía InsForge: `https://wrm6rjkp.insforge.site`.
+- Proyecto: `chorexxs-projects/taskflow-api`.
+- Root Directory: `frontend`; framework Vite; build `npm run build`; output `dist`.
+- Variable: `VITE_API_URL=https://taskflow-api-gkgl.onrender.com` (Production, Preview y Development).
+- Git: `Chorexxs/taskflow-api` conectado; un push a `main` despliega automáticamente.
+- `vercel.json`: rewrite SPA a `/` + headers de seguridad (CSP, HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`).
+- `.vercelignore`: excluye secretos, `.env.local`, backend, tests y specs del upload.
+- Preview alternativo: `https://wrm6rjkp.insforge.site` (mismo build).
 
 ```bash
-npx @insforge/cli deployments deploy ./frontend \
-  --env '{"VITE_API_URL":"https://<backend-url>"}'
+# Deploy manual desde la raíz del repositorio
+vercel deploy --prod --yes --project taskflow-api --scope chorexxs-projects
 ```
 
-El proyecto Vercel `chorexxs-projects/taskflow-api` requiere `vercel login` o un `VERCEL_TOKEN` para actualizarse directamente.
+Estado: **live y verificado** (B-02 resuelto).
 
 ### Base de datos — InsForge
 
@@ -403,7 +406,7 @@ alembic/                 # migraciones
 
 ## Limitaciones conocidas y próximos pasos
 
-- **Vercel existente pendiente:** `taskflow-api-tau.vercel.app` necesita `vercel login` o un `VERCEL_TOKEN` para actualizarse. El preview `wrm6rjkp.insforge.site` ya está online y funciona contra la API de Render. Ver [`blockers.md`](./specs/taskflow/blockers.md).
+- **MCP de Vercel:** el servidor `vercel` está configurado en OpenCode pero requiere autenticación OAuth (`/mcps` → `vercel` → sign in). El deploy por CLI y la integración con Git ya funcionan.
 - Migración a cookies `httpOnly` o decisión formal (ADR-001).
 - Adjuntos en object storage S3-compatible (la alternativa actual es PostgreSQL) (P4).
 - Notificaciones en tiempo real con SSE (P4); hoy polling cada 30 s.

@@ -44,44 +44,21 @@ GET /api/metadata/database-connection-string
 
 ---
 
-## B-02 — Vercel: sesión no iniciada
+## B-02 — Vercel: RESUELTO
 
-**Comando ejecutado:**
+**Estado verificado:** 2026-11-10
 
-```bash
-npx vercel whoami
-```
+- CLI autenticada como `chorexxs` (`vercel whoami`).
+- Proyecto `chorexxs-projects/taskflow-api` vinculado.
+- Root Directory: `frontend`; framework Vite; build `npm run build`; output `dist`.
+- `VITE_API_URL=https://taskflow-api-gkgl.onrender.com` en Production, Preview y Development.
+- Repositorio `Chorexxs/taskflow-api` ya conectado a Vercel.
+- Deploy de producción `dpl_73iXa7KraFmfrN9KEvpoFULU2Pog` → `https://taskflow-api-tau.vercel.app` (`READY`).
+- `frontend/vercel.json` incluye rewrite SPA y headers de seguridad (CSP, HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`).
+- `.vercelignore` evita subir `.env`, `.env.local`, backend, tests y specs.
+- Verificado con navegador: `/login` carga, fuentes y assets `200`, `POST /api/v1/auth/login` fallido devuelve `401` sin errores CSP y CORS correcto.
 
-**Salida:**
-
-```text
-> Logged out.
-```
-
-También se intentó un despliegue temporal:
-
-```bash
-npx vercel deploy --temporary --yes --build-env VITE_API_URL=https://taskflow-api-gkgl.onrender.com
-```
-
-**Salida:**
-
-```text
-> Temporary deployments aren't available for this attempt. Log in to continue.
-> No existing credentials found. Starting login flow...
-```
-
-**Workaround verificado:** el despliegue vía InsForge sí funciona y publicó un preview en:
-
-```text
-https://wrm6rjkp.insforge.site
-```
-
-El deployment de Vercel quedó `READY` (id `2b6e8f98-...`), pero pertenece a un proyecto Vercel gestionado por InsForge, no al proyecto `chorexxs-projects/taskflow-api`.
-
-**Qué necesito:** ejecutar `vercel login` o proporcionar un `VERCEL_TOKEN` con acceso al proyecto `chorexxs-projects/taskflow-api` si se quiere actualizar ese proyecto concreto.
-
-**Impacto:** el preview de InsForge está online, pero la URL `taskflow-api-tau.vercel.app` sigue sirviendo el build anterior hasta que se autentique Vercel.
+**Pendiente (no bloqueante):** autenticar el MCP de Vercel en OpenCode (`/mcps` → `vercel` → sign in). El servidor ya está configurado y aparece como `needs authentication`.
 
 ---
 

@@ -1,0 +1,27 @@
+# Vercel only needs the frontend for this project (Root Directory = frontend).
+# Keep secrets, local databases and backend code out of the upload.
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+frontend/.vercel
+frontend/node_modules/
+frontend/dist/
+
+app/
+alembic/
+tests/
+scripts/
+specs/
+.opencode/
+.agents/
+.github/
+.vscode/
+uploads/
+__pycache__/
+.pytest_cache/
+.venv/
+*.db
+*.sqlite
