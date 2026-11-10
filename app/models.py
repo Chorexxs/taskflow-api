@@ -351,6 +351,7 @@ class Attachment(Base):
     filename = Column(String(255), nullable=False)
     file_path = Column(String(500), nullable=True)
     content = Column(LargeBinary, nullable=True)
+    checksum = Column(String(64), nullable=True)
     file_size = Column(Integer, nullable=False)
     mime_type = Column(String(100), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

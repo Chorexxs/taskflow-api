@@ -78,6 +78,17 @@
       "AttachmentOut": {
         "description": "Schema for attachment response data.\n\nUsed in attachment list and upload endpoints.\n\nAttributes:\n    id (int): Attachment's unique identifier\n    task_id (int): Task the attachment belongs to\n    uploaded_by (int): User who uploaded the file\n    filename (str): Original filename\n    file_size (int): File size in bytes\n    mime_type (str): MIME type of the file\n    created_at (datetime): Upload timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
         "properties": {
+          "checksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checksum"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -115,6 +126,7 @@
           "filename",
           "file_size",
           "mime_type",
+          "checksum",
           "created_at"
         ],
         "title": "AttachmentOut",

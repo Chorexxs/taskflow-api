@@ -11,6 +11,7 @@ File uploads are limited to 10MB. Files are stored on disk with
 metadata in the database.
 """
 
+import hashlib
 import mimetypes
 import os
 import re
@@ -188,6 +189,7 @@ async def upload_attachment(
     if not contents:
         raise HTTPException(status_code=400, detail="Empty files are not allowed")
 
+    checksum = hashlib.sha256(contents).hexdigest()
     file_path = None
     content = None
 
@@ -212,6 +214,7 @@ async def upload_attachment(
             len(contents),
             mime_type,
             content=content,
+            checksum=checksum,
         )
     except Exception:
         if file_path and os.path.exists(file_path):

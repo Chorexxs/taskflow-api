@@ -20,7 +20,7 @@
 
 **Completadas (P3):** `T-036` (lookup por id/slug con nombre/título deprecados), `T-037` (slug único por equipo en proyectos y migración), `T-038` (paginación uniforme en equipos, miembros, proyectos y adjuntos), `T-039` (envelope de errores con `detail` compatible), `T-041` (edición de equipo), `T-042` (desasignación de tareas al expulsar), `T-044` (borrado de tarea con limpieza de adjuntos), `T-045` (endpoint atómico de estado Kanban), `T-046` (archivar/restaurar proyecto), `T-082` (CHECK de enums, auditoría e índices de lectura), `T-047` (actividad con actor y paginación), `T-048` (comentarios paginados y pertenencia al equipo), `T-049` (búsqueda con escape, descripciones y paginación), `T-043` (matriz de permisos cubierta con tests 401/403/404 por endpoint).
 
-**Parcial (P4):** `T-062` (búsqueda con debounce; controles de paginación en UI pendientes), `T-054` (se implementó almacenamiento persistente en PostgreSQL en lugar de S3 por falta de credenciales), `T-055` (validación MIME/tamaño; checksum pendiente).
+**Parcial (P4):** `T-062` (búsqueda con debounce; controles de paginación en UI pendientes), `T-054` (se implementó almacenamiento persistente en PostgreSQL en lugar de S3 por falta de credenciales).
 
 **Completadas (P6):** `T-072` (dependencias backend fijadas + React Router parcheado), `T-073` (Python 3.12), `T-075` (Docker non-root + HEALTHCHECK), `T-078` (snapshot OpenAPI + check en CI), `T-079` (health live/ready).
 
@@ -30,7 +30,7 @@
 
 **Completadas (P5):** `T-065` (decisión dark-only), `T-070` (eliminados axios y ThemeContext muerto).
 
-**Completadas (P4):** `T-050` (orden asc/desc de comentarios), `T-051` (pertenencia actual al equipo al editar comentarios), `T-052` (menciones), `T-053` (backend de almacenamiento configurable), `T-056` (limpieza de adjuntos locales al borrar tarea).
+**Completadas (P4):** `T-050` (orden asc/desc de comentarios), `T-051` (pertenencia actual al equipo al editar comentarios), `T-052` (menciones), `T-053` (backend de almacenamiento configurable), `T-055` (MIME/tamaño, checksum SHA-256 y nombres únicos), `T-056` (limpieza de adjuntos locales al borrar tarea).
 
 **Completadas (P4):** `T-057` (notificaciones paginadas y contador de no leídas).
 

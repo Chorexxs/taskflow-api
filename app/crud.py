@@ -1313,6 +1313,7 @@ def create_attachment(
     file_size: int,
     mime_type: str,
     content: bytes | None = None,
+    checksum: str | None = None,
 ):
     """
     Create an attachment record for an uploaded file.
@@ -1347,6 +1348,7 @@ def create_attachment(
         filename=filename,
         file_path=file_path,
         content=content,
+        checksum=checksum,
         file_size=file_size,
         mime_type=mime_type,
     )

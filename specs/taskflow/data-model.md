@@ -215,7 +215,9 @@ erDiagram
 | `task_id` | `integer` | FK `tasks.id` ON DELETE CASCADE, NOT NULL |
 | `uploaded_by` | `integer` | FK `users.id`, NOT NULL |
 | `filename` | `varchar(255)` | NOT NULL |
-| `file_path` | `varchar(500)` | NOT NULL |
+| `file_path` | `varchar(500)` | NULL (solo backend local) |
+| `content` | `bytea` | NULL (backend database) |
+| `checksum` | `char(64)` | NULL; SHA-256 en subidas nuevas |
 | `file_size` | `integer` | NOT NULL |
 | `mime_type` | `varchar(100)` | NOT NULL |
 | `created_at` | `timestamptz` | DEFAULT now() |
@@ -451,7 +453,7 @@ erDiagram
 |---|---|---|---|
 | M-01 | Constraints y columnas de auditoría | **Implementado** en `a7b8c9d0e1f2`: `updated_at`, `last_login_at`, `password_changed_at`, CHECK de roles/estados/prioridades/tipos | `downgrade` elimina columnas/constraints |
 | M-02 | Slugs de proyecto | Añadir `slug NULL`; backfill `slugify(name)` + sufijo; unique; `NOT NULL` | Eliminar unique/columna |
-| M-03 | Storage de adjuntos | Añadir `storage_key`, `checksum`, `original_filename`; backfill desde `file_path`; migrar objetos; dual-read; deprecar `file_path` | Restaurar lectura por `file_path`; mantener columnas |
+| M-03 | Storage de adjuntos | 🟡 Parcial: `checksum` añadido en `b8c9d0e1f2a3` con backfill de contenido en DB; `content` cubre persistencia. Falta `storage_key`/S3 y deprecar `file_path` | Restaurar lectura por `file_path`; mantener columnas |
 | M-04 | Sesiones de refresh | Crear `refresh_sessions` y `revoked_access_tokens`; dual-write; migrar tokens vigentes; retirar `revoked_tokens` en release posterior | Volver a `revoked_tokens`; conservar tablas |
 | M-05 | Posición de tareas | Añadir `position NULL`; backfill por `created_at`; default; `NOT NULL` | Eliminar columna |
 | M-06 | Notificaciones | Añadir `read_at`; backfill desde `is_read`; índice; conservar `is_read` temporalmente | Eliminar `read_at`/índice |
