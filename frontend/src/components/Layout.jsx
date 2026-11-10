@@ -53,6 +53,12 @@ export default function Layout({ children, hideNav }) {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[var(--color-accent)] focus:text-[var(--color-bg-primary)]"
+      >
+        Skip to main content
+      </a>
       {/* Header with navigation */}
       <header className="border-b border-subtle bg-[var(--color-bg-secondary)]/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -95,7 +101,7 @@ export default function Layout({ children, hideNav }) {
       </header>
 
       {/* Main content area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
     </div>

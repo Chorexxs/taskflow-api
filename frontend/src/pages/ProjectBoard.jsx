@@ -436,6 +436,7 @@ export default function ProjectBoard() {
               <input
                 type="text"
                 placeholder="Search tasks..."
+                aria-label="Search tasks"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="input-field w-full"
@@ -446,6 +447,8 @@ export default function ProjectBoard() {
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`p-2 rounded-lg transition-all ${showFilters ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]'}`}
+                aria-label="Toggle filters"
+                aria-expanded={showFilters}
               >
                 <Filter className="w-5 h-5" />
               </button>
@@ -462,6 +465,8 @@ export default function ProjectBoard() {
                 onClick={() => setShowActivityPanel(!showActivityPanel)}
                 className={`p-2 rounded-lg transition-all ${showActivityPanel ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)]' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]'}`}
                 title="Project Activity"
+                aria-label="Project activity"
+                aria-expanded={showActivityPanel}
               >
                 <Activity className="w-5 h-5" />
               </button>
@@ -603,7 +608,7 @@ export default function ProjectBoard() {
       </main>
 
       {showCreateTask && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Create task">
           <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Create Task</h3>
@@ -693,7 +698,7 @@ export default function ProjectBoard() {
 )}
 
       {showEditProject && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Project settings">
           <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Project Settings</h3>
@@ -761,7 +766,7 @@ export default function ProjectBoard() {
       )}
 
       {showActivityPanel && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-label="Project activity">
           <div className="bg-[var(--color-bg-secondary)] rounded-xl shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-subtle">
               <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Project Activity</h2>

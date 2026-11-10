@@ -141,7 +141,7 @@ export default function Dashboard() {
 
       {/* Create team modal */}
       {showCreateTeam && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Create team">
           <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-medium text-[var(--color-text-primary)] mb-4">Create Team</h3>
             <form onSubmit={handleCreateTeam} className="space-y-4">
