@@ -367,7 +367,7 @@ def remove_member(
             detail="Cannot remove the last admin of the team",
         )
 
-    crud.remove_member(db, team.id, user_id)
+    crud.remove_member(db, team.id, user_id, changed_by=current_user.id)
 
 
 @router.patch("/{team_id_or_slug}/members/{user_id}", response_model=schemas.TeamMemberOut)

@@ -337,6 +337,10 @@ Leyenda de permisos: **Público**, **Auth** (cualquier autenticado), **Member**,
 | PATCH | `/teams/{team}/members/{user_id}` | Admin | `{role}` | `TeamMemberOut` | 200, 403, 404, 409 |
 | DELETE | `/teams/{team}/members/{user_id}` | Admin o self | — | — | 204, 403, 409 |
 
+Al expulsar (o salir de) un equipo, las tareas asignadas a ese usuario en los
+proyectos del equipo quedan sin asignar y se registra `unassigned` en la
+actividad.
+
 **Target (P3):**
 
 | Método | Ruta | Permiso | Nota |

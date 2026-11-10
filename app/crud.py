@@ -345,20 +345,23 @@ def add_member(db: Session, team_id: int, user_id: int, role: str):
     return member
 
 
-def remove_member(db: Session, team_id: int, user_id: int):
+def remove_member(db: Session, team_id: int, user_id: int, changed_by: int | None = None):
     """
     Remove a user from a team.
     
-    Deletes the TeamMember record. Also invalidates cached team data.
-    
+    Deletes the TeamMember record and unassigns every task the user had in the
+    team's projects, so a former member never keeps work assigned. Also
+    invalidates cached team data.
+
     Args:
         db (Session): SQLAlchemy database session.
         team_id (int): ID of the team.
         user_id (int): ID of the user to remove.
-    
+        changed_by (int | None): Admin performing the removal, for audit logs.
+
     Returns:
         TeamMember | None: The deleted member record, or None if not found.
-    
+
     Example:
         >>> remove_member(db, team_id=1, user_id=2)
     """
@@ -371,6 +374,28 @@ def remove_member(db: Session, team_id: int, user_id: int):
         .first()
     )
     if member:
+        assigned_tasks = (
+            db.query(models.Task)
+            .join(models.Project, models.Task.project_id == models.Project.id)
+            .filter(
+                models.Project.team_id == team_id,
+                models.Task.assigned_to == user_id,
+            )
+            .all()
+        )
+        for task in assigned_tasks:
+            task.assigned_to = None
+            if changed_by is not None:
+                db.add(
+                    models.ActivityLog(
+                        entity_type="task",
+                        entity_id=task.id,
+                        action="unassigned",
+                        changed_by=changed_by,
+                        old_value=str(user_id),
+                        new_value=None,
+                    )
+                )
         db.delete(member)
         db.commit()
         from app.cache import cache_service
