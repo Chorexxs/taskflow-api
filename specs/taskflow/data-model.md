@@ -163,12 +163,14 @@ erDiagram
 | `id` | `serial` | PK |
 | `team_id` | `integer` | FK `teams.id` ON DELETE CASCADE, NOT NULL, índice |
 | `name` | `varchar(255)` | NOT NULL |
+| `slug` | `varchar(255)` | NOT NULL, índice, UNIQUE `(team_id, slug)` |
 | `description` | `varchar(500)` | NULL |
 | `status` | `varchar(20)` | DEFAULT `active`, índice |
 | `created_by` | `integer` | FK `users.id`, NOT NULL |
 | `created_at` | `timestamptz` | DEFAULT now() |
 
-Índice compuesto: `(team_id, status)`.
+Índices: `(team_id, status)` y `(team_id, slug)` UNIQUE. Migración
+`e5f6a7b8c9d0` (M-02) con backfill determinista y sufijos ante colisiones.
 
 ### `tasks`
 

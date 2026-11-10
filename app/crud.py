@@ -22,6 +22,8 @@ Key patterns used:
 - Cache invalidation: Clearing cached data when entities are modified
 """
 
+import re
+import unicodedata
 from datetime import datetime
 from sqlalchemy.orm import Session, joinedload
 
@@ -523,29 +525,84 @@ def update_member_role(db: Session, team_id: int, user_id: int, role: str):
     return member
 
 
+def slugify(value: str) -> str:
+    """Convert a display name into a URL-friendly slug."""
+    normalized = (
+        unicodedata.normalize("NFKD", value)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+    )
+    slug = re.sub(r"[^a-z0-9]+", "-", normalized.lower()).strip("-")
+    return slug[:240].strip("-") or "project"
+
+
+def _unique_project_slug(
+    db: Session,
+    team_id: int,
+    base_slug: str,
+    exclude_project_id: int | None = None,
+) -> str:
+    """Return a slug that is not used by another project in the same team."""
+    base = slugify(base_slug)
+    candidate = base
+    suffix = 2
+    while True:
+        query = db.query(models.Project).filter(
+            models.Project.team_id == team_id,
+            models.Project.slug == candidate,
+        )
+        if exclude_project_id is not None:
+            query = query.filter(models.Project.id != exclude_project_id)
+        if query.first() is None:
+            return candidate
+        candidate = f"{base}-{suffix}"
+        suffix += 1
+
+
 def create_project(db: Session, project: schemas.ProjectCreate, team_id: int, user_id: int):
     """
     Create a new project within a team.
-    
+
     Creates a project with the given name and description. The project
-    is automatically set to "active" status.
-    
+    is automatically set to "active" status. When ``slug`` is provided it must
+    be unique within the team; otherwise it is derived from the name and
+    suffixed deterministically on collisions.
+
     Args:
         db (Session): SQLAlchemy database session.
         project (ProjectCreate): Schema with project details.
         team_id (int): ID of the team to create the project in.
         user_id (int): ID of the user creating the project.
-    
+
     Returns:
         Project: The newly created project object.
-    
+
+    Raises:
+        ValueError: If an explicit slug is already used in the team.
+
     Example:
         >>> project_data = ProjectCreate(name="Website Redesign", description="...")
         >>> new_project = create_project(db, project_data, team_id=1, user_id=1)
     """
+    if project.slug:
+        existing = (
+            db.query(models.Project)
+            .filter(
+                models.Project.team_id == team_id,
+                models.Project.slug == project.slug,
+            )
+            .first()
+        )
+        if existing:
+            raise ValueError("Project slug already exists in this team")
+        slug = project.slug
+    else:
+        slug = _unique_project_slug(db, team_id, project.name)
+
     db_project = models.Project(
         team_id=team_id,
         name=project.name,
+        slug=slug,
         description=project.description,
         created_by=user_id,
     )
@@ -570,6 +627,18 @@ def get_project_by_id(db: Session, project_id: int):
         >>> project = get_project_by_id(db, 1)
     """
     return db.query(models.Project).filter(models.Project.id == project_id).first()
+
+
+def get_project_by_slug(db: Session, team_id: int, slug: str):
+    """Retrieve a project by its team-scoped slug."""
+    return (
+        db.query(models.Project)
+        .filter(
+            models.Project.team_id == team_id,
+            models.Project.slug == slug,
+        )
+        .first()
+    )
 
 
 def get_projects_by_team(db: Session, team_id: int, include_archived: bool = False):

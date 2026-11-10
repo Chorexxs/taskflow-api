@@ -353,14 +353,19 @@ actividad.
 
 | Método | Ruta | Permiso | Request | Response | Status |
 |---|---|---|---|---|---|
-| POST | `/teams/{team}/projects/` | Member | `{name, description?}` | `ProjectOut` | 201, 422 |
+| POST | `/teams/{team}/projects/` | Member | `{name, slug?, description?}` | `ProjectOut` | 201, 409, 422 |
 | GET | `/teams/{team}/projects/` | Member | `status,include_archived,page,page_size` | `Paginated<ProjectOut>` | 200 |
-| GET | `/teams/{team}/projects/{project}` | Member | — | `ProjectOut` | 200, 404 |
+| GET | `/teams/{team}/projects/{project}` | Member | — | `ProjectOut` | 200, 404, 409 |
 | PATCH | `/teams/{team}/projects/{project}` | Admin | `{name?,description?,status?}` | `ProjectOut` | 200, 403, 404 |
 | DELETE | `/teams/{team}/projects/{project}` | Admin | — | — | 204, 403 |
 | POST | `/teams/{team}/projects/{project}/archive` | Admin | — | `ProjectOut` | 200, 403, 404 |
 | POST | `/teams/{team}/projects/{project}/restore` | Admin | — | `ProjectOut` | 200, 403, 404 |
 | GET | `/teams/{team}/projects/{project}/activity` | Member | `page,page_size` | `Paginated<ActivityLogOut>` | 200, 403 |
+
+**Identificadores:** `{project}` acepta `id` o `slug` (único por equipo). El
+nombre sigue funcionando como compatibilidad deprecada: se registra un warning y,
+si hay más de un proyecto con ese nombre, responde `409`.
+`ProjectOut` incluye `slug`; el slug se deriva del nombre si no se envía.
 
 **Semántica actual:** `DELETE` **archiva** (`status=archived`).
 
@@ -563,10 +568,10 @@ actividad.
 
 | Elemento | Estado actual | Target | Estrategia |
 |---|---|---|---|
-| Refresh body | Backend espera query; frontend envía body | Body JSON | Corregir backend; aceptar query con warning temporal |
-| Logout | Solo revoca access | Revoca ambos | Añadir refresh en body; frontend actualizado |
-| `DELETE /projects` | Archiva | Archive explícito + restore | Mantener alias; añadir endpoints; docs |
-| Lookup por nombre/título | Soportado | id/slug | Warning + deprecación; retirar en v2 |
+| Refresh body | Body JSON preferido; query deprecada | Solo body | Query oculta del schema; warning temporal |
+| Logout | Revoca access y refresh | Revoca ambos | Implementado e idempotente |
+| `DELETE /projects` | Archiva | Archive explícito + restore | Alias documentado; `/archive` y `/restore` disponibles |
+| Lookup por nombre/título | Compatibilidad con warning; nombres/títulos ambiguos → 409 | id/slug | Proyectos ya tienen slug; retirar en v2 |
 | `AttachmentOut.file_path` | Expuesto | Eliminado | Quitar en P1; frontend no lo usa |
 | `detail` en errores | Usado | `error` envelope | Periodo de transición con ambos; retirar |
 | `is_read` | Boolean | `read_at` | Mantener ambos temporalmente |

@@ -28,7 +28,17 @@ Relationships:
 - User 1:N RevokedToken
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Index, LargeBinary
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    LargeBinary,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -148,6 +158,7 @@ class Project(Base):
         id (Integer): Primary key, auto-generated
         team_id (Integer): Foreign key to the team this project belongs to
         name (String): Project name
+        slug (String): URL-friendly identifier, unique within the team
         description (String): Optional project description
         status (String): Project status ("active" or "archived")
         created_by (Integer): Foreign key to User who created the project
@@ -161,15 +172,18 @@ class Project(Base):
     Table: projects
     Indexes:
         - ix_projects_team_status: Composite index for filtering by team and status
+        - uq_projects_team_slug: Unique slug per team
     """
     __tablename__ = "projects"
     __table_args__ = (
         Index("ix_projects_team_status", "team_id", "status"),
+        UniqueConstraint("team_id", "slug", name="uq_projects_team_slug"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
+    slug = Column(String(255), nullable=False, index=True)
     description = Column(String(500), nullable=True)
     status = Column(String(20), default="active", index=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)

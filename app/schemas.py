@@ -401,12 +401,15 @@ class ProjectCreate(BaseModel):
     
     Attributes:
         name (str): Project name
+        slug (str | None): Optional URL-friendly identifier; derived from the
+            name when omitted
         description (str | None): Optional project description
     
     Validators:
         sanitize_input: Removes control characters from text fields
     """
     name: str
+    slug: str | None = None
     description: str | None = None
 
     @field_validator('name', 'description', mode='before')
@@ -416,6 +419,17 @@ class ProjectCreate(BaseModel):
         if isinstance(v, str):
             return sanitize_text(v)
         return v
+
+    @field_validator('slug', mode='before')
+    @classmethod
+    def normalize_slug(cls, v):
+        """Normalize an explicit project slug or reject an empty one."""
+        if v is None:
+            return v
+        value = re.sub(r"[^a-z0-9]+", "-", str(v).strip().lower()).strip("-")
+        if not value:
+            raise ValueError("slug must contain letters or numbers")
+        return value[:255]
 
 
 class ProjectUpdate(BaseModel):
@@ -456,6 +470,7 @@ class ProjectOut(BaseModel):
         id (int): Project's unique identifier
         team_id (int): Team the project belongs to
         name (str): Project name
+        slug (str): URL-friendly identifier, unique within the team
         description (str | None): Project description
         status (ProjectStatus): Project status
         created_by (int): ID of user who created the project
@@ -467,6 +482,7 @@ class ProjectOut(BaseModel):
     id: int
     team_id: int
     name: str
+    slug: str
     description: str | None
     status: ProjectStatus
     created_by: int

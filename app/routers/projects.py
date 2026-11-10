@@ -24,34 +24,56 @@ from app.dependencies import (
     get_current_team_member,
     get_team_from_id_or_slug,
 )
+from app.logging_config import get_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 def get_project_from_id_or_slug(db: Session, project_id_or_slug: str, team_id: int) -> models.Project:
     """
     Resolve a project identifier to a Project object.
     
-    Accepts either a numeric project ID or a name (case-insensitive search).
-    
+    Accepts a numeric project ID, the team-scoped slug (preferred) or a legacy
+    name. Name lookups are deprecated and ambiguous names return 409.
+
     Args:
         db (Session): SQLAlchemy database session.
-        project_id_or_slug (str): The project identifier (ID or name).
+        project_id_or_slug (str): The project identifier (ID, slug or name).
         team_id (int): ID of the team the project belongs to.
-    
+
     Returns:
         Project: The Project object if found.
-    
+
     Raises:
         HTTPException 404: If project not found or doesn't belong to the team.
+        HTTPException 409: If a legacy name matches more than one project.
     """
     if project_id_or_slug.isdigit():
         project = crud.get_project_by_id(db, int(project_id_or_slug))
     else:
-        project = db.query(models.Project).filter(
-            models.Project.team_id == team_id,
-            models.Project.name.ilike(project_id_or_slug)
-        ).first()
+        project = crud.get_project_by_slug(db, team_id, project_id_or_slug)
+        if project is None:
+            matches = (
+                db.query(models.Project)
+                .filter(
+                    models.Project.team_id == team_id,
+                    models.Project.name.ilike(project_id_or_slug),
+                )
+                .all()
+            )
+            if len(matches) > 1:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Multiple projects match that name; use the project id or slug",
+                )
+            if matches:
+                project = matches[0]
+                logger.warning(
+                    "deprecated_project_name_lookup",
+                    project_id=project.id,
+                    team_id=team_id,
+                )
     if not project or project.team_id != team_id:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
@@ -89,7 +111,10 @@ def create_project(
     """
     from app.dependencies import get_team_from_id_or_slug
     team = get_team_from_id_or_slug(db, team_id_or_slug)
-    new_project = crud.create_project(db, project, team.id, current_user.id)
+    try:
+        new_project = crud.create_project(db, project, team.id, current_user.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     crud.log_activity(db, "project", new_project.id, "created", current_user.id, None, new_project.name)
     return new_project
 

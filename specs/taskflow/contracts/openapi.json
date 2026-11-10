@@ -667,7 +667,7 @@
         "type": "object"
       },
       "ProjectCreate": {
-        "description": "Schema for project creation.\n\nUsed in POST /teams/{id}/projects endpoint.\n\nAttributes:\n    name (str): Project name\n    description (str | None): Optional project description\n\nValidators:\n    sanitize_input: Removes control characters from text fields",
+        "description": "Schema for project creation.\n\nUsed in POST /teams/{id}/projects endpoint.\n\nAttributes:\n    name (str): Project name\n    slug (str | None): Optional URL-friendly identifier; derived from the\n        name when omitted\n    description (str | None): Optional project description\n\nValidators:\n    sanitize_input: Removes control characters from text fields",
         "properties": {
           "description": {
             "anyOf": [
@@ -683,6 +683,17 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
           }
         },
         "required": [
@@ -692,7 +703,7 @@
         "type": "object"
       },
       "ProjectOut": {
-        "description": "Schema for project response data.\n\nUsed in project list and detail endpoints.\n\nAttributes:\n    id (int): Project's unique identifier\n    team_id (int): Team the project belongs to\n    name (str): Project name\n    description (str | None): Project description\n    status (ProjectStatus): Project status\n    created_by (int): ID of user who created the project\n    created_at (datetime): Project creation timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "description": "Schema for project response data.\n\nUsed in project list and detail endpoints.\n\nAttributes:\n    id (int): Project's unique identifier\n    team_id (int): Team the project belongs to\n    name (str): Project name\n    slug (str): URL-friendly identifier, unique within the team\n    description (str | None): Project description\n    status (ProjectStatus): Project status\n    created_by (int): ID of user who created the project\n    created_at (datetime): Project creation timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
         "properties": {
           "created_at": {
             "format": "date-time",
@@ -722,6 +733,10 @@
             "title": "Name",
             "type": "string"
           },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
           "status": {
             "$ref": "#/components/schemas/ProjectStatus"
           },
@@ -734,6 +749,7 @@
           "id",
           "team_id",
           "name",
+          "slug",
           "description",
           "status",
           "created_by",

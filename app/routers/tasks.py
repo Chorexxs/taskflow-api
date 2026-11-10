@@ -25,34 +25,56 @@ from app.database import get_db
 from app import crud, models, schemas
 from app.auth import get_current_user
 from app.dependencies import get_current_team_admin, get_current_team_member
+from app.logging_config import get_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 def get_project_from_id_or_name(db: Session, project_id_or_name: str, team_id: int) -> models.Project:
     """
     Resolve a project identifier to a Project object.
     
-    Accepts either a numeric project ID or a name.
-    
+    Accepts a numeric project ID, the team-scoped slug (preferred) or a legacy
+    name. Ambiguous legacy names return 409.
+
     Args:
         db (Session): SQLAlchemy database session.
-        project_id_or_name (str): The project identifier (ID or name).
+        project_id_or_name (str): The project identifier (ID, slug or name).
         team_id (int): ID of the team the project belongs to.
-    
+
     Returns:
         Project: The Project object if found.
-    
+
     Raises:
         HTTPException 404: If project not found or doesn't belong to the team.
+        HTTPException 409: If a legacy name matches more than one project.
     """
     if project_id_or_name.isdigit():
         project = crud.get_project_by_id(db, int(project_id_or_name))
     else:
-        project = db.query(models.Project).filter(
-            models.Project.team_id == team_id,
-            models.Project.name.ilike(project_id_or_name)
-        ).first()
+        project = crud.get_project_by_slug(db, team_id, project_id_or_name)
+        if project is None:
+            matches = (
+                db.query(models.Project)
+                .filter(
+                    models.Project.team_id == team_id,
+                    models.Project.name.ilike(project_id_or_name),
+                )
+                .all()
+            )
+            if len(matches) > 1:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Multiple projects match that name; use the project id or slug",
+                )
+            if matches:
+                project = matches[0]
+                logger.warning(
+                    "deprecated_project_name_lookup",
+                    project_id=project.id,
+                    team_id=team_id,
+                )
     if not project or project.team_id != team_id:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
@@ -62,26 +84,45 @@ def get_task_from_id_or_title(db: Session, task_id_or_title: str, project_id: in
     """
     Resolve a task identifier to a Task object.
     
-    Accepts either a numeric task ID or a title (case-insensitive search).
-    
+    Accepts a numeric task ID (preferred) or a legacy title. Titles are not
+    keys: an ambiguous title returns 409 and every legacy lookup is logged as
+    deprecated.
+
     Args:
         db (Session): SQLAlchemy database session.
         task_id_or_title (str): The task identifier (ID or title).
         project_id (int): ID of the project the task belongs to.
-    
+
     Returns:
         Task: The Task object if found.
-    
+
     Raises:
         HTTPException 404: If task not found or doesn't belong to the project.
+        HTTPException 409: If a legacy title matches more than one task.
     """
     if task_id_or_title.isdigit():
         task = crud.get_task_by_id(db, int(task_id_or_title))
     else:
-        task = db.query(models.Task).filter(
-            models.Task.project_id == project_id,
-            models.Task.title.ilike(task_id_or_title)
-        ).first()
+        matches = (
+            db.query(models.Task)
+            .filter(
+                models.Task.project_id == project_id,
+                models.Task.title.ilike(task_id_or_title),
+            )
+            .all()
+        )
+        if len(matches) > 1:
+            raise HTTPException(
+                status_code=409,
+                detail="Multiple tasks match that title; use the task id",
+            )
+        task = matches[0] if matches else None
+        if task is not None:
+            logger.warning(
+                "deprecated_task_title_lookup",
+                task_id=task.id,
+                project_id=project_id,
+            )
     if not task or task.project_id != project_id:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
