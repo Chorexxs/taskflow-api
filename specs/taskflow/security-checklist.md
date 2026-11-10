@@ -1,0 +1,171 @@
+# Checklist ASVS L2 — TaskFlow
+
+**Fecha:** 2026-11-10
+**Alcance:** API FastAPI + frontend React + despliegue Render/InsForge/Vercel.
+**Referencia:** OWASP ASVS 4.0.3, nivel 2.
+
+Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pendiente.
+
+---
+
+## V1 — Arquitectura, diseño y amenazas
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Componentes y fronteras documentados | ✅ | `plan.md`, `data-model.md` |
+| Autenticación centralizada y reutilizada | ✅ | `app/auth.py`, `get_current_user` |
+| Autorización en servidor para cada endpoint | ✅ | Matriz de permisos + `tests/test_permission_matrix.py` |
+| Decisiones de seguridad registradas | ✅ | `DECISIONS.md`, ADR-001…011 |
+| Amenazas y riesgos identificados | 🟡 | `plan.md` §riesgos; falta revisión STRIDE formal |
+
+## V2 — Autenticación
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Contraseñas ≥ 8 y ≤ 128, sin control chars | ✅ | `schemas.py`, T-027 |
+| Hash con bcrypt y salt por contraseña | ✅ | `app/auth.py` |
+| Bloqueo tras intentos fallidos | ✅ | `MAX_LOGIN_ATTEMPTS`, tests de lockout |
+| Sin mensajes que revelen si el email existe | ✅ | Login devuelve 401 genérico |
+| Rate limiting en registro/login/refresh | ✅ | T-030/T-031, `tests/test_rate_limit_http.py` |
+| Cambio de contraseña exige la actual y revoca sesiones | ✅ | T-028, `token_version` |
+| MFA | ❌ | Fuera de alcance de este ciclo |
+
+## V3 — Sesión
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Access token corto (15 min) | ✅ | `ACCESS_TOKEN_EXPIRE_MINUTES` |
+| Refresh rotativo de 7 días | ✅ | `create_refresh_token`, `revoke_token` |
+| Logout revoca access y refresh, idempotente | ✅ | `POST /auth/logout`, tests P1 |
+| Refresh nunca en query string | 🟡 | Body preferido; query queda oculta y deprecada |
+| Cookies `httpOnly` + CSRF | 🟡 | Alternativa documentada: Bearer + auto-refresh (ADR-001); cookies en P7 |
+| Detección de reutilización de refresh | ✅ | T-034; reuse → 401 y revocación global de sesiones |
+
+## V4 — Control de acceso
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Denegar por defecto; permisos explícitos | ✅ | Dependencias de equipo, tests 401/403/404 |
+| Sin IDOR entre equipos | ✅ | Resolución team-scoped; recurso ajeno → 404 |
+| Rol admin/member verificado en servidor | ✅ | `app/dependencies.py` |
+| Último admin protegido | ✅ | Tests de expulsión/degradación |
+| Acciones de UI no sustituyen a la API | ✅ | `AGENTS.md`, matriz testeada |
+| Asignación solo a miembros del equipo | ✅ | `POST /tasks` valida `assigned_to` |
+
+## V5 — Validación y sanidad
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Validación Pydantic v2 en todas las entradas | ✅ | `app/schemas.py` |
+| Consultas parametrizadas (SQLAlchemy) | ✅ | `app/crud.py` |
+| Escape de comodines en búsqueda | ✅ | T-049 |
+| Sanitización de nombres de archivo | ✅ | `sanitize_filename` |
+| Límite de tamaño en streaming | ✅ | T-014, `MAX_UPLOAD_SIZE` |
+| Allowlist de extensión/MIME | ✅ | `validate_upload_type` |
+
+## V6 — Criptografía
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Sin algoritmos propios | ✅ | `python-jose`, `bcrypt` |
+| Secretos fuera del código | ✅ | `.env`, fail-fast en producción |
+| `SECRET_KEY` sin fallback en producción | ✅ | `app/config.py` |
+| TLS en despliegue | ✅ | Render/Vercel/InsForge; HSTS |
+| Rotación de claves documentada | 🟡 | Procedimiento en `plan.md`; falta automatizar |
+
+## V7 — Errores y logging
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Errores sin stack trace al cliente | ✅ | Envelope + handler global |
+| `request_id` en respuestas y logs | ✅ | `middleware.py`, `logging_config.py` |
+| Sin contraseñas, tokens ni PII en logs | ✅ | T-033, `tests/test_auth_audit.py` |
+| Eventos de auth auditados | ✅ | login/logout/refresh/lockout/cambio de credenciales |
+| Retención de logs | 🟡 | Depende del proveedor; no configurada explícitamente |
+
+## V8 — Protección de datos
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Datos sensibles no expuestos en schemas | ✅ | `UserOut` sin hash; `AttachmentOut` sin rutas |
+| Minimización de PII | ✅ | No se registra email en auditoría |
+| Cifrado en tránsito | ✅ | TLS gestionado |
+| Cifrado en reposo | 🟡 | Gestionado por InsForge; no verificable desde el repo |
+| Backups y restore | 🟡 | Documentado en `data-model.md`; sin prueba reciente |
+
+## V9 — Comunicación
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| HTTPS obligatorio | ✅ | HSTS, Render/Vercel |
+| CORS con allowlist explícita | ✅ | `CORS_ORIGINS`, tests P1 |
+| Sin `*` con credenciales | ✅ | Validación en `config.py` |
+| Cabeceras de seguridad | ✅ | CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy |
+
+## V10 — Código malicioso
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Sin dependencias sin pin | ✅ | `requirements.txt`, `package-lock.json` |
+| Auditoría de dependencias | ✅ | `npm audit --omit=dev` → 0; Renovate/Dependabot |
+| Sin ejecución de archivos subidos | ✅ | Adjuntos servidos como descarga; allowlist |
+| Revisión de dependencias nuevas | ✅ | PR + lockfiles |
+
+## V11 — Lógica de negocio
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Límites de recursos (paginación ≤ 100) | ✅ | T-038 |
+| Idempotencia de logout | ✅ | Tests P1 |
+| Coherencia de borrados | ✅ | T-044, cascada y limpieza |
+| Reasignación al expulsar | ✅ | T-042 |
+| Prevención de carreras en último admin | 🟡 | Comprobación en aplicación; falta constraint/lock |
+
+## V12 — Archivos y recursos
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Path traversal bloqueado | ✅ | `sanitize_filename`, `_task_upload_dir` |
+| Nombres únicos | ✅ | UUID en storage |
+| Descarga autenticada y team-scoped | ✅ | `attachments.py` |
+| Storage persistente en producción | ✅ | `STORAGE_BACKEND=database` |
+| Checksum de adjuntos | 🟡 | T-055 pendiente |
+
+## V13 — API
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Contrato OpenAPI versionado y verificado en CI | ✅ | `contracts/openapi.json`, T-078 |
+| Envelope de errores estable | ✅ | `{detail, error:{code,message,details,request_id}}` |
+| Paginación uniforme | ✅ | T-038 |
+| Rate limit con `Retry-After` | ✅ | T-031 |
+| Versionado `/api/v1` | ✅ | Routers |
+| Idempotencia en POST críticos | 🟡 | No implementada; evaluar en P7 |
+
+## V14 — Configuración
+
+| Control | Estado | Evidencia |
+|---|---|---|
+| Fail-fast de configuración crítica | ✅ | `Settings.validate_runtime` |
+| Contenedor non-root + HEALTHCHECK | ✅ | `Dockerfile`, T-075 |
+| Health live/ready separados | ✅ | `/health/live`, `/health/ready` |
+| Secretos en gestor del proveedor | ✅ | Render env vars |
+| CORS/entorno por despliegue | ✅ | `blockers.md` B-02/B-03 |
+
+---
+
+## Hallazgos abiertos priorizados
+
+| ID | Riesgo | Prioridad | Tarea |
+|---|---|---|---|
+| SEC-ASVS-01 | Sin cookies `httpOnly`; token accesible desde JS | Media (riesgo aceptado) | T-026 / ADR-001, reevaluar en P7 |
+| SEC-ASVS-02 | Checksum de adjuntos pendiente | Baja | T-055 |
+| SEC-ASVS-03 | Carrera teórica al degradar/expulsar al último admin | Baja | T-082/constraint futuro |
+| SEC-ASVS-04 | Sin prueba de restore de backups | Media | T-080 |
+| SEC-ASVS-05 | Integración de tests aún en SQLite | Media | T-077 |
+
+## Firma
+
+Revisión realizada por el agente el 2026-11-10 contra el código y los specs del
+repositorio. Los puntos 🟡 quedan registrados como deuda aceptada; no hay
+hallazgos críticos abiertos (`SEC-0`/`CA-0` = 0).
