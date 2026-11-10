@@ -439,13 +439,13 @@ def assign_task(
     assignment: schemas.TaskAssign,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-    admin: models.TeamMember = Depends(get_current_team_admin),
+    member: models.TeamMember = Depends(get_current_team_member),
 ):
     """
     Assign or unassign a task.
-    
-    Only team admins can assign tasks. The assignee must be a member
-    of the team. A notification is sent to the assigned user.
+
+    The task creator or a team admin can assign tasks. The assignee must be a
+    member of the team. A notification is sent to the assigned user.
     
     Args:
         team_id_or_slug (str): The team identifier (ID or slug).
@@ -454,19 +454,26 @@ def assign_task(
         assignment (TaskAssign): Schema with user_id (can be null to unassign).
         db (Session): Database session (injected by FastAPI).
         current_user (User): The authenticated user.
-        admin (TeamMember): Admin check (injected via dependency).
-    
+        member (TeamMember): Team membership check (injected via dependency).
+
     Returns:
         TaskOut: Updated task with new assignee.
-    
+
     Raises:
         HTTPException 400: If assignee is not a team member.
+        HTTPException 403: If the caller is neither the creator nor an admin.
     """
     from app.dependencies import get_team_from_id_or_slug
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
-    
+
+    if task.created_by != current_user.id and member.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only the creator or an admin can assign tasks",
+        )
+
     # Verify assignee is a team member
     if assignment.user_id is not None:
         team_member = crud.get_team_member(db, team.id, assignment.user_id)
