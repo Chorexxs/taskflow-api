@@ -28,7 +28,7 @@
 
 **Parcial (P5):** `T-066` (focus visible, reduced motion, `aria-label` en iconos y roles de diálogo; falta auditoría WCAG completa).
 
-**Completadas (P5):** `T-063` (cliente API con refresh single-flight, retry en 401, errores tipados y AbortController), `T-064` (AuthContext endurecido: permisos visuales desde `user`, sin `user_id` en storage), `T-067` (cabeceras y buscadores responsive; tablero usable desde 360 px), `T-068` (estados de error consistentes con reintento en dashboard, equipo, tablero y tarea), `T-065` (decisión dark-only), `T-070` (eliminados axios y ThemeContext muerto).
+**Completadas (P5):** `T-063` (cliente API con refresh single-flight, retry en 401, errores tipados y AbortController), `T-064` (AuthContext endurecido: permisos visuales desde `user`, sin `user_id` en storage), `T-067` (cabeceras y buscadores responsive; tablero usable desde 360 px), `T-071` (acciones de admin ocultas en tablero y miembros), `T-068` (estados de error consistentes con reintento en dashboard, equipo, tablero y tarea), `T-065` (decisión dark-only), `T-070` (eliminados axios y ThemeContext muerto).
 
 **Completadas (P4):** `T-050` (orden asc/desc de comentarios), `T-051` (pertenencia actual al equipo al editar comentarios), `T-052` (menciones), `T-053` (backend de almacenamiento configurable), `T-055` (MIME/tamaño, checksum SHA-256 y nombres únicos), `T-056` (limpieza de adjuntos locales al borrar tarea).
 

@@ -462,12 +462,14 @@ export default function TeamDetail() {
             <div className="card p-5">
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Members</h3>
-                <button
-                  onClick={() => setShowInvite(true)}
-                  className="text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-medium transition-colors"
-                >
-                  + Invite
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => setShowInvite(true)}
+                    className="text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-medium transition-colors"
+                  >
+                    + Invite
+                  </button>
+                )}
               </div>
               <div className="space-y-3">
                 {members?.map(member => (

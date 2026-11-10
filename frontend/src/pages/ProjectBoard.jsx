@@ -197,9 +197,11 @@ export default function ProjectBoard() {
 
   const { data: teamMembers } = useQuery({
     queryKey: ['team-members', teamId],
-    queryFn: () => api.teams.get(token, teamId).then(t => t.members || []),
+    queryFn: () => api.teams.listMembers(token, teamId),
     retry: false,
   })
+  const currentMember = teamMembers?.find(m => m.user_id === currentUserId)
+  const isAdmin = currentMember?.role === 'admin'
 
   const { data: projectActivity } = useQuery({
     queryKey: ['project-activity', teamId, projectId, activityPageNumber],
@@ -464,13 +466,16 @@ export default function ProjectBoard() {
                 <Activity className="w-5 h-5" />
               </button>
               
-              <button
-                onClick={() => { setProjectForm({ name: project?.name || '', description: project?.description || '' }); setShowEditProject(true); }}
-                className="p-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-all"
-                title="Project Settings"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => { setProjectForm({ name: project?.name || '', description: project?.description || '' }); setShowEditProject(true); }}
+                  className="p-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-all"
+                  title="Project Settings"
+                  aria-label="Project settings"
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
+              )}
             </div>
           </div>
         </div>
