@@ -14,6 +14,10 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEV_SECRET_KEY = "dev-only-insecure-secret-key-change-me"
+# Environments where the insecure development defaults are acceptable. Any
+# other value (staging, production, or a typo) must configure real secrets so a
+# mislabelled deployment never signs tokens with the public development key.
+DEV_ENVIRONMENTS = frozenset({"development", "dev", "test", "testing"})
 DEFAULT_DEV_ORIGINS = (
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -96,12 +100,22 @@ class Settings(BaseSettings):
         return self.ENVIRONMENT.lower() in {"production", "prod"}
 
     @property
+    def allows_dev_defaults(self) -> bool:
+        """Whether insecure development defaults are acceptable.
+
+        Only explicit development/test environments may fall back to the
+        public development key. This prevents a deployment labelled
+        ``staging`` (or with a typo) from signing tokens with a known key.
+        """
+        return self.ENVIRONMENT.strip().lower() in DEV_ENVIRONMENTS
+
+    @property
     def secret_key(self) -> str:
         """Return the configured secret, with a dev-only fallback."""
         if self.SECRET_KEY:
             return self.SECRET_KEY
-        if self.is_production:
-            raise RuntimeError("SECRET_KEY must be set in production")
+        if self.is_production or not self.allows_dev_defaults:
+            raise RuntimeError("SECRET_KEY must be set outside development/test")
         return DEV_SECRET_KEY
 
     @property
@@ -161,8 +175,8 @@ class Settings(BaseSettings):
         without a full environment.
         """
         if not self.SECRET_KEY:
-            if self.is_production:
-                raise RuntimeError("SECRET_KEY must be set in production")
+            if self.is_production or not self.allows_dev_defaults:
+                raise RuntimeError("SECRET_KEY must be set outside development/test")
             warnings.warn(
                 "SECRET_KEY is not set; using a development-only key",
                 RuntimeWarning,

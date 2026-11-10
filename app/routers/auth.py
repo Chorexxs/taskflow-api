@@ -14,9 +14,10 @@ Security features:
 - Token rotation on refresh
 """
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response, status
+import jwt
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import JWTError, jwt
+from jwt import PyJWTError
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
@@ -55,7 +56,7 @@ def _user_id_from_token(db: Session, token: str | None) -> int | None:
             algorithms=[settings.ALGORITHM],
             options={"verify_exp": False},
         )
-    except JWTError:
+    except PyJWTError:
         return None
     email = payload.get("sub")
     if not email:
@@ -206,17 +207,14 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
 def refresh(
     request: Request,
     payload: schemas.RefreshTokenRequest | None = Body(default=None),
-    refresh_token: str | None = Query(default=None, include_in_schema=False),
     db: Session = Depends(get_db),
 ):
     """
     Refresh access token using a valid refresh token.
     
-    Accepts the refresh token in the JSON body (preferred):
-    ``{"refresh_token": "..."}``.
-    
-    A query-string fallback is kept temporarily for backwards compatibility,
-    but it is deprecated because tokens in URLs can leak through logs.
+    The refresh token must be sent in the JSON body:
+    ``{"refresh_token": "..."}``. It is never accepted in the query string
+    because tokens in URLs leak through logs, proxies and browser history.
     
     The old refresh token is revoked and a new pair is issued (rotation).
     
@@ -227,8 +225,6 @@ def refresh(
     from app.auth import get_current_user_from_refresh
 
     token = payload.refresh_token if payload else None
-    if not token:
-        token = refresh_token
     if not token:
         logger.warning("auth_refresh_failed", user_id=None, reason="missing_token")
         raise HTTPException(

@@ -19,9 +19,10 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Annotated
 
 import bcrypt
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+from jwt import PyJWTError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -197,7 +198,7 @@ def revoke_token(db: Session, token: str, token_type: str = "access") -> None:
         None: This function doesn't return anything.
     
     Raises:
-        JWTError: If the token cannot be decoded (invalid token format).
+        PyJWTError: If the token cannot be decoded (invalid token format).
     
     Example:
         >>> revoke_token(db, old_access_token, "access")
@@ -370,10 +371,10 @@ async def get_current_user(
                 detail="Token has been revoked",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        email: str = payload.get("sub")
-        if email is None:
+        email = payload.get("sub")
+        if not isinstance(email, str) or not email:
             raise credentials_exception
-    except JWTError:
+    except PyJWTError:
         raise credentials_exception from None
 
     user = get_user_by_email(db, email=email)
@@ -436,10 +437,10 @@ def get_current_user_from_refresh(
                 detail="Token has been revoked",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        email: str = payload.get("sub")
-        if email is None:
+        email = payload.get("sub")
+        if not isinstance(email, str) or not email:
             raise credentials_exception
-    except JWTError:
+    except PyJWTError:
         raise credentials_exception from None
 
     from app.crud import get_user_by_email

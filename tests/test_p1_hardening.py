@@ -100,6 +100,24 @@ def test_refresh_requires_a_token(client: TestClient):
     assert response.status_code == 422
 
 
+def test_refresh_rejects_token_in_query_string(client: TestClient):
+    """Tokens in URLs leak through logs and browser history (SEC-3.1)."""
+    tokens = _register_and_login(client, "refresh-in-url@example.com")
+
+    rejected = client.post(
+        "/api/v1/auth/refresh",
+        params={"refresh_token": tokens["refresh_token"]},
+    )
+    assert rejected.status_code == 422
+
+    # The rejected request must not consume or rotate the token.
+    accepted = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": tokens["refresh_token"]},
+    )
+    assert accepted.status_code == 200, accepted.text
+
+
 def test_refresh_rejects_an_access_token(client: TestClient):
     tokens = _register_and_login(client, "wrongtype@example.com")
 
@@ -413,6 +431,20 @@ def test_production_requires_a_secret_key():
         _ = config.secret_key
 
 
+def test_non_development_environment_requires_a_secret_key():
+    """A mislabelled deployment must not sign tokens with the public key."""
+    config = Settings(
+        ENVIRONMENT="staging",
+        SECRET_KEY="",
+        DATABASE_URL="postgresql://user:pass@localhost/db",
+    )
+
+    with pytest.raises(RuntimeError):
+        _ = config.secret_key
+    with pytest.raises(RuntimeError):
+        config.validate_runtime()
+
+
 def test_development_uses_a_fallback_secret_key():
     config = Settings(
         ENVIRONMENT="development",
@@ -422,3 +454,23 @@ def test_development_uses_a_fallback_secret_key():
 
     assert config.secret_key
     assert config.secret_key != ""
+
+
+def test_production_disables_api_documentation(monkeypatch):
+    from app import main
+
+    monkeypatch.setattr(main.settings, "ENVIRONMENT", "production")
+
+    assert main.docs_urls() == {
+        "docs_url": None,
+        "redoc_url": None,
+        "openapi_url": None,
+    }
+
+
+def test_development_keeps_api_documentation(monkeypatch):
+    from app import main
+
+    monkeypatch.setattr(main.settings, "ENVIRONMENT", "development")
+
+    assert main.docs_urls()["docs_url"] == "/docs"

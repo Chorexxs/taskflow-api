@@ -140,11 +140,23 @@ async def lifespan(app: FastAPI):
     logger.info("application_shutdown")
 
 
+def docs_urls() -> dict[str, str | None]:
+    """Return the Swagger/OpenAPI URLs for the current environment.
+
+    Interactive documentation is handy during development but exposes the full
+    API surface in production, so it is disabled there.
+    """
+    if settings.is_production:
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {"docs_url": "/docs", "redoc_url": "/redoc", "openapi_url": "/openapi.json"}
+
+
 # Create FastAPI application with metadata and lifespan
 app = FastAPI(
     title="TaskFlow API",
     description="API REST con FastAPI y JWT",
-    lifespan=lifespan
+    lifespan=lifespan,
+    **docs_urls(),
 )
 
 # Attach rate limiter to app state for access in routes
@@ -202,11 +214,21 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Return Pydantic validation errors in the same envelope."""
+    """Return Pydantic validation errors in the same envelope.
+
+    The raw ``input`` value is intentionally omitted: auth payloads contain
+    passwords, and echoing them back (or into a client-side error log) is an
+    unnecessary disclosure. ``loc``/``msg``/``type`` are enough to fix the
+    request.
+    """
+    details = [
+        {key: value for key, value in error.items() if key != "input"}
+        for error in exc.errors()
+    ]
     return _error_response(
         422,
         "Validation error",
-        details=jsonable_encoder(exc.errors()),
+        details=jsonable_encoder(details),
     )
 
 

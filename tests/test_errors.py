@@ -26,6 +26,18 @@ def test_validation_error_envelope(client: TestClient):
     assert isinstance(body["error"]["details"], list)
 
 
+def test_validation_error_does_not_echo_the_submitted_value(client: TestClient):
+    """Auth payloads contain passwords; never echo them back (SEC-4.2)."""
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"email": "echo@example.com", "password": "hunter2"},
+    )
+    assert response.status_code == 422
+    body = response.json()
+    assert "hunter2" not in response.text
+    assert all("input" not in item for item in body["error"]["details"])
+
+
 def test_not_found_error_envelope(client: TestClient):
     client.post(
         "/api/v1/auth/register",
