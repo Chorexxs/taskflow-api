@@ -2,7 +2,7 @@
 
 API REST para gestión de tareas en equipo con autenticación JWT, equipos, proyectos, tablero Kanban, comentarios, adjuntos, notificaciones y registro de actividad.
 
-[![Tests](https://img.shields.io/badge/backend%20tests-174%20passed-brightgreen)](./tests)
+[![Tests](https://img.shields.io/badge/backend%20tests-180%20passed-brightgreen)](./tests)
 [![Frontend](https://img.shields.io/badge/frontend%20tests-42%20passed-brightgreen)](./frontend/src/test)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.135-blue)](https://fastapi.tiangolo.com/)
@@ -23,7 +23,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Liveness** | https://taskflow-api-gkgl.onrender.com/health/live | Proceso vivo |
 | **Readiness** | https://taskflow-api-gkgl.onrender.com/health/ready | DB accesible |
 
-> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend Vercel **live** en `https://taskflow-api-tau.vercel.app`. Producción verificada el 2026-11-10 tras aplicar las migraciones pendientes: **register 201**, **login 200**, smoke de release **14/14**, performance p95 < 1000 ms (WAN) y SSE 3/3. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
+> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend Vercel **live** en `https://taskflow-api-tau.vercel.app`. Producción verificada el 2026-11-10 tras aplicar las migraciones pendientes: **register 201**, **login 200**, smoke de release **15/15**, performance p95 < 1000 ms (WAN) y SSE 3/3. Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
 
 ---
 
@@ -40,7 +40,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
                                                   │
                                                   ├── Redis opcional (rate limiting/cache/SSE pub-sub)
                                                   ├── Sentry opcional (errores)
-                                                  └── Adjuntos en PostgreSQL (STORAGE_BACKEND=database)
+                                                  ├── InsForge Storage opcional (adjuntos en object storage)
 ```
 
 ### Stack
@@ -56,11 +56,11 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Frontend** | React 18, Vite 5, React Router 7 |
 | **Datos front** | TanStack React Query 5, `fetch` |
 | **UI** | Tailwind CSS 4, Lucide React, React Hot Toast, `@dnd-kit` |
-| **Tests** | pytest + pytest-cov (174, 86 %), Vitest + Testing Library (43, 71,6 %) |
+| **Tests** | pytest + pytest-cov (180, 87 %), Vitest + Testing Library (43, 71,6 %) |
 | **CI/CD** | GitHub Actions, Render, Vercel, InsForge |
 | **Contenedores** | Docker, docker-compose (PostgreSQL + Redis + API) |
 
-Los adjuntos se guardan por defecto en PostgreSQL (`STORAGE_BACKEND=database`) para sobrevivir a los discos efímeros de Render. En desarrollo se puede usar `STORAGE_BACKEND=local`.
+Los adjuntos se guardan por defecto en PostgreSQL (`STORAGE_BACKEND=database`) para sobrevivir a los discos efímeros de Render. `STORAGE_BACKEND=insforge` usa el bucket privado de InsForge Storage (object storage) y `local` queda para desarrollo. Los adjuntos existentes se migran con `scripts/backfill_attachments_object_storage.py`.
 
 ---
 
@@ -295,11 +295,11 @@ npm run build
 Postgres; no vale para validar un release. `TEST_SKIP_MIGRATIONS=1` reutiliza un
 esquema ya migrado.
 
-Estado actual: **174 tests backend** (86 % de cobertura, verdes sobre PostgreSQL)
+Estado actual: **180 tests backend** (87 % de cobertura, verdes sobre PostgreSQL)
 y **43 tests frontend** (71,6 % de líneas). El CI falla por debajo de **80 %** en
 backend y **70 %** en frontend.
 
-Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y otro contra la **API de producción en Render** (13/13): health, registro, login, equipo, proyecto, tarea, comentario, adjunto en PostgreSQL, descarga, búsqueda, notificaciones, perfil y error envelope. También se verificó CORS para las dos URLs de frontend y el rechazo de un origen no permitido.
+Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y otro contra la **API de producción en Render** (15/15): health, registro, login, equipo, proyecto, tarea, comentario, adjunto (object storage), descarga, búsqueda, notificaciones, perfil y error envelope. También se verificó CORS para las dos URLs de frontend y el rechazo de un origen no permitido.
 
 ---
 
@@ -309,12 +309,12 @@ Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y 
 
 - Build: `pip install -r requirements.txt`
 - Start: `python -m app.main` (o `uvicorn app.main:app`)
-- Variables: `DATABASE_URL`, `DB_SSLMODE=require`, `SECRET_KEY`, `ENVIRONMENT=production`, `CORS_ORIGINS=https://taskflow-api-tau.vercel.app`, `STORAGE_BACKEND=database`, opcionales `REDIS_URL`, `SENTRY_DSN`.
+- Variables: `DATABASE_URL`, `DB_SSLMODE=require`, `SECRET_KEY`, `ENVIRONMENT=production`, `CORS_ORIGINS=https://taskflow-api-tau.vercel.app`, `STORAGE_BACKEND=insforge`, `INSFORGE_URL`, `INSFORGE_API_KEY`, `INSFORGE_STORAGE_BUCKET=taskflow-attachments`; opcionales `REDIS_URL`, `SENTRY_DSN`.
   - Si usas un dominio propio en Vercel, añádelo separado por comas.
   - Sin `CORS_ORIGINS`, la app **no arranca en producción** (fail-fast).
 - Ejecutar `alembic upgrade head` antes del despliegue. `alembic/env.py` usa `DATABASE_URL`.
-- Los adjuntos se guardan en PostgreSQL por defecto (`STORAGE_BACKEND=database`), por lo que sobreviven a los redeploys. Cambiar a `local` solo para desarrollo.
-- Estado actual: `/health/ready` → `200`, base de datos en `c9d0e1f2a3b4 (head)`, registro/login y smoke de release **14/14** verificados.
+- Los adjuntos se guardan por defecto en PostgreSQL (`STORAGE_BACKEND=database`). Con `STORAGE_BACKEND=insforge` se usa el bucket privado `taskflow-attachments`; los objetos migrados siguen siendo legibles si se vuelve a `database` (conservan `content` hasta limpiarlo). La activación en Render requiere las variables `INSFORGE_URL`, `INSFORGE_API_KEY` e `INSFORGE_STORAGE_BUCKET` (**B-07**).
+- Estado actual: `/health/ready` → `200`, base de datos en `d0e1f2a3b4c5 (head)`, registro/login y smoke de release **15/15** verificados.
 
 ### Frontend — Vercel
 
@@ -441,7 +441,7 @@ alembic/                 # migraciones
 
 - **MCP de Vercel:** el servidor `vercel` está configurado en OpenCode pero requiere autenticación OAuth (`/mcps` → `vercel` → sign in). El deploy por CLI y la integración con Git ya funcionan.
 - Migración a cookies `httpOnly` o decisión formal (ADR-001): decidido mantener Bearer + auto-refresh; cookies se reevalúan en P7.
-- Adjuntos en object storage S3-compatible (la alternativa actual es PostgreSQL) (P4, parcial T-054).
+- Adjuntos en object storage: `StorageService` con backend InsForge Storage (`STORAGE_BACKEND=insforge`), bucket privado, backfill con checksum y rollback documentado (T-054).
 - SSE implementado con Redis pub/sub, límites de conexión y prueba de 500 conexiones (T-081); el polling queda como respaldo.
 - Rate limiting con Redis para múltiples instancias implementado (T-030/T-031); fallback en memoria si Redis no responde.
 - Auditoría WCAG completa y tema claro/oscuro (P5); la UI es dark-only.

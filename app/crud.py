@@ -1341,6 +1341,7 @@ def create_attachment(
     mime_type: str,
     content: bytes | None = None,
     checksum: str | None = None,
+    storage_key: str | None = None,
 ):
     """
     Create an attachment record for an uploaded file.
@@ -1374,6 +1375,7 @@ def create_attachment(
         uploaded_by=user_id,
         filename=filename,
         file_path=file_path,
+        storage_key=storage_key,
         content=content,
         checksum=checksum,
         file_size=file_size,

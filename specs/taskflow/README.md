@@ -4,7 +4,7 @@
 **Fecha:** 2026-11-09
 **Proyecto:** TaskFlow API
 **Alcance del ciclo:** documentación + bugs conocidos + modernización completa
-**Estado:** P0–P6 ejecutados (P0 con T-003 bloqueada por credenciales, P6 con verificación post-deploy pendiente); P7 opcional y T-054 (S3) pendientes por credenciales.
+**Estado:** P0–P9 ejecutados (incluye T-003, T-054 y T-081); producción verificada. Solo queda activar el backend de storage en Render y reevaluar cookies `httpOnly` en P7.
 
 ---
 
@@ -115,13 +115,13 @@ Este paquete vive en `specs/taskflow/` y es la fuente de verdad del ciclo. `READ
 
 | Fase | Estado | Notas |
 |---|---|---|
-| P0 — Gobernanza | 🟡 Parcial | Specs, documentación, LICENSE, baseline, ADRs aceptados (T-004), entornos (T-009) y política de release (T-010). Pendiente T-003 por falta de credenciales de GitHub (**B-06**) |
+| P0 — Gobernanza | ✅ Ejecutado | Specs, documentación, LICENSE, baseline, ADRs aceptados, entornos, política de release y backlog importado en GitHub (T-003) |
 | P1 — Correcciones críticas | ✅ Ejecutado | Refresh, logout, uploads, permisos de equipo, CORS, secret fail-fast, Kanban, cliente API, Sentry, Alembic |
 | P2 — Auth/sesión | ✅ Ejecutado | Auto-refresh, contraseñas, cambio con revocación, limpieza de tokens, rate limit Redis, headers, auditoría y reutilización de refresh. Cookies `httpOnly` se reevalúan en P7 (ADR-001) |
 | P3 — API/datos | ✅ Ejecutado | IDs/slugs, paginación, errores, permisos, borrados, archivado, actividad y búsqueda |
-| P4 — Colaboración/storage | ✅ Ejecutado | Notificaciones, menciones, SSE + polling, activity; S3 queda parcial en T-054 (PostgreSQL por defecto) |
+| P4 — Colaboración/storage | ✅ Ejecutado | Notificaciones, menciones, SSE + polling, activity y object storage con backfill (T-054); activación de `STORAGE_BACKEND=insforge` en Render pendiente |
 | P5 — Frontend | ✅ Ejecutado | Cliente API, AuthContext, a11y, responsive, estados de error, MSW y dark-only |
-| P6 — Ops/release | ✅ Ejecutado | Ruff/mypy, CI completo, runbook, health, gitleaks/pip-audit, checklist, smoke funcional 14/14 y smoke de performance; verificación post-deploy completada |
+| P6 — Ops/release | ✅ Ejecutado | Ruff/mypy, CI completo, runbook, health, gitleaks/pip-audit, checklist, smoke funcional 15/15 y smoke de performance; verificación post-deploy completada |
 | P7 — Realtime | ✅ Ejecutado | SSE con Redis pub/sub, fallback en proceso, límites de conexión, backoff y prueba de 500 conexiones (T-081) |
 | P8 — Auditoría de seguridad | ✅ Ejecutado | T-083…T-092 |
 | P9 — Smoke de release | ✅ Ejecutado | T-093 (rate limit 500) y T-094 (health bloqueado por Redis) |

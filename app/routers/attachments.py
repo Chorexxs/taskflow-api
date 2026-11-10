@@ -11,6 +11,7 @@ File uploads are limited to 10MB. Files are stored on disk with
 metadata in the database.
 """
 
+import asyncio
 import hashlib
 import mimetypes
 import os
@@ -36,9 +37,12 @@ from app.auth import get_current_user
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_team_member
+from app.logging_config import get_logger
 from app.rate_limit import rate_limit
+from app.storage import StorageError, get_storage
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 # Upload limits and storage location come from central configuration.
 MAX_FILE_SIZE = settings.MAX_UPLOAD_SIZE
@@ -205,8 +209,25 @@ async def upload_attachment(
     checksum = hashlib.sha256(contents).hexdigest()
     file_path = None
     content = None
+    storage_key = None
 
-    if settings.storage_backend == "database":
+    if settings.storage_backend == "insforge":
+        storage = get_storage()
+        if storage is None:  # pragma: no cover - config validation
+            raise HTTPException(status_code=503, detail="Object storage is not configured")
+        storage_key = storage.build_key(task.id, extension)
+        try:
+            await asyncio.to_thread(
+                storage.put,
+                storage_key,
+                bytes(contents),
+                mime_type,
+                original_filename,
+            )
+        except StorageError as exc:
+            logger.warning("attachment_storage_failed", error=str(exc))
+            raise HTTPException(status_code=503, detail="Object storage is unavailable") from exc
+    elif settings.storage_backend == "database":
         # Persistent backend: the bytes live in PostgreSQL and survive
         # ephemeral filesystems such as Render's.
         content = bytes(contents)
@@ -228,10 +249,18 @@ async def upload_attachment(
             mime_type,
             content=content,
             checksum=checksum,
+            storage_key=storage_key,
         )
     except Exception:
         if file_path and os.path.exists(file_path):
             os.remove(file_path)
+        if storage_key:
+            storage = get_storage()
+            if storage is not None:
+                try:
+                    storage.delete(storage_key)
+                except StorageError:
+                    pass
         raise
 
     crud.log_activity(
@@ -330,8 +359,18 @@ def delete_attachment(
             status_code=403, detail="Only the uploader or team admin can delete this attachment"
         )
 
-    # Remove the local file when this attachment uses the filesystem backend.
-    if attachment.file_path and os.path.exists(attachment.file_path):
+    # Remove the local file or object when this attachment uses external storage.
+    if attachment.storage_key:
+        storage = get_storage()
+        if storage is not None:
+            try:
+                storage.delete(attachment.storage_key)
+            except StorageError as exc:
+                # The database row is still deleted; the orphan is reported.
+                logger.warning("attachment_delete_failed", error=str(exc))
+        else:
+            logger.warning("attachment_storage_not_configured", attachment_id=attachment.id)
+    elif attachment.file_path and os.path.exists(attachment.file_path):
         os.remove(attachment.file_path)
 
     # Log and delete
@@ -377,6 +416,25 @@ def download_attachment(
 
     if not attachment or attachment.task_id != task.id:
         raise HTTPException(status_code=404, detail="Attachment not found")
+
+    if attachment.storage_key:
+        storage = get_storage()
+        if storage is not None:
+            try:
+                data = storage.get(attachment.storage_key)
+            except StorageError as exc:
+                # Fall back to the retained database/local copy during rollout
+                # or if object storage is temporarily unavailable.
+                logger.warning("attachment_download_failed", error=str(exc))
+            else:
+                safe_name = attachment.filename.replace('"', "")
+                return Response(
+                    content=data,
+                    media_type=attachment.mime_type,
+                    headers={"Content-Disposition": f'attachment; filename="{safe_name}"'},
+                )
+        else:
+            logger.warning("attachment_storage_not_configured", attachment_id=attachment.id)
 
     if attachment.content is not None:
         safe_name = attachment.filename.replace('"', "")

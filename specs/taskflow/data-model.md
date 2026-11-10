@@ -84,6 +84,7 @@ erDiagram
         int uploaded_by FK
         varchar filename
         varchar file_path
+        varchar storage_key
         int file_size
         varchar mime_type
         timestamptz created_at
@@ -217,6 +218,7 @@ erDiagram
 | `uploaded_by` | `integer` | FK `users.id`, NOT NULL |
 | `filename` | `varchar(255)` | NOT NULL |
 | `file_path` | `varchar(500)` | NULL (solo backend local) |
+| `storage_key` | `varchar(500)` | NULL; clave del objeto en InsForge Storage, indexada |
 | `content` | `bytea` | NULL (backend database) |
 | `checksum` | `char(64)` | NULL; SHA-256 en subidas nuevas |
 | `file_size` | `integer` | NOT NULL |
@@ -325,9 +327,14 @@ Migración `c9d0e1f2a3b4`: añade `dedupe_key` y
 
 ### 3.7 `attachments`
 
+**Estado (T-054):** `storage_key` implementado en `d0e1f2a3b4c5` (nullable e
+indexado); `checksum` en `b8c9d0e1f2a3`; backfill a InsForge Storage con
+`scripts/backfill_attachments_object_storage.py`. Se mantienen `content` y
+`file_path` para rollback; `file_path` deja de exponerse en la API.
+
 | Cambio | Motivo |
 |---|---|
-| `storage_key varchar(500) UNIQUE NOT NULL` | Clave en object storage |
+| `storage_key varchar(500) NULL` | Clave en object storage (nullable para filas legacy) |
 | `original_filename varchar(255)` | Nombre mostrado |
 | `checksum char(64)` | Integridad SHA-256 |
 | `file_size bigint` | Soportar > 2 GB si se amplía límite |
@@ -458,7 +465,7 @@ Migración `c9d0e1f2a3b4`: añade `dedupe_key` y
 |---|---|---|---|
 | M-01 | Constraints y columnas de auditoría | **Implementado** en `a7b8c9d0e1f2`: `updated_at`, `last_login_at`, `password_changed_at`, CHECK de roles/estados/prioridades/tipos | `downgrade` elimina columnas/constraints |
 | M-02 | Slugs de proyecto | Añadir `slug NULL`; backfill `slugify(name)` + sufijo; unique; `NOT NULL` | Eliminar unique/columna |
-| M-03 | Storage de adjuntos | 🟡 Parcial: `checksum` añadido en `b8c9d0e1f2a3` con backfill de contenido en DB; `content` cubre persistencia. Falta `storage_key`/S3 y deprecar `file_path` | Restaurar lectura por `file_path`; mantener columnas |
+| M-03 | Storage de adjuntos | **Implementado**: `checksum` (`b8c9d0e1f2a3`), `storage_key` (`d0e1f2a3b4c5`), `StorageService` con backend InsForge Storage y backfill verificado | Limpiar `storage_key` y volver a `database`/`local`; `content`/`file_path` se conservan |
 | M-04 | Sesiones de refresh | Crear `refresh_sessions` y `revoked_access_tokens`; dual-write; migrar tokens vigentes; retirar `revoked_tokens` en release posterior | Volver a `revoked_tokens`; conservar tablas |
 | M-05 | Posición de tareas | Añadir `position NULL`; backfill por `created_at`; default; `NOT NULL` | Eliminar columna |
 | M-06 | Notificaciones | Añadir `read_at`; backfill desde `is_read`; índice; conservar `is_read` temporalmente | Eliminar `read_at`/índice |

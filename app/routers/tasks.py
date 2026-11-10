@@ -26,6 +26,7 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.dependencies import get_current_team_member
 from app.logging_config import get_logger
+from app.storage import StorageError, get_storage
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -440,13 +441,16 @@ def delete_task(
         )
 
     # Remove attachment files before the DB cascade deletes their rows.
+    storage = get_storage()
     for attachment in crud.get_attachments_by_task(db, task.id):
         try:
-            if attachment.file_path and os.path.exists(attachment.file_path):
+            if attachment.storage_key and storage is not None:
+                storage.delete(attachment.storage_key)
+            elif attachment.file_path and os.path.exists(attachment.file_path):
                 os.remove(attachment.file_path)
-        except OSError:
-            # A missing/unremovable file must not block task deletion.
-            pass
+        except (OSError, StorageError) as exc:
+            # A missing/unremovable blob must not block task deletion.
+            logger.warning("attachment_cleanup_failed", error=str(exc))
 
     crud.log_activity(db, "task", task.id, "deleted", current_user.id, task.title, None)
     crud.delete_task(db, task.id)

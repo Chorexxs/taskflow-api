@@ -81,7 +81,11 @@ class Settings(BaseSettings):
     # Uploads
     # "database" keeps files in PostgreSQL, which survives ephemeral disks.
     # "local" writes to UPLOAD_DIR and is intended for development/tests.
+    # "insforge" stores objects in the InsForge Storage bucket (private).
     STORAGE_BACKEND: str = "database"
+    INSFORGE_URL: str = ""
+    INSFORGE_API_KEY: str = ""
+    INSFORGE_STORAGE_BUCKET: str = "taskflow-attachments"
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024
     UPLOAD_DIR: str = "uploads"
     ALLOWED_UPLOAD_EXTENSIONS: str = (
@@ -158,8 +162,8 @@ class Settings(BaseSettings):
     def storage_backend(self) -> str:
         """Return the normalized attachment storage backend."""
         backend = self.STORAGE_BACKEND.strip().lower()
-        if backend not in {"database", "local"}:
-            raise RuntimeError("STORAGE_BACKEND must be 'database' or 'local'")
+        if backend not in {"database", "local", "insforge"}:
+            raise RuntimeError("STORAGE_BACKEND must be 'database', 'local' or 'insforge'")
         return backend
 
     @property
@@ -194,6 +198,18 @@ class Settings(BaseSettings):
                 RuntimeWarning,
                 stacklevel=2,
             )
+        if self.storage_backend == "insforge":
+            missing = [
+                name
+                for name, value in (
+                    ("INSFORGE_URL", self.INSFORGE_URL),
+                    ("INSFORGE_API_KEY", self.INSFORGE_API_KEY),
+                    ("INSFORGE_STORAGE_BUCKET", self.INSFORGE_STORAGE_BUCKET),
+                )
+                if not value.strip()
+            ]
+            if missing:
+                raise RuntimeError("STORAGE_BACKEND=insforge requires " + ", ".join(missing))
 
 
 settings = Settings()

@@ -1,5 +1,55 @@
 from fastapi.testclient import TestClient
 
+from app import models
+from app.config import settings
+
+
+class FakeObjectStorage:
+    def __init__(self):
+        self.objects: dict[str, bytes] = {}
+
+    def build_key(self, task_id: int, extension: str, filename: str | None = None) -> str:
+        return f"attachments/{task_id}/fake{extension}"
+
+    def put(self, key: str, data: bytes, content_type: str, filename: str | None = None) -> None:
+        self.objects[key] = data
+
+    def get(self, key: str) -> bytes:
+        return self.objects[key]
+
+    def delete(self, key: str) -> None:
+        self.objects.pop(key, None)
+
+
+def test_insforge_storage_upload_download_delete(client: TestClient, db_session, monkeypatch):
+    owner_token = setup_full_hierarchy_with_task(client, "storage@example.com")
+    storage = FakeObjectStorage()
+    monkeypatch.setattr(settings, "STORAGE_BACKEND", "insforge")
+    monkeypatch.setattr("app.storage._service", storage)
+    headers = {"Authorization": f"Bearer {owner_token}"}
+    url = "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/attachments/"
+
+    upload = client.post(
+        url,
+        files={"file": ("stored.txt", b"object bytes", "text/plain")},
+        headers=headers,
+    )
+
+    assert upload.status_code == 201
+    attachment_id = upload.json()["id"]
+    stored = db_session.query(models.Attachment).filter_by(id=attachment_id).one()
+    assert stored.storage_key == "attachments/1/fake.txt"
+    assert stored.content is None
+    assert storage.objects[stored.storage_key] == b"object bytes"
+
+    download = client.get(f"{url}{attachment_id}/download", headers=headers)
+    assert download.status_code == 200
+    assert download.content == b"object bytes"
+
+    deleted = client.delete(f"{url}{attachment_id}", headers=headers)
+    assert deleted.status_code == 204
+    assert stored.storage_key not in storage.objects
+
 
 def setup_full_hierarchy_with_task(client: TestClient, owner_email: str):
     client.post("/api/v1/auth/register", json={"email": owner_email, "password": "password123"})

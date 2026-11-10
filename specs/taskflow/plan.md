@@ -177,7 +177,7 @@
 - Validación de MIME/extensión, tamaño y checksum.
 - Limpieza de huérfanos.
 
-**Enmienda (T-053/T-054):** se implementó la abstracción `StorageService` (`put`/`get`/`delete`) con dos backends: `local` (solo desarrollo) y `database` (PostgreSQL, `attachments.content`). En producción se usa `STORAGE_BACKEND=database` porque el S3-compatible no estaba disponible (credenciales). La migración a S3 queda como parcial en T-054; al activarse no requiere cambiar la API porque la interfaz ya es la misma.
+**Enmienda (T-053/T-054):** se implementó `StorageService` con tres backends: `local` (solo desarrollo), `database` (PostgreSQL, `attachments.content`) y `insforge` (bucket privado `taskflow-attachments` mediante la API de object storage de InsForge). El backfill migra los adjuntos existentes conservando el checksum y los bytes originales para rollback. Al activar `STORAGE_BACKEND=insforge`, la API deja de depender de discos efímeros sin cambiar el contrato de descarga.
 
 **Consecuencias:** nueva dependencia/configuración; migración de archivos existentes; tests con storage fake.
 

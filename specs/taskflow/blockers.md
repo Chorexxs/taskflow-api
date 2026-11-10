@@ -143,7 +143,7 @@ Verificación:
 GET  /health/ready                          → 200
 POST /api/v1/auth/register                  → 201 + X-RateLimit-Limit: 5
 POST /api/v1/auth/login                     → 200
-python scripts/smoke_release.py             → 14/14
+python scripts/smoke_release.py             → 15/15
 python scripts/smoke_performance.py         → p95 < 1000 ms (WAN)
 SSE (3 conexiones)                          → 3/3 abiertas
 ```
@@ -153,43 +153,53 @@ antes de dar un deploy por bueno. Añadido a la checklist de release.
 
 ---
 
-## B-06 — T-003: labels, milestones e issues requieren credenciales de GitHub
+## B-06 — T-003: labels, milestones e issues (RESUELTO)
+
+**Estado:** resuelto (2026-11-10)
+
+Se reutilizó la credencial almacenada por el credential manager de git (sin
+exponerla) y se importó el backlog con
+`scripts/import_github_backlog.py`:
+
+- 6 labels: `s0`, `s1`, `security`, `frontend`, `db`, `docs`.
+- 10 milestones P0…P9.
+- 95 issues `T-###` con prioridad, dependencias, tamaño, refs y aceptación.
+
+Verificación: `GET /repos/Chorexxs/taskflow-api/labels` → 15 labels (9 previos +
+6 nuevos), milestones → 10, issues → 97 (95 nuevos + 2 previos).
+
+---
+
+## B-07 — Activar el backend de object storage en Render
 
 **Estado:** abierto (2026-11-10)
-**Severidad:** gobernanza (no bloquea runtime)
+**Severidad:** operativa (no bloquea; los adjuntos siguen sirviéndose desde PostgreSQL)
 
-T-003 pide crear labels (`s0/s1/security/db/frontend/docs`), milestones e issues
-`T-###` en `Chorexxs/taskflow-api`. El entorno no tiene `gh` instalado,
-`GITHUB_TOKEN` ni ningún credential helper con sesión de GitHub:
+El código, el bucket privado `taskflow-attachments` y los 3 adjuntos migrados ya
+están verificados. Falta configurar en Render (servicio
+`srv-d82qnghj2pic73aqr5l0`):
 
 ```text
-gh -> CommandNotFoundException
-GITHUB_TOKEN -> no definido
-%APPDATA%\GitHub CLI\hosts.yml -> no existe
+STORAGE_BACKEND=insforge
+INSFORGE_URL=https://<app-key>.eu-central.insforge.app
+INSFORGE_API_KEY=ik_...            # en .insforge/project.json, no exponer
+INSFORGE_STORAGE_BUCKET=taskflow-attachments
 ```
 
-**Acción manual requerida:** con una sesión autenticada, ejecutar la importación
-del backlog o crearlo desde la UI. Labels mínimos:
-
-```bash
-gh label create s0 --color B60205 --description "Critico"
-gh label create s1 --color D93F0B --description "Alto"
-gh label create security --color 0E8A16
-gh label create frontend --color 1D76DB
-gh label create db --color 5319E7
-gh label create docs --color FBCA04
-```
-
-Después, crear un milestone por fase (P0…P9, P7 opcional) e importar una issue
-por cada `T-###` de `specs/taskflow/tasks.md`.
+Mientras no se configuren, `STORAGE_BACKEND=database` sigue operativo y las
+descargas de adjuntos migrados caen al `content` conservado en PostgreSQL. Tras
+cambiarlas, repetir la subida/descarga/borrado de un adjunto
+(`scripts/smoke_release.py`).
 
 ---
 
 ## Lo que sí está verificado
 
-- `pytest -q` → **101 tests passed** (última ejecución completa).
-- `npm run test` → **12 tests passed**.
+- `pytest -q` → **180 tests passed** (87 % de cobertura).
+- `npm run test` → **43 tests passed** (71,7 % de líneas).
 - `npm run build` → correcto.
 - `alembic upgrade head` + `downgrade base` sobre SQLite temporal → correcto.
+- InsForge en `d0e1f2a3b4c5 (head)`; 3 adjuntos con `storage_key` y checksum.
+- Producción: `scripts/smoke_release.py` → **15/15**; register 201/login 200.
 - `npm audit --omit=dev` → **0 vulnerabilities**.
 - `python scripts/export_openapi.py --check` → snapshot al día.

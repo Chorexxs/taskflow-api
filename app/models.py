@@ -346,6 +346,7 @@ class Attachment(Base):
     uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     filename = Column(String(255), nullable=False)
     file_path = Column(String(500), nullable=True)
+    storage_key = Column(String(500), nullable=True, index=True)
     content = Column(LargeBinary, nullable=True)
     checksum = Column(String(64), nullable=True)
     file_size = Column(Integer, nullable=False)

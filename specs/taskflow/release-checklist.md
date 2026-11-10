@@ -25,8 +25,8 @@ verificados y firmados. Si algo falla, se aplica el rollback de
 ## 2. Pre-release (código y contrato)
 
 - [x] `main` verde y sin cambios locales sin commitear.
-- [x] `pytest -q` → **174 passed** sobre PostgreSQL 15.
-- [x] `pytest --cov=app --cov-fail-under=80` → **86 %** de cobertura.
+- [x] `pytest -q` → **180 passed** sobre PostgreSQL 15.
+- [x] `pytest --cov=app --cov-fail-under=80` → **87 %** de cobertura.
 - [x] `mypy app` → **Success: no issues found in 23 source files**.
 - [x] `ruff check app tests` y `ruff format --check app tests` → limpios.
 - [ ] `npm run test:coverage`, `npm run lint` y `npm run build` → verdes (CI frontend).
@@ -50,6 +50,22 @@ verificados y firmados. Si algo falla, se aplica el rollback de
 - [x] `SECRET_KEY`, `DATABASE_URL` y `CORS_ORIGINS` presentes en Render.
 - [x] `/docs`, `/redoc` y `/openapi.json` deshabilitados en producción.
 - [ ] Rotación de `SECRET_KEY` (solo si aplica; invalida sesiones).
+
+---
+
+## 3b. Storage de adjuntos
+
+- [x] Bucket privado `taskflow-attachments` creado en InsForge Storage.
+- [x] Backfill de los adjuntos existentes (`scripts/backfill_attachments_object_storage.py`): 3/3 con `storage_key` y checksum verificado.
+- [x] Flujo real con `STORAGE_BACKEND=insforge` verificado en local: 15/15, subida presignada a S3, confirmación y descarga por CDN.
+- [ ] `STORAGE_BACKEND=insforge` + `INSFORGE_URL` + `INSFORGE_API_KEY` + `INSFORGE_STORAGE_BUCKET` configurados en Render (**B-07**).
+- [ ] Subida/descarga/borrado de un adjunto tras activar el backend en producción.
+
+Rollback de storage:
+
+1. Cambiar `STORAGE_BACKEND` a `database` (o `local`).
+2. Limpiar `attachments.storage_key` si se quiere dejar de usar el bucket.
+3. Conservar `content`/`file_path` hasta validar la descarga desde la API.
 
 ---
 
@@ -169,7 +185,7 @@ rate limit de 10/min por IP de producción.
 | 12 | Notificaciones y contador | 200 |
 | 13 | Envelope de error (`404` de otro equipo) | `error.code` y `request_id` |
 
-- [x] 13/13 correctos. Verificado con `scripts/smoke_release.py` → **14/14** (incluye cabeceras de rate limit).
+- [x] 13/13 correctos. Verificado con `scripts/smoke_release.py` → **15/15** (incluye cabeceras de rate limit).
 - [ ] `/api/v1/users/me` con el token del smoke → 200.
 - [ ] Logs sin secretos, tokens ni emails completos.
 - [ ] Monitorización 30 min: 5xx, login/refresh y latencia.

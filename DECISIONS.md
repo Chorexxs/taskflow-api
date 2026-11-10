@@ -8,7 +8,7 @@
 |---|---|---|
 | ADR-001 | Transporte de tokens: Bearer + auto-refresh y single-flight; cookies `httpOnly` se reevalúan en P7 | Aceptado (alternativa) |
 | ADR-002 | Tiempo real con SSE para notificaciones (fallback polling); Redis pub/sub, límites y carga implementados en T-081 | Aceptado |
-| ADR-003 | Adjuntos: `StorageService` con backend PostgreSQL por defecto; S3-compatible pendiente de credenciales (T-054) | Aceptado con enmienda |
+| ADR-003 | Adjuntos en object storage: `StorageService` con backends PostgreSQL (default), local e InsForge Storage | Aceptado |
 | ADR-004 | Alembic como única fuente de esquema; sin `create_all` en producción | Aceptado |
 | ADR-005 | Envelope de errores `{error:{code,message,details,request_id}}` | Aceptado |
 | ADR-006 | Solo tema oscuro + UI en inglés en este ciclo | Aceptado |

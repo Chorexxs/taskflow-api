@@ -95,6 +95,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         check("upload attachment", attachment.status_code == 201, str(attachment.status_code))
 
+        download = client.get(
+            f"{project_path}/tasks/{task_title}/attachments/"
+            f"{attachment.json().get('id', 0)}/download",
+            headers=headers,
+        )
+        check(
+            "download attachment",
+            download.status_code == 200 and download.content == b"release smoke",
+            str(download.status_code),
+        )
+
         search = client.get(
             f"/api/v1/teams/{team_slug}/search", params={"q": "Smoke"}, headers=headers
         )
