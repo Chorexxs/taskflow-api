@@ -408,15 +408,24 @@ def health_check():
         health_status["database"] = f"error: {str(e)}"
         health_status["status"] = "degraded"
 
-    # Check Redis connection (optional)
-    try:
-        import redis
+    # Check Redis connection (optional). Only when a URL is configured, and
+    # with a short timeout so an unreachable Redis cannot delay /health.
+    redis_url = os.environ.get("REDIS_URL")
+    if redis_url:
+        try:
+            import redis
 
-        r = redis.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379/0"))
-        r.ping()
-        health_status["redis"] = "connected"
-    except Exception:
-        health_status["redis"] = "not_available"
+            r = redis.from_url(
+                redis_url,
+                socket_connect_timeout=0.2,
+                socket_timeout=0.2,
+            )
+            r.ping()
+            health_status["redis"] = "connected"
+        except Exception:
+            health_status["redis"] = "not_available"
+    else:
+        health_status["redis"] = "not_configured"
 
     # Check disk space
     try:

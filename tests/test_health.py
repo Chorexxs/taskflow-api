@@ -50,3 +50,32 @@ def test_readiness_probe_not_ready(client: TestClient, monkeypatch):
     response = client.get("/health/ready")
     assert response.status_code == 503
     assert response.json()["status"] == "not_ready"
+
+
+def test_health_does_not_block_on_unreachable_redis(client: TestClient, monkeypatch):
+    """An optional Redis must fail fast instead of delaying /health (T-094)."""
+    captured: dict[str, float] = {}
+
+    def fake_from_url(_url, **kwargs):
+        captured.update(kwargs)
+        raise ConnectionError("redis unreachable")
+
+    monkeypatch.setenv("REDIS_URL", "redis://127.0.0.1:6379/0")
+    monkeypatch.setattr("redis.from_url", fake_from_url)
+
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json()["redis"] == "not_available"
+    assert captured["socket_connect_timeout"] <= 0.5
+    assert captured["socket_timeout"] <= 0.5
+
+
+def test_health_skips_redis_without_url(client: TestClient, monkeypatch):
+    """Without REDIS_URL the probe reports not_configured and does not block."""
+    monkeypatch.delenv("REDIS_URL", raising=False)
+
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json()["redis"] == "not_configured"
