@@ -1,5 +1,11 @@
 # Local quality gates. Install once with `pre-commit install`.
-# CI runs the same ruff/mypy commands, so hooks and pipeline stay aligned.
+#
+# Requirements:
+# - Python dependencies: `pip install -r requirements.txt`
+# - Frontend dependencies: `cd frontend && npm install`
+# - `gitleaks` in PATH (brew/scoop/winget or
+#   `go install github.com/gitleaks/gitleaks/v8@v8.30.1`). CI uses the
+#   official action, so the pipeline does not depend on the local binary.
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.2
@@ -8,14 +14,25 @@ repos:
         name: ruff check
         args: [--fix]
         files: ^(app|tests)/.*\.py$
-
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.30.1
-    hooks:
-      - id: gitleaks
+      - id: ruff-format
+        name: ruff format
+        files: ^(app|tests)/.*\.py$
 
   - repo: local
     hooks:
+      - id: gitleaks
+        name: gitleaks (history)
+        entry: gitleaks git --redact --log-opts=--all --verbose
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: eslint
+        name: eslint (frontend)
+        entry: node frontend/node_modules/eslint/bin/eslint.js --config frontend/eslint.config.js --max-warnings=0
+        language: system
+        files: ^frontend/.*\.(js|jsx)$
+
       - id: mypy
         name: mypy app
         entry: python -m mypy app

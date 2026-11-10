@@ -58,6 +58,7 @@ jobs:
       - name: Lint and type check
         run: |
           ruff check app tests
+          ruff format --check app tests
           mypy app
 
       - name: Audit dependencies

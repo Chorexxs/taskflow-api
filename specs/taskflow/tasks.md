@@ -34,7 +34,9 @@
 
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
-**Pendientes de P0:** `T-003` (labels/milestones), `T-004` (aceptación formal de ADRs), `T-007` (pre-commit completo), `T-009` (staging), `T-010` (política de release).
+**Completada (P0):** `T-007` (pre-commit con `ruff`, `ruff format`, `gitleaks`, eslint y mypy; `pre-commit run --all-files` verde).
+
+**Pendientes de P0:** `T-003` (labels/milestones), `T-004` (aceptación formal de ADRs), `T-009` (staging), `T-010` (política de release).
 
 Verificación actual: `pytest -q` → **166 passed** sobre PostgreSQL 15 con **87 % de cobertura**; `npm run test:coverage` → **42 passed** con **71,6 % de líneas**; `npm run lint` → limpio; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge real migrado a `d4e5f6a7b8c9` con smoke test **12/12**; Render live con smoke test de producción **13/13** y CORS verificado.
 

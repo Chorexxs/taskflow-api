@@ -74,6 +74,7 @@ pytest --cov=app --cov-report=html
 
 # Lint / tipos
 ruff check app tests
+ruff format --check app tests
 mypy app
 pre-commit run --all-files
 
@@ -81,6 +82,10 @@ pre-commit run --all-files
 alembic upgrade head
 alembic downgrade -1
 alembic revision --autogenerate -m "descripcion"
+
+# Pre-commit completo (requiere gitleaks en PATH; ver .pre-commit-config.yaml)
+pre-commit install
+pre-commit run --all-files
 
 # Frontend
 cd frontend

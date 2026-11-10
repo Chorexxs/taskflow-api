@@ -215,6 +215,19 @@ cp .env.example .env.local   # VITE_API_URL=http://localhost:8000
 npm run dev                  # http://localhost:5173
 ```
 
+### Pre-commit (opcional pero recomendado)
+
+```bash
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
+Los hooks ejecutan `ruff check`, `ruff format`, `gitleaks`, eslint y mypy. El
+hook de secretos necesita el binario `gitleaks` en `PATH` (`brew`, `scoop`,
+`winget` o `go install github.com/gitleaks/gitleaks/v8@v8.30.1`); el CI usa la
+acción oficial y no depende de esa instalación local.
+
 ### Variables de entorno
 
 Ver [`.env.example`](./.env.example). Las críticas:

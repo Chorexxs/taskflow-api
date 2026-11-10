@@ -114,7 +114,7 @@ Severidad: **S0** bloqueante de seguridad/pérdida de datos; **S1** alta; **S2**
 | BL-21 | Frontend | `ThemeProvider` no está montado en `main.jsx`; `:root` define tokens oscuros y `.dark` no se usa | Tema claro/oscuro inexistente; código muerto |
 | BL-22 | Frontend | `axios` en `package.json` pero no se importa | Dependencia innecesaria |
 | BL-23 | Docs | STACK/DECISIONS hablan de Railway; README de Render/InsForge; TTL 30 vs 15; “realtime” es polling; “delete project” archiva | Onboarding confuso y decisiones desactualizadas |
-| BL-24 | Tooling | `requirements.txt` sin versiones; sin `pyproject.toml`; sin lint/typecheck backend | Builds no reproducibles; deuda silenciosa |
+| BL-24 | Tooling | Dependencias fijadas, `pyproject.toml`, ruff/mypy en CI y pre-commit con formato, eslint y gitleaks (T-007, T-074) | Deuda de estilo o secretos pasaría desapercibida |
 | BL-25 | Tooling | Docker/CI Python 3.11; bytecode local 3.12; sin `.python-version` | Divergencia de entorno |
 | BL-26 | Docker | Contenedor corre como root; sin `HEALTHCHECK`; una sola etapa | Superficie de ataque y operación pobre |
 | BL-27 | Legal | README declara MIT pero no existe `LICENSE` | Ambigüedad legal |
