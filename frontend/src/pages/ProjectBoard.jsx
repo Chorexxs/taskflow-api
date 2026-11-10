@@ -404,17 +404,17 @@ export default function ProjectBoard() {
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
       <header className="border-b border-subtle bg-[var(--color-bg-secondary)]/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16 gap-4">
+          <div className="flex flex-wrap items-center min-h-16 gap-3 py-2">
             <button 
               onClick={() => navigate(`/teams/${teamId}`)} 
               className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <h1 className="text-lg font-medium text-[var(--color-text-primary)]">Project Board</h1>
               <span className="text-[var(--color-text-muted)]">/</span>
-              <span className="text-[var(--color-text-secondary)]">{projectId}</span>
+              <span className="text-[var(--color-text-secondary)] truncate max-w-[12rem]">{projectId}</span>
             </div>
             
             {tasksError && (
@@ -430,7 +430,7 @@ export default function ProjectBoard() {
               </span>
             )}
             
-            <div className="flex-1 max-w-md mx-4">
+            <div className="order-last w-full sm:order-none sm:flex-1 sm:max-w-md sm:mx-4">
               <input
                 type="text"
                 placeholder="Search tasks..."
@@ -453,7 +453,7 @@ export default function ProjectBoard() {
                 className="btn-primary flex items-center gap-2 text-sm"
               >
                 <Plus className="w-4 h-4" />
-                New Task
+                <span className="hidden sm:inline">New Task</span>
               </button>
 
               <button

@@ -257,7 +257,7 @@ export default function TeamDetail() {
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
       <header className="border-b border-subtle bg-[var(--color-bg-secondary)]/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16 gap-4">
+          <div className="flex flex-wrap items-center min-h-16 gap-3 py-2">
             <button 
               onClick={() => navigate('/')} 
               className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
@@ -282,7 +282,7 @@ export default function TeamDetail() {
                 </button>
               )}
             </div>
-            <div className="flex-1 max-w-md ml-auto">
+            <div className="relative order-last w-full sm:order-none sm:flex-1 sm:max-w-md sm:ml-auto">
               <div className="relative">
                 <input
                   type="text"
