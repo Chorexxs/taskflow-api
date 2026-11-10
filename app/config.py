@@ -7,6 +7,7 @@ The module fails fast in production when a critical value is missing and
 uses safe development defaults everywhere else.
 """
 
+import os
 import warnings
 
 from pydantic import field_validator
@@ -55,6 +56,11 @@ class Settings(BaseSettings):
 
     # HTTP
     CORS_ORIGINS: str = ""
+
+    # Rate limiting (ADR-010). Empty storage URI means "use REDIS_URL";
+    # tests always use an in-memory backend.
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_STORAGE_URI: str = ""
 
     # Optional services
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -111,6 +117,21 @@ class Settings(BaseSettings):
         if self.is_production:
             raise RuntimeError("CORS_ORIGINS must be set in production")
         return list(DEFAULT_DEV_ORIGINS)
+
+    @property
+    def rate_limit_storage_uri(self) -> str:
+        """Return the storage backend for rate-limit counters.
+
+        An explicit ``RATE_LIMIT_STORAGE_URI`` wins. Otherwise Redis is used so
+        that several API instances share the same counters. Tests use memory so
+        they never need a live Redis server.
+        """
+        explicit = self.RATE_LIMIT_STORAGE_URI.strip()
+        if explicit:
+            return explicit
+        if os.environ.get("TESTING"):
+            return "memory://"
+        return self.REDIS_URL.strip() or "memory://"
 
     @property
     def storage_backend(self) -> str:

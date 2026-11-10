@@ -24,21 +24,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from contextlib import asynccontextmanager
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.config import settings
+from app.rate_limit import limiter
 from app.routers import auth, users, teams, projects, tasks, comments, attachments, notifications
 from app.logging_config import configure_logging, get_logger, request_id_context
 
 # Configure structured logging at module import
 configure_logging()
 logger = get_logger(__name__)
-
-# Rate limiter instance using IP address as key
-# Used to protect endpoints like login from brute force attacks
-limiter = Limiter(key_func=get_remote_address)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):

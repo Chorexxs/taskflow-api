@@ -14,16 +14,13 @@ Security features:
 - Token rotation on refresh
 """
 
-import os
-
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 from app import crud, schemas
 from app.database import get_db
+from app.rate_limit import limiter, rate_limit
 from app.auth import (
     settings,
     create_access_token,
@@ -37,37 +34,9 @@ from app.auth import (
 
 router = APIRouter()
 
-# Rate limiter instance using IP address as key
-limiter = Limiter(key_func=get_remote_address)
-
-
-def rate_limit_decorator(limit_str: str):
-    """
-    Decorator factory that applies rate limiting to routes.
-    
-    Automatically disables rate limiting when TESTING environment
-    variable is set (for test execution).
-    
-    Args:
-        limit_str (str): Rate limit string (e.g., "10/minute").
-    
-    Returns:
-        Decorator function that applies the rate limit.
-    
-    Example:
-        @rate_limit_decorator("5/minute")
-        def my_endpoint():
-            ...
-    """
-    if os.environ.get("TESTING"):
-        def decorator(func):
-            return func
-        return decorator
-    return limiter.limit(limit_str)
-
 
 @router.post("/register", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
-@rate_limit_decorator("5/minute")
+@rate_limit("5/minute")
 def register(request: Request, user: schemas.UserCreate, db: Session = Depends(get_db)):
     """
     Register a new user in the system.
@@ -112,7 +81,7 @@ def register(request: Request, user: schemas.UserCreate, db: Session = Depends(g
 
 
 @router.post("/login", response_model=schemas.Token)
-@rate_limit_decorator("10/minute")
+@rate_limit("10/minute")
 def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
     Authenticate a user and return JWT tokens.

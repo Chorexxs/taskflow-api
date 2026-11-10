@@ -27,7 +27,8 @@ def setup_database():
     Base.metadata.create_all(bind=test_engine)
     yield
     Base.metadata.drop_all(bind=test_engine)
-    main.app.state.limiter.enabled = True
+    main.app.state.limiter.enabled = False
+    main.app.state.limiter.reset()
 
 
 @pytest.fixture(scope="function")
