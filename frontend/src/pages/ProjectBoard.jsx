@@ -136,7 +136,9 @@ export default function ProjectBoard() {
   const [showCreateTask, setShowCreateTask] = useState(false)
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium', assigned_to: null, due_date: null })
   const [showFilters, setShowFilters] = useState(false)
+  const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const [activeTask, setActiveTask] = useState(null)
   const [showActivityPanel, setShowActivityPanel] = useState(false)
   const [activityPageNumber, setActivityPageNumber] = useState(1)
@@ -154,9 +156,23 @@ export default function ProjectBoard() {
     assigned_to: searchParams.get('assigned_to') || '',
   }
 
+  // Debounce the search so typing never triggers a request per keystroke.
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSearch(searchInput.trim().toLowerCase())
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(timeout)
+  }, [searchInput])
+
   const { data: tasks, isLoading, error: tasksError } = useQuery({
-    queryKey: ['tasks', teamId, projectId, filters],
-    queryFn: () => api.tasks.list(token, teamId, projectId, filters),
+    queryKey: ['tasks', teamId, projectId, filters, page],
+    queryFn: () =>
+      api.tasks.list(token, teamId, projectId, {
+        ...filters,
+        page,
+        page_size: 50,
+      }),
     retry: false,
   })
 
@@ -343,6 +359,7 @@ export default function ProjectBoard() {
       newParams.delete(key)
     }
     setSearchParams(newParams)
+    setPage(1)
   }
 
   /**
@@ -354,6 +371,7 @@ export default function ProjectBoard() {
 
   const clearFilters = () => {
     setSearchParams(new URLSearchParams())
+    setPage(1)
   }
 
   /**
@@ -406,8 +424,8 @@ export default function ProjectBoard() {
               <input
                 type="text"
                 placeholder="Search tasks..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="input-field w-full"
               />
             </div>
@@ -545,6 +563,27 @@ export default function ProjectBoard() {
               {activeTask ? <TaskCard task={activeTask} isOverlay /> : null}
             </DragOverlay>
           </DndContext>
+        )}
+        {tasks?.pages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-subtle">
+            <button
+              onClick={() => setPage(current => Math.max(1, current - 1))}
+              disabled={page <= 1}
+              className="text-sm text-[var(--color-accent)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="text-xs text-[var(--color-text-muted)]">
+              Page {tasks.page} of {tasks.pages} · {tasks.total} tasks
+            </span>
+            <button
+              onClick={() => setPage(current => Math.min(tasks.pages, current + 1))}
+              disabled={!tasks.has_next}
+              className="text-sm text-[var(--color-accent)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
         )}
       </main>
 
