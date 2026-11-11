@@ -42,6 +42,16 @@ notificaciones.
 5. Contraste de texto principal/secundario sobre fondo oscuro verificado con
    los tokens de `index.css`.
 
+## Revisión en navegador (2026-11-11)
+
+Chrome DevTools detectó en el tablero 6 campos sin `id`/`name` y 5 sin label
+asociado. Se corrigieron todos los formularios de la app (login, registro,
+dashboard, equipo, tablero, tarea y perfil):
+
+- `<label htmlFor="…">` + `id`/`name` en cada control.
+- `aria-label` en buscadores, filtros y controles sin label visible.
+- El test del tablero valida la asociación con `getByLabelText`.
+
 ## Deuda y seguimiento
 
 | ID | Elemento | Prioridad | Destino |

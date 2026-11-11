@@ -438,6 +438,8 @@ export default function ProjectBoard() {
             <div className="order-last w-full sm:order-none sm:flex-1 sm:max-w-md sm:mx-4">
               <input
                 type="text"
+                id="task-search"
+                name="task-search"
                 placeholder="Search tasks..."
                 aria-label="Search tasks"
                 value={searchInput}
@@ -493,6 +495,9 @@ export default function ProjectBoard() {
         <div className="border-b border-subtle bg-[var(--color-bg-secondary)]/30 px-4 py-3">
           <div className="max-w-7xl mx-auto flex flex-wrap gap-3 items-center">
             <select
+              id="filter-status"
+              name="filter-status"
+              aria-label="Filter by status"
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
               className="input-field w-auto py-1.5 text-sm"
@@ -504,6 +509,9 @@ export default function ProjectBoard() {
             </select>
 
             <select
+              id="filter-priority"
+              name="filter-priority"
+              aria-label="Filter by priority"
               value={filters.priority}
               onChange={(e) => handleFilterChange('priority', e.target.value)}
               className="input-field w-auto py-1.5 text-sm"
@@ -515,6 +523,9 @@ export default function ProjectBoard() {
             </select>
 
             <select
+              id="filter-assignee"
+              name="filter-assignee"
+              aria-label="Filter by assignee"
               value={filters.assigned_to}
               onChange={(e) => handleFilterChange('assigned_to', e.target.value)}
               className="input-field w-auto py-1.5 text-sm"
@@ -624,9 +635,11 @@ export default function ProjectBoard() {
             </div>
             <form onSubmit={handleCreateTask} className="space-y-4">
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Title</label>
+                <label htmlFor="create-task-title" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Title</label>
                 <input
                   type="text"
+                  id="create-task-title"
+                  name="title"
                   value={newTask.title}
                   onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                   required
@@ -635,8 +648,10 @@ export default function ProjectBoard() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
+                <label htmlFor="create-task-description" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
                 <textarea
+                  id="create-task-description"
+                  name="description"
                   value={newTask.description}
                   onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                   className="input-field min-h-[80px] resize-none"
@@ -645,8 +660,10 @@ export default function ProjectBoard() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Priority</label>
+                  <label htmlFor="create-task-priority" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Priority</label>
                   <select
+                    id="create-task-priority"
+                    name="priority"
                     value={newTask.priority}
                     onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
                     className="input-field"
@@ -657,9 +674,11 @@ export default function ProjectBoard() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Due Date</label>
+                  <label htmlFor="create-task-due-date" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Due Date</label>
                   <input
                     type="date"
+                    id="create-task-due-date"
+                    name="due_date"
                     value={newTask.due_date || ''}
                     onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value || null })}
                     className="input-field"
@@ -667,8 +686,10 @@ export default function ProjectBoard() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Assign to</label>
+                <label htmlFor="create-task-assignee" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Assign to</label>
                 <select
+                  id="create-task-assignee"
+                  name="assigned_to"
                   value={newTask.assigned_to || ''}
                   onChange={(e) => setNewTask({ ...newTask, assigned_to: e.target.value ? parseInt(e.target.value) : null })}
                   className="input-field"
@@ -717,9 +738,11 @@ export default function ProjectBoard() {
               className="space-y-4"
             >
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Project Name</label>
+                <label htmlFor="edit-project-name" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Project Name</label>
                 <input
                   type="text"
+                  id="edit-project-name"
+                  name="name"
                   value={projectForm.name}
                   onChange={(e) => setProjectForm({ ...projectForm, name: e.target.value })}
                   required
@@ -728,8 +751,10 @@ export default function ProjectBoard() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
+                <label htmlFor="edit-project-description" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
                 <textarea
+                  id="edit-project-description"
+                  name="description"
                   value={projectForm.description}
                   onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
                   className="input-field min-h-[80px] resize-none"

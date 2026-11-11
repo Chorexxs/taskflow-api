@@ -273,17 +273,21 @@ export default function TaskDetail() {
           {isEditing ? (
             <div className="space-y-4 mb-6">
               <div>
-                <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Title</label>
+                <label htmlFor="edit-task-title" className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Title</label>
                 <input
                   type="text"
+                  id="edit-task-title"
+                  name="title"
                   value={editForm.title}
                   onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                   className="input-field w-full"
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Description</label>
+                <label htmlFor="edit-task-description" className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Description</label>
                 <textarea
+                  id="edit-task-description"
+                  name="description"
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                   className="input-field w-full h-24 resize-none"
@@ -291,8 +295,10 @@ export default function TaskDetail() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Priority</label>
+                  <label htmlFor="edit-task-priority" className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Priority</label>
                   <select
+                    id="edit-task-priority"
+                    name="priority"
                     value={editForm.priority}
                     onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
                     className="input-field w-full"
@@ -303,8 +309,10 @@ export default function TaskDetail() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Status</label>
+                  <label htmlFor="edit-task-status" className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Status</label>
                   <select
+                    id="edit-task-status"
+                    name="status"
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                     className="input-field w-full"
@@ -316,9 +324,11 @@ export default function TaskDetail() {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Due Date</label>
+                <label htmlFor="edit-task-due-date" className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">Due Date</label>
                 <input
                   type="datetime-local"
+                  id="edit-task-due-date"
+                  name="due_date"
                   value={editForm.due_date}
                   onChange={(e) => setEditForm({ ...editForm, due_date: e.target.value })}
                   className="input-field w-full"
@@ -413,6 +423,8 @@ export default function TaskDetail() {
               Upload File
               <input
                 type="file"
+                name="attachment"
+                aria-label="Upload attachment"
                 className="hidden"
                 onChange={handleFileSelect}
                 disabled={uploadMutation.isPending}
@@ -582,6 +594,9 @@ export default function TaskDetail() {
                     {editingCommentId === comment.id ? (
                       <div className="space-y-2">
                         <textarea
+                          id={`edit-comment-${comment.id}`}
+                          name="comment"
+                          aria-label="Edit comment"
                           value={editingCommentContent}
                           onChange={(e) => setEditingCommentContent(e.target.value)}
                           className="input-field w-full h-20 resize-none text-sm"
@@ -623,6 +638,9 @@ export default function TaskDetail() {
             <form onSubmit={handleAddComment} className="flex gap-3">
               <input
                 type="text"
+                id="new-comment"
+                name="comment"
+                aria-label="Add a comment"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Add a comment..."

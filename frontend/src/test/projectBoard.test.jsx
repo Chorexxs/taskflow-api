@@ -109,6 +109,9 @@ describe('ProjectBoard', () => {
     await userEvent.click(screen.getByRole('button', { name: /new task/i }))
 
     const dialog = screen.getByRole('dialog', { name: /create task/i })
+    expect(within(dialog).getByLabelText('Title')).toBeInTheDocument()
+    expect(within(dialog).getByLabelText('Priority')).toBeInTheDocument()
+    expect(within(dialog).getByLabelText('Due Date')).toBeInTheDocument()
     await userEvent.type(within(dialog).getByPlaceholderText('Task title'), 'Second task')
     await userEvent.click(within(dialog).getByRole('button', { name: /^create task$/i }))
 

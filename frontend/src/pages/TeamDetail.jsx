@@ -286,6 +286,8 @@ export default function TeamDetail() {
               <div className="relative">
                 <input
                   type="text"
+                  id="team-search"
+                  name="team-search"
                   placeholder="Search..."
                   aria-label="Search team"
                   value={searchQuery}
@@ -338,18 +340,22 @@ export default function TeamDetail() {
           <div className="mb-6 card p-4">
             <form onSubmit={handleSaveTeam} className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Team Name</label>
+                <label htmlFor="edit-team-name" className="block text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Team Name</label>
                 <input
                   className="input-field"
+                  id="edit-team-name"
+                  name="name"
                   value={teamForm.name}
                   onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
                   required
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Description</label>
+                <label htmlFor="edit-team-description" className="block text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Description</label>
                 <textarea
                   className="input-field"
+                  id="edit-team-description"
+                  name="description"
                   rows={2}
                   value={teamForm.description}
                   onChange={(e) => setTeamForm({ ...teamForm, description: e.target.value })}
@@ -375,6 +381,7 @@ export default function TeamDetail() {
                 <label className="mt-2 inline-flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
                   <input
                     type="checkbox"
+                    name="show-archived"
                     checked={showArchived}
                     onChange={(e) => setShowArchived(e.target.checked)}
                   />
@@ -489,6 +496,9 @@ export default function TeamDetail() {
                       ) : (
                         isAdmin && member.user_id !== currentUserId && (
                           <select
+                            id={`member-role-${member.user_id}`}
+                            name={`member-role-${member.user_id}`}
+                            aria-label={`Role for ${member.user?.email}`}
                             value={member.role}
                             onChange={(e) => updateRoleMutation.mutate({ userId: member.user_id, role: e.target.value })}
                             className="input-field py-1 px-1 text-xs w-full min-w-[94px]"
@@ -537,9 +547,11 @@ export default function TeamDetail() {
             </div>
             <form onSubmit={handleInvite} className="space-y-4">
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Email</label>
+                <label htmlFor="invite-email" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Email</label>
                 <input
                   type="email"
+                  id="invite-email"
+                  name="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   required
@@ -548,8 +560,10 @@ export default function TeamDetail() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Role</label>
+                <label htmlFor="invite-role" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Role</label>
                 <select
+                  id="invite-role"
+                  name="role"
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
                   className="input-field"
@@ -593,9 +607,11 @@ export default function TeamDetail() {
             </div>
             <form onSubmit={handleCreateProject} className="space-y-4">
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Name</label>
+                <label htmlFor="create-project-name" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Name</label>
                 <input
                   type="text"
+                  id="create-project-name"
+                  name="name"
                   value={newProject.name}
                   onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
                   required
@@ -604,8 +620,10 @@ export default function TeamDetail() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
+                <label htmlFor="create-project-description" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
                 <textarea
+                  id="create-project-description"
+                  name="description"
                   value={newProject.description}
                   onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
                   className="input-field min-h-[80px] resize-none"
@@ -647,9 +665,11 @@ export default function TeamDetail() {
             </div>
             <form onSubmit={(e) => { e.preventDefault(); handleSaveEditProject(); }} className="p-4 space-y-4">
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Name</label>
+                <label htmlFor="team-edit-project-name" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Name</label>
                 <input
                   type="text"
+                  id="team-edit-project-name"
+                  name="name"
                   value={editProjectForm.name}
                   onChange={(e) => setEditProjectForm({ ...editProjectForm, name: e.target.value })}
                   required
@@ -658,8 +678,10 @@ export default function TeamDetail() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
+                <label htmlFor="team-edit-project-description" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
                 <textarea
+                  id="team-edit-project-description"
+                  name="description"
                   value={editProjectForm.description}
                   onChange={(e) => setEditProjectForm({ ...editProjectForm, description: e.target.value })}
                   className="input-field min-h-[80px] resize-none"

@@ -120,9 +120,11 @@ export default function Profile() {
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Email</label>
+              <label htmlFor="profile-email" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Email</label>
               <input
                 type="email"
+                id="profile-email"
+                name="email"
                 value={user?.email || ''}
                 disabled
                 className="input-field bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"
@@ -144,9 +146,11 @@ export default function Profile() {
               
               <div className="space-y-3 ">
                 <div className="space-y-1">
-                  <label className="block text-xs  font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Current Password</label>
+                  <label htmlFor="current-password" className="block text-xs  font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Current Password</label>
                   <input
                     type="password"
+                    id="current-password"
+                    name="current_password"
                     value={currentPassword}
                     onChange={(e) => { setCurrentPassword(e.target.value); setError(''); }}
                     placeholder="Enter current password"
@@ -156,9 +160,11 @@ export default function Profile() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-xs  font-medium text-[var(--color-text-muted)] uppercase tracking-wider">New Password</label>
+                  <label htmlFor="new-password" className="block text-xs  font-medium text-[var(--color-text-muted)] uppercase tracking-wider">New Password</label>
                   <input
                     type="password"
+                    id="new-password"
+                    name="new_password"
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setError(''); }}
                     placeholder="Enter new password"
@@ -169,9 +175,11 @@ export default function Profile() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-xs  font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Confirm Password</label>
+                  <label htmlFor="confirm-new-password" className="block text-xs  font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Confirm Password</label>
                   <input
                     type="password"
+                    id="confirm-new-password"
+                    name="confirm_password"
                     value={confirmPassword}
                     onChange={(e) => { setConfirmPassword(e.target.value); setError(''); }}
                     placeholder="Confirm new password"

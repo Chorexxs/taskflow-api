@@ -85,11 +85,13 @@ export default function Register() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email field */}
             <div className="space-y-2">
-              <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
+              <label htmlFor="register-email" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
                 Email
               </label>
               <input
                 type="email"
+                id="register-email"
+                name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -100,11 +102,13 @@ export default function Register() {
             
             {/* Password field */}
             <div className="space-y-2">
-              <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
+              <label htmlFor="register-password" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
                 Password
               </label>
               <input
                 type="password"
+                id="register-password"
+                name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -116,11 +120,13 @@ export default function Register() {
             
             {/* Confirm password field */}
             <div className="space-y-2">
-              <label className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
+              <label htmlFor="register-confirm-password" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
                 Confirm Password
               </label>
               <input
                 type="password"
+                id="register-confirm-password"
+                name="confirm_password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required

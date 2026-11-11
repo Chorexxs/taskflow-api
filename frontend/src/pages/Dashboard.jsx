@@ -146,9 +146,11 @@ export default function Dashboard() {
             <h3 className="text-lg font-medium text-[var(--color-text-primary)] mb-4">Create Team</h3>
             <form onSubmit={handleCreateTeam} className="space-y-4">
               <div>
-                <label className="block text-sm text-[var(--color-text-secondary)] mb-1">Team Name</label>
+                <label htmlFor="create-team-name" className="block text-sm text-[var(--color-text-secondary)] mb-1">Team Name</label>
                 <input
                   type="text"
+                  id="create-team-name"
+                  name="name"
                   value={newTeam.name}
                   onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
                   required
@@ -157,9 +159,11 @@ export default function Dashboard() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-[var(--color-text-secondary)] mb-1">URL Slug</label>
+                <label htmlFor="create-team-slug" className="block text-sm text-[var(--color-text-secondary)] mb-1">URL Slug</label>
                 <input
                   type="text"
+                  id="create-team-slug"
+                  name="slug"
                   value={newTeam.slug}
                   onChange={(e) => setNewTeam({ ...newTeam, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
                   required
@@ -168,8 +172,10 @@ export default function Dashboard() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-[var(--color-text-secondary)] mb-1">Description (optional)</label>
+                <label htmlFor="create-team-description" className="block text-sm text-[var(--color-text-secondary)] mb-1">Description (optional)</label>
                 <textarea
+                  id="create-team-description"
+                  name="description"
                   value={newTeam.description}
                   onChange={(e) => setNewTeam({ ...newTeam, description: e.target.value })}
                   className="input-field"
