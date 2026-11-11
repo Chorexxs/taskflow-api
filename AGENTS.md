@@ -83,6 +83,11 @@ alembic upgrade head
 alembic downgrade -1
 alembic revision --autogenerate -m "descripcion"
 
+# Drill de backup/restore (T-102)
+python scripts/backup_restore_drill.py --source-url "$env:DATABASE_URL" `
+  --target-url postgresql://postgres@127.0.0.1:5432/taskflow_restore `
+  --pg-bin "C:/Program Files/PostgreSQL/16/bin" --schema public
+
 # Pre-commit completo (requiere gitleaks en PATH; ver .pre-commit-config.yaml)
 pre-commit install
 pre-commit run --all-files

@@ -91,7 +91,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Minimización de PII | ✅ | No se registra email en auditoría |
 | Cifrado en tránsito | ✅ | TLS gestionado |
 | Cifrado en reposo | 🟡 | Gestionado por InsForge; no verificable desde el repo |
-| Backups y restore | 🟡 | Documentado en `data-model.md`; sin prueba reciente |
+| Backups y restore | ✅ | T-102: drill real 2026-11-11 (12 tablas/92 filas, revisión `b2c3d4e5f6a7`) con `scripts/backup_restore_drill.py` |
 
 ## V9 — Comunicación
 
@@ -161,7 +161,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | SEC-ASVS-01 | Sin cookies `httpOnly`; token accesible desde JS | Baja (riesgo aceptado) | T-097 / ADR-001: decisión final de mantener Bearer; reabrir si hay BFF, XSS explotable o se relaja la CSP |
 | SEC-ASVS-02 | Checksum de adjuntos | ✅ Resuelto (T-055) | — |
 | SEC-ASVS-03 | Carrera teórica al degradar/expulsar al último admin | Baja | T-082/constraint futuro |
-| SEC-ASVS-04 | Sin prueba de restore de backups | Media | T-080 |
+| SEC-ASVS-04 | Sin prueba de restore de backups | ✅ Resuelto (T-102) | — |
 | SEC-ASVS-05 | Integración de tests en SQLite | ✅ Resuelto (T-077): PostgreSQL con migraciones | — |
 
 ## Firma

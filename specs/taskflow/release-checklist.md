@@ -44,6 +44,8 @@ verificados y firmados. Si algo falla, se aplica el rollback de
 
 - [ ] Backup verificado de InsForge antes de una migración destructiva.
 - [x] Backup comprimido de InsForge antes de migrar (2026-11-10, `pg_dump -Fc`).
+- [ ] Drill de restore con `scripts/backup_restore_drill.py` antes del release
+      (2026-11-11: ✅ 12 tablas/92 filas, revisión `b2c3d4e5f6a7`).
 - [ ] Migración revisada: `upgrade` y `downgrade` documentados; sin `create_all`.
 - [x] Sin secretos ni PII en el diff, logs o capturas.
 - [x] Permisos verificados en servidor (matriz 401/403/404).

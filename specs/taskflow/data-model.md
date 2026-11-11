@@ -532,10 +532,38 @@ ALTER TABLE projects ALTER COLUMN slug SET NOT NULL;
 ## 8. Backup y restore
 
 - Backup automático diario de PostgreSQL (InsForge) + retención 30 días.
-- Prueba de restore trimestral en entorno aislado.
+- Prueba de restore trimestral en entorno aislado (y tras migraciones de esquema).
 - RPO ≤ 24 h; RTO ≤ 4 h.
 - Los objetos de storage se versionan o se copian a un bucket secundario (según proveedor).
-- Documentar en `runbook` el procedimiento y los responsables.
+
+### Procedimiento automatizado (T-102)
+
+```bash
+python scripts/backup_restore_drill.py \
+  --source-url "$DATABASE_URL" \
+  --target-url postgresql://postgres@127.0.0.1:5432/taskflow_restore \
+  --pg-bin "C:/Program Files/PostgreSQL/16/bin" \
+  --schema public
+```
+
+1. `pg_dump --format=custom` del origen (la URL nunca se imprime con credenciales).
+2. `pg_restore --clean --if-exists --no-owner --no-privileges --exit-on-error`
+   en una base desechable. Para InsForge se usa `--schema public`: el dump
+   incluye extensiones gestionadas (`pg_cron`, `vector`, `http`, …) que un
+   PostgreSQL limpio no tiene.
+3. `app.backup.compare_databases` verifica que coinciden tablas, número de filas
+   y revisión de Alembic; devuelve exit code 1 ante cualquier diferencia.
+4. `--skip-restore` permite generar solo el artefacto de backup.
+
+### Prueba real (2026-11-11)
+
+- Origen: PostgreSQL gestionado de InsForge (`<insforge-host>`, 12,7 MB).
+- Destino: PostgreSQL 16 local desechable.
+- Resultado: dump de 228 KB restaurado y verificado en **22,2 s**; 12 tablas y
+  92 filas idénticas; revisión `b2c3d4e5f6a7`; `compare_databases` sin
+  diferencias (`restore_verified`).
+- RTO medido para este tamaño; el RTO de producción escala con el volumen y el
+  ancho de banda del proveedor.
 
 ---
 
