@@ -18,6 +18,9 @@ DEV_SECRET_KEY = "dev-only-insecure-secret-key-change-me"
 # other value (staging, production, or a typo) must configure real secrets so a
 # mislabelled deployment never signs tokens with the public development key.
 DEV_ENVIRONMENTS = frozenset({"development", "dev", "test", "testing"})
+ALLOWED_JWT_ALGORITHMS = frozenset({"HS256", "HS384", "HS512"})
+MIN_SECRET_KEY_LENGTH = 32
+REQUIRED_PRODUCTION_SSLMODES = frozenset({"require", "verify-ca", "verify-full"})
 DEFAULT_DEV_ORIGINS = (
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -214,9 +217,30 @@ class Settings(BaseSettings):
                 RuntimeWarning,
                 stacklevel=2,
             )
+        elif not self.allows_dev_defaults and len(self.SECRET_KEY) < MIN_SECRET_KEY_LENGTH:
+            raise RuntimeError(
+                f"SECRET_KEY must have at least {MIN_SECRET_KEY_LENGTH} characters outside development/test"
+            )
+
+        if self.ALGORITHM not in ALLOWED_JWT_ALGORITHMS:
+            raise RuntimeError(
+                "ALGORITHM must be one of " + ", ".join(sorted(ALLOWED_JWT_ALGORITHMS))
+            )
+
+        if self.is_production:
+            sslmode = self.DB_SSLMODE.strip().lower()
+            if sslmode not in REQUIRED_PRODUCTION_SSLMODES:
+                raise RuntimeError(
+                    "DB_SSLMODE must require TLS in production (require, verify-ca or verify-full)"
+                )
+
         previous = self.SECRET_KEY_PREVIOUS.strip()
         if previous and previous == self.SECRET_KEY:
             raise RuntimeError("SECRET_KEY_PREVIOUS must differ from SECRET_KEY")
+        if previous and not self.allows_dev_defaults and len(previous) < MIN_SECRET_KEY_LENGTH:
+            raise RuntimeError(
+                f"SECRET_KEY_PREVIOUS must have at least {MIN_SECRET_KEY_LENGTH} characters outside development/test"
+            )
         if not self.DATABASE_URL:
             if self.is_production:
                 raise RuntimeError("DATABASE_URL must be set in production")
