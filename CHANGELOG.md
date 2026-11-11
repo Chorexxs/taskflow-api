@@ -17,6 +17,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Backend `insforge` de `StorageService` con bucket privado `taskflow-attachments`, checksum y backfill de adjuntos (T-054); verificado en producción con subida presignada, confirmación y descarga por CDN.
 - `scripts/backfill_attachments_object_storage.py` con modo `--dry-run` y verificación de checksum.
 - `scripts/import_github_backlog.py`; 6 labels, 10 milestones y 95 issues importados en GitHub (T-003).
+- Orden estable del Kanban: columna `tasks.position`, migración `f0e1f2a3b4c5` con backfill e índice `(project_id, status, position)` (T-096).
+- `app/jobs.py` y `scripts/purge_retention.py`: purga idempotente de notificaciones (90 d) y actividad (1 año) (T-098).
 
 - Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.
 - Configuración central en `app/config.py` con validación y fail-fast en producción.
@@ -78,6 +80,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Cliente API frontend reescrito con errores tipados y `r.ok`; assign envía `user_id`.
 - Invalidaciones de React Query migradas a la sintaxis v5.
 - Documentación (`README`, `AGENTS`, `STACK`, `DECISIONS`) alineada con el estado real.
+- `PATCH /tasks/{id}/status` acepta `position` y el tablero permite reordenar dentro de una columna; estado y posición se guardan en la misma transacción (T-096).
+- Decisión final de ADR-001: se mantiene Bearer + auto-refresh y se documentan los disparadores para reabrirla (T-097).
+- Retención de datos aplicada al arrancar y disponible como script programable (T-098).
+- Contratos y checklist sin afirmaciones obsoletas sobre cookies, checksums, paginación y query string (T-099).
 
 ### Corregido
 
@@ -93,4 +99,6 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Pendiente
 
-- P7: reevaluar cookies `httpOnly` + CSRF (ADR-001).
+- Sin tareas funcionales pendientes (P0–P10 cerrados). Queda deuda aceptada en
+  `specs/taskflow/security-checklist.md` y bloqueos de entorno en
+  `specs/taskflow/blockers.md` (B-04: build Docker local sin daemon).

@@ -20,9 +20,11 @@ Implementado en P1:
 - Asignación con `{user_id}` (no `{assigned_to}`).
 - Cliente frontend con errores tipados (`ApiError`) y comprobación de `r.ok`.
 
-Implementado: envelope `{error:...}` (manteniendo `detail`), paginación en tareas/comentarios/actividad/notificaciones/búsqueda, IDs/slugs en equipos y proyectos, notificaciones con contador.
+Implementado: envelope `{error:...}` (manteniendo `detail`), paginación uniforme (tareas, comentarios, actividad, notificaciones, búsqueda, equipos, miembros, proyectos y adjuntos), IDs/slugs en equipos y proyectos, notificaciones con contador y orden estable del Kanban con `position`.
 
-Pendiente (P2-P4): cookies/ADR-001, paginación en equipos/miembros/proyectos/adjuntos y IDs/slugs estrictos.
+No quedan pendientes de contrato del ciclo P0–P10. Las extensiones futuras se
+registran como propuestas (por ejemplo, cookies `httpOnly` si se adopta un BFF
+en el mismo origen).
 
 ---
 
@@ -122,9 +124,8 @@ Content-Type: application/json
 
 ### 2.4 Transporte en el navegador
 
-- **P2:** Bearer + auto-refresh (transición).
-- **Target (ADR-001):** refresh en cookie `HttpOnly; Secure; SameSite=Lax`; access en memoria. La API sigue aceptando Bearer para clientes programáticos.
-- CSRF: `SameSite=Lax` + verificación de `Origin` en métodos mutables + header custom.
+- **Decisión final (T-097):** Bearer + auto-refresh; el refresh viaja en el body y nunca en query string. Se descartaron las cookies `httpOnly` porque Vercel (frontend) y Render (API) son sitios distintos y exigirían cookies de terceros, bloqueadas por Safari/Firefox. La API acepta Bearer para clientes programáticos.
+- **CSRF:** no aplica al esquema Bearer actual (sin cookies de sesión). Si se adopta un BFF en el mismo origen, se reevalúa ADR-001 y se añade CSRF.
 
 ### 2.5 Reglas de autorización
 

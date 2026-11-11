@@ -6,7 +6,7 @@
 
 | ADR | Decisión | Estado |
 |---|---|---|
-| ADR-001 | Transporte de tokens: Bearer + auto-refresh y single-flight; cookies `httpOnly` se reevalúan en P7 | Aceptado (alternativa) |
+| ADR-001 | Transporte de tokens: Bearer + auto-refresh y single-flight; cookies `httpOnly` reevaluadas y descartadas en T-097 | Aceptado (T-097) |
 | ADR-002 | Tiempo real con SSE para notificaciones (fallback polling); Redis pub/sub, límites y carga implementados en T-081 | Aceptado |
 | ADR-003 | Adjuntos en object storage: `StorageService` con backends PostgreSQL (default), local e InsForge Storage | Aceptado |
 | ADR-004 | Alembic como única fuente de esquema; sin `create_all` en producción | Aceptado |
@@ -18,7 +18,7 @@
 | ADR-010 | Rate limiting con Redis para múltiples instancias | Aceptado |
 | ADR-011 | Identificadores `id`/`slug`; nombres/títulos deprecados | Aceptado |
 
-**Revisión formal (T-004, 2026-11-10):** los 11 ADRs quedan aceptados y con responsable asignado (responsable del proyecto). Los ADRs que estaban `propuesto` se aceptaron con la implementación ya realizada y las desviaciones documentadas: ADR-002 (SSE implementado, pub/sub en T-081), ADR-003 (PostgreSQL en lugar de S3 por falta de credenciales) y ADR-006/007 (dark-only y “añadir miembro existente”).
+**Revisión formal (T-004, 2026-11-10):** los 11 ADRs quedan aceptados y con responsable asignado (responsable del proyecto). Los ADRs que estaban `propuesto` se aceptaron con la implementación ya realizada y las desviaciones documentadas: ADR-002 (SSE implementado, pub/sub en T-081), ADR-003 (object storage InsForge implementado en T-054, verificado en producción) y ADR-006/007 (dark-only y “añadir miembro existente”).
 
 ---
 
@@ -63,7 +63,7 @@
 
 - Integración sencilla con FastAPI.
 - Límites por IP en auth (5/min registro, 10/min login).
-- **Pendiente P2:** storage Redis para consistencia multi-instancia y límites en más endpoints.
+- **Implementado en P2:** storage Redis compartido con fallback en memoria y límites en auth, uploads y búsqueda (T-030/T-031).
 
 ---
 

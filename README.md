@@ -440,9 +440,10 @@ alembic/                 # migraciones
 ## Limitaciones conocidas y próximos pasos
 
 - **MCP de Vercel:** el servidor `vercel` está configurado en OpenCode pero requiere autenticación OAuth (`/mcps` → `vercel` → sign in). El deploy por CLI y la integración con Git ya funcionan.
-- Migración a cookies `httpOnly` o decisión formal (ADR-001): decidido mantener Bearer + auto-refresh; cookies se reevalúan en P7.
+- Transporte de tokens (ADR-001): decisión final en T-097; se mantiene Bearer + auto-refresh porque el frontend y la API son sitios distintos y la cookie de refresh requeriría cookies de terceros. Riesgo residual y disparadores de reapertura en `specs/taskflow/security-checklist.md`.
 - Adjuntos en object storage: `StorageService` con backend InsForge Storage (`STORAGE_BACKEND=insforge`), bucket privado, backfill con checksum y rollback documentado (T-054).
 - SSE implementado con Redis pub/sub, límites de conexión y prueba de 500 conexiones (T-081); el polling queda como respaldo.
+- Orden estable del Kanban con `tasks.position` y migración `f0e1f2a3b4c5` (T-096).
 - Rate limiting con Redis para múltiples instancias implementado (T-030/T-031); fallback en memoria si Redis no responde.
 - Auditoría WCAG completa y tema claro/oscuro (P5); la UI es dark-only.
 - Gates de seguridad en CI: `gitleaks` (pre-commit y CI), `pip-audit` y dependencias al día (P8).

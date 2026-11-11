@@ -37,7 +37,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Access token corto (15 min) | ✅ | `ACCESS_TOKEN_EXPIRE_MINUTES` |
 | Refresh rotativo de 7 días | ✅ | `create_refresh_token`, `revoke_token` |
 | Logout revoca access y refresh, idempotente | ✅ | `POST /auth/logout`, tests P1 |
-| Refresh nunca en query string | 🟡 | Body preferido; query queda oculta y deprecada |
+| Refresh nunca en query string | ✅ | T-083: el token en query se rechaza con 422 sin rotarlo |
 | Cookies `httpOnly` + CSRF | 🟡 | Riesgo aceptado tras T-097: Bearer + auto-refresh; cookies de terceros bloqueadas entre Vercel y Render (ADR-001) |
 | Detección de reutilización de refresh | ✅ | T-034; reuse → 401 y revocación global de sesiones |
 
@@ -128,8 +128,8 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Path traversal bloqueado | ✅ | `sanitize_filename`, `_task_upload_dir` |
 | Nombres únicos | ✅ | UUID en storage |
 | Descarga autenticada y team-scoped | ✅ | `attachments.py` |
-| Storage persistente en producción | ✅ | `STORAGE_BACKEND=database` |
-| Checksum de adjuntos | 🟡 | T-055 pendiente |
+| Storage persistente en producción | ✅ | `STORAGE_BACKEND=insforge` (bucket privado con `storage_key`) |
+| Checksum de adjuntos | ✅ | T-055: SHA-256 calculado durante el streaming y almacenado en la DB |
 
 ## V13 — API
 
@@ -159,7 +159,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | ID | Riesgo | Prioridad | Tarea |
 |---|---|---|---|
 | SEC-ASVS-01 | Sin cookies `httpOnly`; token accesible desde JS | Baja (riesgo aceptado) | T-097 / ADR-001: decisión final de mantener Bearer; reabrir si hay BFF, XSS explotable o se relaja la CSP |
-| SEC-ASVS-02 | Checksum de adjuntos pendiente | Baja | T-055 |
+| SEC-ASVS-02 | Checksum de adjuntos | ✅ Resuelto (T-055) | — |
 | SEC-ASVS-03 | Carrera teórica al degradar/expulsar al último admin | Baja | T-082/constraint futuro |
 | SEC-ASVS-04 | Sin prueba de restore de backups | Media | T-080 |
 | SEC-ASVS-05 | Integración de tests en SQLite | ✅ Resuelto (T-077): PostgreSQL con migraciones | — |

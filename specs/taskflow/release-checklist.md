@@ -215,5 +215,5 @@ Criterios de aborto (iguales a `CONTRIBUTING.md` §5):
 - [ ] Tag `vX.Y.Z` creado y release publicada con las notas del CHANGELOG.
 - [ ] `tasks.md` actualizado con la tarea cerrada.
 - [ ] Retrospectiva breve: incidencias, tiempo de deploy y acciones de seguimiento.
-- [ ] Riesgos residuales registrados (staging no aprovisionado, S3 pendiente,
-      SSE sin Redis pub/sub).
+- [ ] Riesgos residuales registrados (staging no aprovisionado, deuda aceptada en
+      `security-checklist.md`).

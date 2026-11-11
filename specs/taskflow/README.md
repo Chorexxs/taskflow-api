@@ -4,7 +4,7 @@
 **Fecha:** 2026-11-09
 **Proyecto:** TaskFlow API
 **Alcance del ciclo:** documentación + bugs conocidos + modernización completa
-**Estado:** P0–P9 ejecutados; producción verificada con object storage activo. Solo queda reevaluar cookies `httpOnly` en P7.
+**Estado:** P0–P10 ejecutados; producción verificada con object storage activo. No quedan tareas funcionales pendientes; solo deuda aceptada en `security-checklist.md` y bloqueos de entorno en `blockers.md`.
 
 ---
 
@@ -82,7 +82,7 @@ T-004: **todas aceptadas** (ver ADRs en `plan.md` y `DECISIONS.md`).
 
 | ID | Decisión | Propuesta por defecto | ADR |
 |---|---|---|---|
-| D-01 | Transporte de tokens en el navegador | Mantener Bearer + auto-refresh en P2; evaluar cookies `httpOnly` en P3 | ADR-001 |
+| D-01 | Transporte de tokens en el navegador | Bearer + auto-refresh; cookies `httpOnly` descartadas en T-097 (requieren BFF en el mismo origen) | ADR-001 |
 | D-02 | Tiempo real | SSE para notificaciones con polling de respaldo | ADR-002 |
 | D-03 | Almacenamiento de adjuntos | Object storage S3-compatible (InsForge Storage) | ADR-003 |
 | D-04 | Estrategia de migraciones | Alembic como única fuente; sin `create_all` en producción | ADR-004 |
@@ -117,7 +117,7 @@ Este paquete vive en `specs/taskflow/` y es la fuente de verdad del ciclo. `READ
 |---|---|---|
 | P0 — Gobernanza | ✅ Ejecutado | Specs, documentación, LICENSE, baseline, ADRs aceptados, entornos, política de release y backlog importado en GitHub (T-003) |
 | P1 — Correcciones críticas | ✅ Ejecutado | Refresh, logout, uploads, permisos de equipo, CORS, secret fail-fast, Kanban, cliente API, Sentry, Alembic |
-| P2 — Auth/sesión | ✅ Ejecutado | Auto-refresh, contraseñas, cambio con revocación, limpieza de tokens, rate limit Redis, headers, auditoría y reutilización de refresh. Cookies `httpOnly` se reevalúan en P7 (ADR-001) |
+| P2 — Auth/sesión | ✅ Ejecutado | Auto-refresh, contraseñas, cambio con revocación, limpieza de tokens, rate limit Redis, headers, auditoría y reutilización de refresh. Cookies `httpOnly` descartadas en T-097 con el riesgo residual registrado (ADR-001) |
 | P3 — API/datos | ✅ Ejecutado | IDs/slugs, paginación, errores, permisos, borrados, archivado, actividad y búsqueda |
 | P4 — Colaboración/storage | ✅ Ejecutado | Notificaciones, menciones, SSE + polling, activity y object storage con backfill (T-054); `STORAGE_BACKEND=insforge` verificado en producción |
 | P5 — Frontend | ✅ Ejecutado | Cliente API, AuthContext, a11y, responsive, estados de error, MSW y dark-only |
@@ -125,6 +125,7 @@ Este paquete vive en `specs/taskflow/` y es la fuente de verdad del ciclo. `READ
 | P7 — Realtime | ✅ Ejecutado | SSE con Redis pub/sub, fallback en proceso, límites de conexión, backoff y prueba de 500 conexiones (T-081) |
 | P8 — Auditoría de seguridad | ✅ Ejecutado | T-083…T-092 |
 | P9 — Smoke de release | ✅ Ejecutado | T-093 (rate limit 500) y T-094 (health bloqueado por Redis) |
+| P10 — Seguimiento post-release | ✅ Ejecutado | T-096 (posición estable del Kanban), T-097 (decisión final de ADR-001), T-098 (retención de datos) y T-099 (drift documental) |
 
 ---
 

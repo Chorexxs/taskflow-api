@@ -8,6 +8,11 @@
 
 ## Estado de resolución (P1)
 
+> **Nota (T-099, 2026-11-11):** esta sección es un corte histórico de P1. El
+> estado final está en `tasks.md` y en el registro de `README.md`: P0–P10
+> cerrados, sin hallazgos S0/S1 abiertos. Las cifras de tests de abajo también
+> son históricas (verificación actual: 189 tests backend y 48 frontend).
+
 Resueltos en P1: `BL-02`, `BL-03`, `BL-04`, `BL-05`, `BL-06`, `BL-08`, `BL-09`, `BL-10`, `BL-11`, `BL-14`, `BL-17`, `BL-32`, `BL-36`, `BL-37`, `BL-38`, `BL-41`.
 
 Parciales: `BL-01` (refresh y logout corregidos; auto-refresh del cliente pendiente P2), `BL-07` (file_path eliminado; storage externo pendiente P4), `BL-45` (cliente API con errores tipados; quedan mensajes por pulir).

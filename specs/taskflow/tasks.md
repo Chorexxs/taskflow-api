@@ -40,7 +40,7 @@
 
 **Completada (P9):** `T-095` (sincronizar InsForge con `alembic upgrade head` antes del deploy; causa raíz de B-05).
 
-**Completada (P10, seguimiento 2026-11-11):** `T-096` (orden estable del Kanban con `tasks.position`, migración `f0e1f2a3b4c5`, `PATCH /status` atómico con `position` y reordenación en el tablero), `T-097` (decisión final de ADR-001: se mantiene Bearer + auto-refresh; cookies de terceros inviables sin BFF y riesgo residual registrado), `T-098` (purga idempotente de notificaciones >90 d y actividad >1 año, al arrancar y con `scripts/purge_retention.py`).
+**Completada (P10, seguimiento 2026-11-11):** `T-096` (orden estable del Kanban con `tasks.position`, migración `f0e1f2a3b4c5`, `PATCH /status` atómico con `position` y reordenación en el tablero), `T-097` (decisión final de ADR-001: se mantiene Bearer + auto-refresh; cookies de terceros inviables sin BFF y riesgo residual registrado), `T-098` (purga idempotente de notificaciones >90 d y actividad >1 año, al arrancar y con `scripts/purge_retention.py`), `T-099` (drift documental: contratos, checklist y README sin afirmaciones obsoletas).
 
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
@@ -48,7 +48,14 @@
 
 **Pendientes de P0:** ninguno.
 
-Verificación actual: `pytest -q` → **180 passed** sobre PostgreSQL 15 con **87 % de cobertura**; `npm run test` → **43 passed**; `npm run lint` → limpio; `npm run build` → correcto; `alembic upgrade head` + `downgrade base` → correcto en SQLite; InsForge migrado a `d0e1f2a3b4c5` con 3 adjuntos backfillados y `STORAGE_BACKEND=insforge` activo en producción; Render live con smoke de release **15/15**, register 201/login 200 y CORS verificado. Smoke de performance local (T-080): p95 < 33 ms en lecturas. Carga SSE (T-081): **500/500 conexiones, 0 errores**.
+Verificación actual (2026-11-11, P10): `pytest -q` → **187 passed** y 2 fallos
+preexistentes de SSE con `TEST_USE_SQLITE=1` (el escape hatch no comparte la
+sesión del fixture; la suite de release usa PostgreSQL); **189 tests backend**.
+`npm run test` → **48 passed**; `npm run lint` → limpio; `npm run build` →
+correcto; `alembic upgrade head` + `downgrade -1` + `upgrade head` → correcto en
+SQLite (`f0e1f2a3b4c5`). Histórico de release: 180 tests/87 % sobre PostgreSQL
+15, InsForge en `d0e1f2a3b4c5`, `STORAGE_BACKEND=insforge`, Render live con smoke
+**15/15** y CORS verificado; p95 < 33 ms en lecturas; SSE **500/500**.
 
 ---
 
