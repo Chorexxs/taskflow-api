@@ -38,6 +38,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Uploads validan magic bytes contra la extensión y rechazan ejecutables (`MZ`, `ELF`, Mach-O, shebang); JSON debe ser JSON válido (T-109).
 - Escaneo ClamAV opcional por INSTREAM: `CLAMAV_HOST` y `CLAMAV_REQUIRED`; un archivo infectado se rechaza (422) antes de almacenarse (T-110).
 - `scripts/smoke_write_performance.py`: mide p95 de creación y cambio de estado de tareas (T-111); local p95 23,1 ms / 19,3 ms.
+- SBOM CycloneDX generado y subido como artefacto en CI; imagen base `python:3.12-slim` fijada por digest (T-112).
 - Frontend actualizado a Vite 8, Vitest 5 y `@vitest/coverage-v8` 5; CI usa Node 24 y la cobertura se restaura con tests de equipo, tablero y tarea (T-107).
 
 - Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.

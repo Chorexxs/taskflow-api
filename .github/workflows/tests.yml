@@ -65,6 +65,18 @@ jobs:
         run: |
           pip-audit -r requirements.txt
 
+      - name: Generate SBOM
+        run: |
+          python -m cyclonedx_py requirements requirements.txt -o sbom.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sbom
+          path: sbom.json
+          retention-days: 90
+          if-no-files-found: error
+
       - name: Check migrations
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test

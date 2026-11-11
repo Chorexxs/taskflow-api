@@ -25,6 +25,7 @@ build/
 htmlcov/
 *.db
 *.sqlite
+sbom.json
 uploads/
 frontend/dist/
 frontend/coverage/

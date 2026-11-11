@@ -112,6 +112,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Sin dependencias sin pin | ✅ | `requirements.txt`, `package-lock.json` |
 | Auditoría de dependencias | ✅ | `npm audit --omit=dev` → 0 y gate en CI; `pip-audit` en backend; Renovate/Dependabot |
 | Imagen Docker sin secretos ni datos locales | ✅ | T-108: `.dockerignore` + copia mínima; CI verifica que no contiene `.env`, `.git`, `tests` ni `frontend` |
+| Imagen base fijada por digest y SBOM | ✅ | T-112: `python:3.12-slim@sha256:…` y SBOM CycloneDX generado y subido como artefacto en CI |
 | Sin ejecución de archivos subidos | ✅ | Adjuntos servidos como descarga; allowlist |
 | Revisión de dependencias nuevas | ✅ | PR + lockfiles |
 
