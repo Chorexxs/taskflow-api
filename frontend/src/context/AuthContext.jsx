@@ -31,6 +31,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
 import { AuthContext, getJwtExpiry } from './auth-context';
 
@@ -59,6 +60,7 @@ export function AuthProvider({ children }) {
   
   // Loading state during initial auth check
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   /**
    * Clear the local session without a network round-trip. Used when the
@@ -70,7 +72,9 @@ export function AuthProvider({ children }) {
     setAccessToken(null);
     setRefreshToken(null);
     localStorage.removeItem('user_id');
-  }, []);
+    // Do not keep another user's teams/tasks visible in the same tab.
+    queryClient.clear();
+  }, [queryClient]);
 
   /**
    * Effect: Validate token and fetch user on mount/token change
@@ -150,6 +154,7 @@ export function AuthProvider({ children }) {
       setAccessToken(null);
       setRefreshToken(null);
       localStorage.removeItem('user_id');
+      queryClient.clear();
     };
 
     window.addEventListener('taskflow:session', onSession);
@@ -158,7 +163,7 @@ export function AuthProvider({ children }) {
       window.removeEventListener('taskflow:session', onSession);
       window.removeEventListener('taskflow:logout', onLogout);
     };
-  }, []);
+  }, [queryClient]);
 
   /**
    * Login user with email and password.

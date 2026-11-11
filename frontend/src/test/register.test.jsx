@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { AuthProvider } from '../context/AuthContext'
 import Register from '../pages/Register'
@@ -18,15 +19,20 @@ const mockApi = vi.hoisted(() => ({
 vi.mock('../api', () => ({ api: mockApi }))
 
 function renderRegister() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
   return render(
-    <MemoryRouter initialEntries={['/register']}>
-      <AuthProvider>
-        <Routes>
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<div>dashboard</div>} />
-        </Routes>
-      </AuthProvider>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/register']}>
+        <AuthProvider>
+          <Routes>
+            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<div>dashboard</div>} />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 }
 
