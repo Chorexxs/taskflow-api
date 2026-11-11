@@ -104,6 +104,33 @@ class Settings(BaseSettings):
         "png,jpg,jpeg,gif,webp,pdf,txt,csv,json,md,doc,docx,xls,xlsx,ppt,pptx,zip"
     )
 
+    # Optional ClamAV scanning for uploads. Empty host disables it; if
+    # CLAMAV_REQUIRED is true an unavailable scanner rejects uploads (fail
+    # closed) instead of allowing them through.
+    CLAMAV_HOST: str = ""
+    CLAMAV_PORT: int = 3310
+    CLAMAV_TIMEOUT_SECONDS: float = 5.0
+    CLAMAV_REQUIRED: bool = False
+
+    @field_validator("CLAMAV_PORT", mode="before")
+    @classmethod
+    def _valid_clamav_port(cls, value):
+        if isinstance(value, str) and not value.strip():
+            raise ValueError("CLAMAV_PORT must be a valid port")
+        port = int(value)
+        if not 1 <= port <= 65535:
+            raise ValueError("CLAMAV_PORT must be between 1 and 65535")
+        return port
+
+    @field_validator("CLAMAV_TIMEOUT_SECONDS", mode="before")
+    @classmethod
+    def _positive_clamav_timeout(cls, value):
+        if isinstance(value, str) and not value.strip():
+            raise ValueError("CLAMAV_TIMEOUT_SECONDS must be positive")
+        if float(value) <= 0:
+            raise ValueError("CLAMAV_TIMEOUT_SECONDS must be greater than zero")
+        return value
+
     @field_validator("ACCESS_TOKEN_EXPIRE_MINUTES", "REFRESH_TOKEN_EXPIRE_DAYS", mode="before")
     @classmethod
     def _positive_token_lifetimes(cls, value):

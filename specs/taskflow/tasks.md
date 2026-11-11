@@ -40,7 +40,7 @@
 
 **Completada (P9):** `T-095` (sincronizar InsForge con `alembic upgrade head` antes del deploy; causa raíz de B-05).
 
-**Completada (P10, seguimiento 2026-11-11):** `T-096` (orden estable del Kanban con `tasks.position`, migración `f0e1f2a3b4c5`, `PATCH /status` atómico con `position` y reordenación en el tablero), `T-097` (decisión final de ADR-001: se mantiene Bearer + auto-refresh; cookies de terceros inviables sin BFF y riesgo residual registrado), `T-098` (purga idempotente de notificaciones >90 d y actividad >1 año, al arrancar y con `scripts/purge_retention.py`), `T-099` (drift documental: contratos, checklist y README sin afirmaciones obsoletas), `T-100` (idempotencia en POST críticos con `Idempotency-Key`: replay, 422/409, purga a 24 h y migración `b2c3d4e5f6a7`), `T-101` (bloqueo `FOR UPDATE` del equipo al expulsar o cambiar roles, con test de concurrencia sobre PostgreSQL), `T-102` (drill de backup/restore con `scripts/backup_restore_drill.py` y verificación de tablas, filas y revisión Alembic), `T-103` (rotación de `SECRET_KEY` con clave dual y ADR-012), `T-104` (modelo STRIDE formal en `threat-model.md` con 32 amenazas, mitigaciones y riesgos residuales), `T-105` (labels e identificadores accesibles en todos los formularios del frontend), `T-106` (el cliente SPA envía `Idempotency-Key` y la conserva en el reintento 401), `T-107` (Vite 8 + Vitest 5 con Node 24 y cobertura restaurada con tests de equipo, tablero y tarea), `T-108` (cierre de los hallazgos de la auditoría de seguridad 2026-11-11: imagen Docker sin secretos, Sentry sin PII, body limits, validación de config, health sin fugas, caché de logout y gates de CI), `T-109` (proxy de Render con IP real verificada y validación de magic bytes/ejecutables en uploads).
+**Completada (P10, seguimiento 2026-11-11):** `T-096` (orden estable del Kanban con `tasks.position`, migración `f0e1f2a3b4c5`, `PATCH /status` atómico con `position` y reordenación en el tablero), `T-097` (decisión final de ADR-001: se mantiene Bearer + auto-refresh; cookies de terceros inviables sin BFF y riesgo residual registrado), `T-098` (purga idempotente de notificaciones >90 d y actividad >1 año, al arrancar y con `scripts/purge_retention.py`), `T-099` (drift documental: contratos, checklist y README sin afirmaciones obsoletas), `T-100` (idempotencia en POST críticos con `Idempotency-Key`: replay, 422/409, purga a 24 h y migración `b2c3d4e5f6a7`), `T-101` (bloqueo `FOR UPDATE` del equipo al expulsar o cambiar roles, con test de concurrencia sobre PostgreSQL), `T-102` (drill de backup/restore con `scripts/backup_restore_drill.py` y verificación de tablas, filas y revisión Alembic), `T-103` (rotación de `SECRET_KEY` con clave dual y ADR-012), `T-104` (modelo STRIDE formal en `threat-model.md` con 32 amenazas, mitigaciones y riesgos residuales), `T-105` (labels e identificadores accesibles en todos los formularios del frontend), `T-106` (el cliente SPA envía `Idempotency-Key` y la conserva en el reintento 401), `T-107` (Vite 8 + Vitest 5 con Node 24 y cobertura restaurada con tests de equipo, tablero y tarea), `T-108` (cierre de los hallazgos de la auditoría de seguridad 2026-11-11: imagen Docker sin secretos, Sentry sin PII, body limits, validación de config, health sin fugas, caché de logout y gates de CI), `T-109` (proxy de Render con IP real verificada y validación de magic bytes/ejecutables en uploads), `T-110` (escaneo ClamAV opcional con política fail-closed y rechazo antes de almacenar).
 
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
@@ -49,8 +49,8 @@
 **Pendientes de P0:** ninguno.
 
 Verificación actual (2026-11-11, P10): suite completa sobre PostgreSQL 16 →
-**233 passed**, 0 fallos, migraciones aplicadas por Alembic y **88,38 % de
-cobertura** (gate 80 %). Con el escape hatch `TEST_USE_SQLITE=1` → 230 passed,
+**242 passed**, 0 fallos, migraciones aplicadas por Alembic y **88,48 % de
+cobertura** (gate 80 %). Con el escape hatch `TEST_USE_SQLITE=1` → 239 passed,
 2 fallos de SSE y 1 skip del test de lock (requiere PostgreSQL). `npm run test`
 → **70 passed** (72,31 % líneas / 59,68 % ramas / 61,89 % funciones; Vite 8 y
 Vitest 5 con Node 24); `npm run lint` → limpio; `npm run build` → correcto;
@@ -283,6 +283,7 @@ documental.
 | T-107 | Actualizar Vite 8 + Vitest 5 y restaurar la cobertura | S2 | T-072 | M | NFR-MAINT-01, NFR-MAINT-04 | `npm ci`, tests, lint y build verdes con Node 24; cobertura ≥70 % líneas/sentencias |
 | T-108 | Cerrar los hallazgos de la auditoría de seguridad 2026-11-11 | S1 | T-104 | M | NFR-SEC-01…07 | SEC-1/SEC-2 corregidos; `.dockerignore`, Sentry, body limits, config, health, caché y gates de CI |
 | T-109 | Verificar el proxy de Render y validar magic bytes en uploads | S2 | T-108 | S | NFR-SEC-05, FR-ATT-01 | Rate limit por IP real verificado; contenido de adjuntos coincide con su extensión y se rechazan ejecutables |
+| T-110 | Escaneo antimalware de adjuntos con ClamAV | S2 | T-109 | S | NFR-SEC-05, FR-ATT-01 | ClamAV INSTREAM opcional, fail-closed configurable y archivo infectado rechazado antes de almacenar |
 
 ---
 

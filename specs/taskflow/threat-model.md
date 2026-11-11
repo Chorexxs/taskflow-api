@@ -230,7 +230,7 @@ Auditoría de seguridad completa sobre `307d345`; sin SEC-0. Corregidos en T-108
 - **SEC-2.4:** `/health` filtraba errores de DB → mensaje genérico (TM-14).
 - **SEC-2.5:** logout no limpiaba React Query → caché limpiada (TM-09).
 
-Residuales aceptados: enumeración de cuentas (SEC-ASVS-07), magic bytes (SEC-ASVS-09
-cubierto en T-109; antivirus pendiente) y bloqueo sin revocación de sesiones
-(SEC-ASVS-10). El rate limit detrás del proxy se corrigió y verificó en T-109
-(SEC-ASVS-08).
+Residuales aceptados: enumeración de cuentas (SEC-ASVS-07) y bloqueo sin
+revocación de sesiones (SEC-ASVS-10). El rate limit detrás del proxy se corrigió
+y verificó en T-109 (SEC-ASVS-08); magic bytes y escaneo ClamAV opcional en
+T-109/T-110 (SEC-ASVS-09).

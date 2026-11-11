@@ -39,6 +39,7 @@ from app.database import get_db
 from app.dependencies import get_current_team_member
 from app.idempotency import IdempotencyGuard, get_idempotency_guard
 from app.logging_config import get_logger
+from app.malware import MalwareDetected, ScannerUnavailable, scan_upload
 from app.rate_limit import rate_limit
 from app.storage import StorageError, get_storage
 from app.uploads import validate_file_signature
@@ -216,6 +217,25 @@ async def upload_attachment(
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail=str(exc),
+        ) from exc
+
+    try:
+        await asyncio.to_thread(scan_upload, bytes(contents))
+    except MalwareDetected as exc:
+        logger.warning(
+            "attachment_malware_rejected",
+            user_id=current_user.id,
+            filename=original_filename,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="File was rejected by the malware scanner",
+        ) from exc
+    except ScannerUnavailable as exc:
+        logger.warning("attachment_scan_unavailable", error=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Malware scanning is temporarily unavailable",
         ) from exc
 
     # The file hash is part of the fingerprint: retrying the same upload returns
