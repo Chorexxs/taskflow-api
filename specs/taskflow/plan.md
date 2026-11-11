@@ -118,7 +118,7 @@
 
 ### ADR-001 - Transporte de tokens en el navegador
 
-**Estado:** aceptado con alternativa (2026-11-10). Sustituye la propuesta híbrida.
+**Estado:** aceptado definitivamente (T-097, 2026-11-11). Sustituye la propuesta híbrida.
 **Responsable:** responsable del proyecto.
 
 **Contexto:** hoy los tokens viven en `localStorage`, accesibles a cualquier XSS. El refresh ya funciona en body y el cliente lo renueva de forma proactiva con single-flight.
@@ -131,14 +131,20 @@
 | B. Access en memoria + refresh en cookie `httpOnly` | XSS no lee refresh; estándar web | Requiere CORS con credenciales, CSRF y cambios en tests |
 | C. Híbrido | API acepta Bearer; navegador usa cookies | Más superficie y documentación |
 
-**Decisión:** **A con endurecimiento**, registrada como alternativa de T-026.
+**Decisión:** **A con endurecimiento**, confirmada en T-097.
 - Se mantiene `Authorization: Bearer` con access de 15 min y refresh rotativo de 7 días.
 - El cliente renueva 60 s antes de expirar, con single-flight entre pestañas y reintento único.
 - Logout y cambio de contraseña revocan sesiones; la reutilización de refresh revoca todas las sesiones (T-034).
 - CSP estricta, `Referrer-Policy`, `Permissions-Policy` y CORS por allowlist reducen el impacto de XSS.
-- La migración a cookies `httpOnly` + CSRF se reevalúa en P7. Motivo: el cambio exige coordinación de CORS, CSRF, tests de navegador y logout; no aporta valor suficiente frente al riesgo actual.
 
-**Consecuencias:** el refresh sigue accesible desde JS si hay XSS (riesgo aceptado y documentado en `security-checklist.md`, SEC-ASVS-01). Cualquier cliente programático sigue funcionando sin cookies. No se activa `allow_credentials`.
+**Evaluación de T-097 (por qué no se migra a cookies en este ciclo):**
+
+- El frontend (`taskflow-api-tau.vercel.app`) y la API (`taskflow-api-gkgl.onrender.com`) son **sitios distintos**. Una cookie de refresh exigiría `SameSite=None; Secure`, es decir, cookie de terceros, que Safari/Firefox bloquean y Chrome restringe; el flujo se rompería para parte de los usuarios.
+- La alternativa correcta sería un BFF/proxy en el mismo origen (Vercel rewrites o función server-side). Es una decisión de arquitectura mayor que cambia el modelo de despliegue, no un ajuste de auth: queda fuera de este ciclo.
+- Riesgo residual: un XSS podría leer ambos tokens. Mitigaciones activas: CSP del frontend con `script-src 'self'` (sin `unsafe-inline`), access de 15 min, rotación de refresh, detección de reutilización, revocación global y CORS por allowlist. El riesgo se registra en `security-checklist.md` (SEC-ASVS-01).
+- **Se reabre la decisión** si: se encuentra un XSS explotable, se relaja la CSP, se adopta un BFF en el mismo origen, o el navegador garantiza cookies de terceros con particionamiento estable.
+
+**Consecuencias:** el refresh sigue accesible desde JS si hay XSS (riesgo aceptado y documentado). Cualquier cliente programático sigue funcionando sin cookies. No se activa `allow_credentials`.
 
 **Si se bloquea:** mantener A con auto-refresh y registrar el riesgo residual.
 

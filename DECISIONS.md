@@ -38,7 +38,7 @@
 - Refresh token (7 días) mantiene la sesión sin pedir credenciales.
 - Rotación: cada refresh invalida el anterior.
 - Revocación en DB para logout y refresh reutilizado.
-- **Implementado:** auto-refresh en el cliente y decisión de mantener Bearer; cookies `httpOnly` se reevalúan en P7 (ADR-001).
+- **Implementado:** auto-refresh en el cliente y decisión de mantener Bearer; T-097 cerró la reevaluación de cookies `httpOnly` (ADR-001).
 
 ---
 
@@ -96,12 +96,18 @@
 
 ## Decisiones pendientes
 
-No quedan ADRs en estado `propuesto`: ADR-001…011 están aceptados (T-004). Las
-siguientes decisiones son evoluciones fuera de este ciclo y no bloquean el
-release:
+No quedan ADRs en estado `propuesto`: ADR-001…011 están aceptados. Las
+siguientes son evoluciones fuera de este ciclo y no bloquean el release:
 
-1. **ADR-001:** reevaluar cookies `httpOnly` + CSRF en P7.
-2. **ADR-003:** migrar adjuntos a object storage S3-compatible cuando haya credenciales (T-054).
-3. **ADR-002:** fan-out con Redis pub/sub y prueba de carga de SSE (T-081).
+1. **ADR-001:** reevaluación cerrada en T-097 (2026-11-11). Se mantiene Bearer +
+   auto-refresh porque el frontend y la API son sitios distintos y una cookie de
+   refresh requeriría cookies de terceros (`SameSite=None`), bloqueadas por
+   Safari/Firefox. La alternativa real es un BFF en el mismo origen; se reabre
+   si se adopta esa arquitectura, si aparece un XSS explotable o si se relaja la
+   CSP. Riesgo residual en `specs/taskflow/security-checklist.md` (SEC-ASVS-01).
+2. **ADR-007:** invitaciones reales por email; hoy el flujo es "añadir miembro
+   existente".
+3. **Cursor pagination:** paginación por cursor para listas grandes
+   (notificaciones/actividad) cuando el volumen lo justifique.
 
 Para cambiar una decisión: actualizar el ADR, la spec y el plan antes de implementar.

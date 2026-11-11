@@ -455,7 +455,7 @@ Y los tests de integración pasan
 
 | ID | Pregunta | Propuesta | Bloquea |
 |---|---|---|---|
-| Q-01 | ¿Tokens en localStorage o cookies `httpOnly`? | Mantener Bearer + auto-refresh en P2; evaluar cookies en P3 (ADR-001) | P2 |
+| Q-01 | ¿Tokens en localStorage o cookies `httpOnly`? | Bearer + auto-refresh; reevaluación cerrada en T-097: cookies de terceros inviables sin BFF (ADR-001) | P7 |
 | Q-02 | ¿SSE o WebSockets? | SSE solo para notificaciones; resto polling (ADR-002) | P4 |
 | Q-03 | ¿Invitaciones reales por email? | Depende de proveedor; si no, renombrar a “añadir miembro” (ADR-007) | P3 |
 | Q-04 | ¿Tema claro/oscuro o solo oscuro? | Implementar ambos o eliminar ThemeContext (ADR-006) | P5 |
