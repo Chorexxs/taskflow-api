@@ -88,6 +88,10 @@ python scripts/backup_restore_drill.py --source-url "$env:DATABASE_URL" `
   --target-url postgresql://postgres@127.0.0.1:5432/taskflow_restore `
   --pg-bin "C:/Program Files/PostgreSQL/16/bin" --schema public
 
+# Smoke de performance de escritura (T-111)
+python scripts/smoke_write_performance.py --base-url http://127.0.0.1:8000 `
+  --samples 20 --threshold-ms 500
+
 # Pre-commit completo (requiere gitleaks en PATH; ver .pre-commit-config.yaml)
 pre-commit install
 pre-commit run --all-files
