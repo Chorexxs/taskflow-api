@@ -58,7 +58,9 @@ reversibles. **Producción (2026-11-11):** InsForge migrado a `b2c3d4e5f6a7`
 (columna e índice de `position` y tabla `idempotency_keys` verificados, 0
 posiciones nulas); smoke de release **15/15**; Render sirve el código del Kanban
 (tarea nueva con `position` 1024) y la idempotencia responde con
-`Idempotent-Replayed: true` en el reintento. Histórico: `STORAGE_BACKEND=insforge`,
+`Idempotent-Replayed: true` en el reintento. Verificado también en producción:
+invitar un admin (201), expulsarlo (204) y bloqueo al intentar salir el último
+admin (409). Histórico: `STORAGE_BACKEND=insforge`,
 CORS verificado; p95 < 33 ms en lecturas; SSE **500/500**.
 
 ---
