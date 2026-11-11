@@ -123,6 +123,7 @@ def test_previous_key_must_differ_from_the_primary_key():
         SECRET_KEY=NEW_KEY,
         SECRET_KEY_PREVIOUS=NEW_KEY,
         DATABASE_URL="postgresql://user:pass@localhost/db",
+        DB_SSLMODE="require",
     )
 
     with pytest.raises(RuntimeError, match="SECRET_KEY_PREVIOUS"):
