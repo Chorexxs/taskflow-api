@@ -79,3 +79,18 @@ def test_health_skips_redis_without_url(client: TestClient, monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["redis"] == "not_configured"
+
+
+def test_health_does_not_leak_database_errors(client: TestClient, monkeypatch):
+    class BrokenEngine:
+        def connect(self):
+            raise RuntimeError("connection to secret-host:5432 failed for user admin")
+
+    monkeypatch.setattr("app.database.get_engine", lambda: BrokenEngine())
+
+    response = client.get("/health")
+
+    assert response.status_code == 503
+    assert response.json()["database"] == "unavailable"
+    assert "secret-host" not in response.text
+    assert "admin" not in response.text

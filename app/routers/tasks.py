@@ -18,7 +18,7 @@ and optional due dates.
 import os
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -27,6 +27,7 @@ from app.database import get_db
 from app.dependencies import get_current_team_member
 from app.idempotency import IdempotencyGuard, get_idempotency_guard
 from app.logging_config import get_logger
+from app.rate_limit import rate_limit
 from app.storage import StorageError, get_storage
 
 router = APIRouter()
@@ -133,7 +134,10 @@ def get_task_from_id_or_title(db: Session, task_id_or_title: str, project_id: in
 
 
 @router.post("/", response_model=schemas.TaskOut, status_code=status.HTTP_201_CREATED)
+@rate_limit("60/minute")
 def create_task(
+    request: Request,
+    response: Response,
     team_id_or_slug: str,
     project_id_or_name: str,
     task: schemas.TaskCreate,

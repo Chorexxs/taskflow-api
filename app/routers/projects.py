@@ -13,7 +13,7 @@ Projects are containers for tasks within a team. They can be archived
 when no longer active, but are not permanently deleted.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -26,6 +26,7 @@ from app.dependencies import (
 )
 from app.idempotency import IdempotencyGuard, get_idempotency_guard
 from app.logging_config import get_logger
+from app.rate_limit import rate_limit
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -83,7 +84,10 @@ def get_project_from_id_or_slug(
 
 
 @router.post("/", response_model=schemas.ProjectOut, status_code=status.HTTP_201_CREATED)
+@rate_limit("30/minute")
 def create_project(
+    request: Request,
+    response: Response,
     team_id_or_slug: str,
     project: schemas.ProjectCreate,
     db: Session = Depends(get_db),

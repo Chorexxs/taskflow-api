@@ -54,7 +54,10 @@ def get_team_from_id_or_slug(db: Session, team_id_or_slug: str) -> models.Team:
 
 
 @router.post("/", response_model=schemas.TeamOut, status_code=status.HTTP_201_CREATED)
+@rate_limit("10/minute")
 def create_team(
+    request: Request,
+    response: Response,
     team: schemas.TeamCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),

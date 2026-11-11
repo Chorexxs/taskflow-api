@@ -14,7 +14,7 @@ any comment.
 
 import re
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
@@ -25,6 +25,7 @@ from app.dependencies import (
     get_team_from_id_or_slug,
 )
 from app.idempotency import IdempotencyGuard, get_idempotency_guard
+from app.rate_limit import rate_limit
 
 _MENTION_PATTERN = re.compile(r"@([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})")
 
@@ -61,7 +62,10 @@ def get_task_from_params(
 
 
 @router.post("/", response_model=schemas.CommentOut, status_code=status.HTTP_201_CREATED)
+@rate_limit("60/minute")
 def create_comment(
+    request: Request,
+    response: Response,
     team_id_or_slug: str,
     project_id_or_name: str,
     task_id_or_title: str,

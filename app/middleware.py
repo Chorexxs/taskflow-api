@@ -16,11 +16,57 @@ import uuid
 from typing import Callable
 
 from fastapi import Request, Response
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.logging_config import get_logger, request_id_context
 
 logger = get_logger(__name__)
+
+# JSON and form bodies are small; uploads use multipart and enforce their own
+# streaming limit. These caps prevent memory/CPU exhaustion on the rest.
+MAX_JSON_BODY_BYTES = 1_000_000
+MAX_FORM_BODY_BYTES = 64 * 1024
+
+
+class BodySizeLimitMiddleware(BaseHTTPMiddleware):
+    """Reject oversized JSON/form bodies before FastAPI parses them."""
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        content_type = request.headers.get("content-type", "").split(";")[0].strip().lower()
+        limit = None
+        if content_type == "application/json":
+            limit = MAX_JSON_BODY_BYTES
+        elif content_type == "application/x-www-form-urlencoded":
+            limit = MAX_FORM_BODY_BYTES
+
+        if limit is not None:
+            raw_length = request.headers.get("content-length")
+            try:
+                length = int(raw_length) if raw_length else 0
+            except ValueError:
+                length = 0
+            if length > limit:
+                logger.warning(
+                    "request_body_too_large",
+                    path=request.url.path,
+                    content_length=length,
+                    limit=limit,
+                )
+                return JSONResponse(
+                    status_code=413,
+                    content={
+                        "detail": "Request body too large",
+                        "error": {
+                            "code": "FILE_TOO_LARGE",
+                            "message": "Request body too large",
+                            "details": None,
+                            "request_id": request_id_context.get(),
+                        },
+                    },
+                )
+
+        return await call_next(request)
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):

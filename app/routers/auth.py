@@ -170,6 +170,7 @@ def login(
         raise HTTPException(
             status_code=status.HTTP_423_LOCKED,
             detail="Account temporarily locked due to too many failed login attempts",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     # Verify password
@@ -198,6 +199,7 @@ def login(
     token_data = {"sub": user.email, "ver": user.token_version or 0}
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
+    response.headers["Cache-Control"] = "no-store"
 
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
@@ -269,6 +271,7 @@ def refresh(
     token_data = {"sub": user.email, "ver": user.token_version or 0}
     new_access_token = create_access_token(data=token_data)
     new_refresh_token = create_refresh_token(data=token_data)
+    response.headers["Cache-Control"] = "no-store"
 
     return {
         "access_token": new_access_token,
@@ -308,6 +311,7 @@ def logout(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="An access or refresh token is required",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     user_id = _user_id_from_token(db, access_token) or _user_id_from_token(db, refresh_token)
@@ -334,6 +338,7 @@ def logout(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="No valid token to revoke",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     logger.info(
@@ -342,4 +347,4 @@ def logout(
         access_revoked=access_revoked,
         refresh_revoked=refresh_revoked,
     )
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return Response(status_code=status.HTTP_204_NO_CONTENT, headers={"Cache-Control": "no-store"})

@@ -30,7 +30,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
 from app.logging_config import configure_logging, get_logger, request_id_context
-from app.middleware import LoggingMiddleware
+from app.middleware import BodySizeLimitMiddleware, LoggingMiddleware
 from app.rate_limit import limiter
 from app.routers import attachments, auth, comments, notifications, projects, tasks, teams, users
 
@@ -80,6 +80,28 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
+def _scrub_sentry_event(event, _hint):
+    """Remove credentials from Sentry events before they leave the process."""
+    request = event.get("request") or {}
+    headers = request.get("headers") or {}
+    for key in list(headers):
+        if key.lower() in {"authorization", "cookie", "x-api-key"}:
+            headers[key] = "****"
+    data = request.get("data")
+    if isinstance(data, dict):
+        for key in list(data):
+            if key.lower() in {
+                "password",
+                "current_password",
+                "new_password",
+                "refresh_token",
+                "access_token",
+                "token",
+            }:
+                data[key] = "****"
+    return event
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -115,6 +137,9 @@ async def lifespan(app: FastAPI):
                 integrations=[FastApiIntegration()],
                 environment=settings.ENVIRONMENT,
                 traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+                send_default_pii=False,
+                max_request_body_size="never",
+                before_send=_scrub_sentry_event,
             )
             logger.info("sentry_initialized")
         except Exception as exc:  # pragma: no cover - defensive
@@ -293,7 +318,8 @@ cors_origins = settings.effective_cors_origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_credentials="*" not in cors_origins,
+    # Bearer tokens are sent in a header, not cookies: no credentialed CORS.
+    allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=[
         "Authorization",
@@ -307,6 +333,7 @@ app.add_middleware(
 
 # Custom logging middleware for request/response logging
 app.add_middleware(LoggingMiddleware)
+app.add_middleware(BodySizeLimitMiddleware)
 
 # Add security headers middleware
 app.add_middleware(SecurityHeadersMiddleware)
@@ -416,7 +443,9 @@ def health_check():
                 conn.execute(text("SELECT 1"))
             health_status["database"] = "connected"
     except Exception as e:
-        health_status["database"] = f"error: {str(e)}"
+        # Never echo driver/host details from a public endpoint.
+        logger.warning("health_database_check_failed", error=str(e))
+        health_status["database"] = "unavailable"
         health_status["status"] = "degraded"
 
     # Check Redis connection (optional). Only when a URL is configured, and
