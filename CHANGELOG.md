@@ -20,6 +20,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Orden estable del Kanban: columna `tasks.position`, migración `f0e1f2a3b4c5` con backfill e índice `(project_id, status, position)` (T-096).
 - `app/jobs.py` y `scripts/purge_retention.py`: purga idempotente de notificaciones (90 d) y actividad (1 año) (T-098).
 - `Idempotency-Key` en POST de equipos, proyectos, tareas, comentarios y adjuntos, con tabla `idempotency_keys` y migración `b2c3d4e5f6a7` (T-100).
+- Bloqueo `SELECT … FOR UPDATE` sobre el equipo al expulsar miembros o cambiar roles, para que dos operaciones concurrentes no dejen el equipo sin admin (T-101).
 
 - Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.
 - Configuración central en `app/config.py` con validación y fail-fast en producción.
@@ -87,6 +88,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Contratos y checklist sin afirmaciones obsoletas sobre cookies, checksums, paginación y query string (T-099).
 - Un reintento con la misma `Idempotency-Key` devuelve la respuesta original con `Idempotent-Replayed: true`; cuerpo distinto → 422 y petición en vuelo → 409 (T-100).
 - La purga de retención también elimina claves de idempotencia caducadas (`IDEMPOTENCY_KEY_TTL_HOURS`, 24 h) (T-100).
+- Las comprobaciones de último admin se ejecutan bajo un lock de fila del equipo; el test de concurrencia se ejecuta sobre PostgreSQL (T-101).
 
 ### Corregido
 

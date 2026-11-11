@@ -119,7 +119,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Idempotencia de logout | ✅ | Tests P1 |
 | Coherencia de borrados | ✅ | T-044, cascada y limpieza |
 | Reasignación al expulsar | ✅ | T-042 |
-| Prevención de carreras en último admin | 🟡 | Comprobación en aplicación; falta constraint/lock |
+| Prevención de carreras en último admin | ✅ | T-101: `SELECT … FOR UPDATE` sobre la fila del equipo serializa expulsiones y cambios de rol |
 
 ## V12 — Archivos y recursos
 

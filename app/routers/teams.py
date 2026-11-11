@@ -370,6 +370,10 @@ def remove_member(
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
     team = get_team_from_id_or_slug(db, team_id_or_slug)
+
+    # Hold the team row until commit so two concurrent expulsions cannot both
+    # see enough admins and leave the team without one.
+    crud.lock_team_for_membership_change(db, team.id)
     member = crud.get_team_member(db, team.id, user_id)
 
     if not member:
@@ -395,7 +399,12 @@ def remove_member(
             detail="Cannot remove the last admin of the team",
         )
 
-    crud.remove_member(db, team.id, user_id, changed_by=current_user.id)
+    crud.remove_member(db, team.id, user_id, changed_by=current_user.id, commit=False)
+    db.commit()
+
+    from app.cache import cache_service
+
+    cache_service.invalidate_team(team.id)
 
 
 @router.patch("/{team_id_or_slug}/members/{user_id}", response_model=schemas.TeamMemberOut)
@@ -435,6 +444,10 @@ def update_member_role(
         ...   -d '{"role":"admin"}'
     """
     team = get_team_from_id_or_slug(db, team_id_or_slug)
+
+    # Serialize role changes so a demotion cannot race another demotion or an
+    # expulsion and leave the team with zero admins.
+    crud.lock_team_for_membership_change(db, team.id)
     member = crud.get_team_member(db, team.id, user_id)
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
@@ -455,7 +468,9 @@ def update_member_role(
         )
 
     old_role = member.role
-    updated_member = crud.update_member_role(db, team.id, user_id, role_update.role.value)
+    updated_member = crud.update_member_role(
+        db, team.id, user_id, role_update.role.value, commit=False
+    )
     crud.log_activity(
         db,
         "team_member",

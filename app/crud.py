@@ -380,7 +380,13 @@ def add_member(db: Session, team_id: int, user_id: int, role: str):
     return member
 
 
-def remove_member(db: Session, team_id: int, user_id: int, changed_by: int | None = None):
+def remove_member(
+    db: Session,
+    team_id: int,
+    user_id: int,
+    changed_by: int | None = None,
+    commit: bool = True,
+):
     """
     Remove a user from a team.
 
@@ -393,6 +399,8 @@ def remove_member(db: Session, team_id: int, user_id: int, changed_by: int | Non
         team_id (int): ID of the team.
         user_id (int): ID of the user to remove.
         changed_by (int | None): Admin performing the removal, for audit logs.
+        commit (bool): Commit the transaction. Pass ``False`` when the caller
+            already holds the team lock and needs to commit atomically.
 
     Returns:
         TeamMember | None: The deleted member record, or None if not found.
@@ -432,10 +440,13 @@ def remove_member(db: Session, team_id: int, user_id: int, changed_by: int | Non
                     )
                 )
         db.delete(member)
-        db.commit()
-        from app.cache import cache_service
+        if commit:
+            db.commit()
+            from app.cache import cache_service
 
-        cache_service.invalidate_team(team_id)
+            cache_service.invalidate_team(team_id)
+        else:
+            db.flush()
     return member
 
 
@@ -493,6 +504,17 @@ def get_team_member(db: Session, team_id: int, user_id: int):
     )
 
 
+def lock_team_for_membership_change(db: Session, team_id: int) -> None:
+    """Serialize membership changes that can remove an administrator.
+
+    ``SELECT ... FOR UPDATE`` on the team row makes concurrent removals or
+    demotions wait for each other, so two requests cannot both observe "two
+    admins" and leave the team without one. SQLite ignores the clause, but the
+    production database is PostgreSQL and the invariant test runs there.
+    """
+    db.query(models.Team).filter(models.Team.id == team_id).with_for_update().one()
+
+
 def count_team_admins(db: Session, team_id: int) -> int:
     """Return the number of admins in a team.
 
@@ -509,7 +531,7 @@ def count_team_admins(db: Session, team_id: int) -> int:
     )
 
 
-def update_member_role(db: Session, team_id: int, user_id: int, role: str):
+def update_member_role(db: Session, team_id: int, user_id: int, role: str, commit: bool = True):
     """
     Update a member's role in a team.
 
@@ -518,6 +540,8 @@ def update_member_role(db: Session, team_id: int, user_id: int, role: str):
         team_id (int): ID of the team.
         user_id (int): ID of the user.
         role (str): New role to assign ("admin" or "member").
+        commit (bool): Commit the transaction. Pass ``False`` when the caller
+            already holds the team lock and needs to commit atomically.
 
     Returns:
         TeamMember | None: Updated member record, or None if not found.
@@ -528,8 +552,11 @@ def update_member_role(db: Session, team_id: int, user_id: int, role: str):
     member = get_team_member(db, team_id, user_id)
     if member:
         member.role = role
-        db.commit()
-        db.refresh(member)
+        if commit:
+            db.commit()
+            db.refresh(member)
+        else:
+            db.flush()
     return member
 
 

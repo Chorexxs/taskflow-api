@@ -456,7 +456,7 @@ Restricción única `(user_id, key)`. Migración `b2c3d4e5f6a7`.
 
 ## 5. Reglas de integridad y negocio
 
-1. Un equipo siempre tiene al menos un `admin`. Se valida en servicio y, si es posible, con trigger.
+1. Un equipo siempre tiene al menos un `admin`. Se valida en servicio y la comprobación se ejecuta bajo un `SELECT … FOR UPDATE` sobre la fila del equipo (T-101), de modo que dos expulsiones o degradaciones concurrentes se serializan y la segunda ve el estado ya confirmado.
 2. Un usuario no puede tener dos membresías en el mismo equipo (PK compuesta).
 3. Un proyecto pertenece a un equipo; una tarea a un proyecto; un comentario/adjunto a una tarea.
 4. `assigned_to` debe ser miembro del equipo del proyecto. Validación en servicio + test.
