@@ -23,6 +23,7 @@ mismatch so the drill can run as a scheduled check.
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -35,7 +36,7 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy import create_engine, inspect  # noqa: E402
 
 from app.backup import RestoreMismatch, compare_databases  # noqa: E402
 
@@ -72,8 +73,16 @@ def run(command: list[str], secrets: list[str]) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="TaskFlow backup/restore drill")
-    parser.add_argument("--source-url", required=True, help="Database to dump")
-    parser.add_argument("--target-url", required=True, help="Database to restore into")
+    parser.add_argument(
+        "--source-url",
+        default=os.environ.get("BACKUP_SOURCE_URL", ""),
+        help="Database to dump (or BACKUP_SOURCE_URL)",
+    )
+    parser.add_argument(
+        "--target-url",
+        default=os.environ.get("BACKUP_TARGET_URL", ""),
+        help="Database to restore into (or BACKUP_TARGET_URL)",
+    )
     parser.add_argument(
         "--backup-file",
         default=str(Path(tempfile.gettempdir()) / "taskflow-backup.dump"),
@@ -90,19 +99,45 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Only dump (useful to produce a backup artifact)",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Allow restoring into a target that already contains tables (destructive)",
+    )
     return parser
+
+
+def target_has_tables(target_url: str) -> bool:
+    """Return True when the restore target already contains user tables."""
+    engine = create_engine(target_url)
+    try:
+        return bool(inspect(engine).get_table_names())
+    finally:
+        engine.dispose()
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    source_url = args.source_url.strip()
+    target_url = args.target_url.strip()
+    if not source_url:
+        raise SystemExit("A source database is required (--source-url or BACKUP_SOURCE_URL)")
+    if not args.skip_restore and not target_url:
+        raise SystemExit("A target database is required (--target-url or BACKUP_TARGET_URL)")
+    if not args.skip_restore and target_url and not args.force and target_has_tables(target_url):
+        raise SystemExit(
+            "The target already contains tables; pass --force to overwrite it"
+        )
+
     backup_file = Path(args.backup_file)
     backup_file.parent.mkdir(parents=True, exist_ok=True)
     pg_dump = find_tool("pg_dump", args.pg_bin)
     pg_restore = find_tool("pg_restore", args.pg_bin)
-    secrets = [args.source_url, args.target_url]
+    secrets = [source_url, target_url]
 
-    print(f"source={redact_url(args.source_url)}")
-    print(f"target={redact_url(args.target_url)}")
+    print(f"source={redact_url(source_url)}")
+    if target_url:
+        print(f"target={redact_url(target_url)}")
     print(f"backup={backup_file}")
 
     started = time.monotonic()
@@ -113,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
             "--no-owner",
             "--no-privileges",
             f"--file={backup_file}",
-            args.source_url,
+            source_url,
         ],
         secrets,
     )
@@ -130,7 +165,7 @@ def main(argv: list[str] | None = None) -> int:
         "--no-owner",
         "--no-privileges",
         "--exit-on-error",
-        f"--dbname={args.target_url}",
+        f"--dbname={target_url}",
     ]
     if args.schema:
         restore_command.append(f"--schema={args.schema}")
@@ -138,8 +173,8 @@ def main(argv: list[str] | None = None) -> int:
     run(restore_command, secrets)
     print("restore_ok")
 
-    source_engine = create_engine(args.source_url)
-    target_engine = create_engine(args.target_url)
+    source_engine = create_engine(source_url)
+    target_engine = create_engine(target_url)
     try:
         report = compare_databases(source_engine, target_engine)
     except RestoreMismatch as exc:

@@ -1,5 +1,7 @@
 version: '3.8'
 
+# Local development only. Do not reuse these credentials or expose these
+# ports on a shared host.
 services:
   postgres:
     image: postgres:15-alpine
@@ -8,7 +10,7 @@ services:
       POSTGRES_PASSWORD: taskflow
       POSTGRES_DB: taskflow
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,7 +22,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -32,11 +34,12 @@ services:
   app:
     build: .
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       DATABASE_URL: postgresql://taskflow:taskflow@postgres:5432/taskflow
       REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: dev-secret-key-change-in-production
+      # Development-only key; production uses Render env vars.
+      SECRET_KEY: dev-only-insecure-secret-key-change-me
       ENVIRONMENT: development
       CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
     depends_on:

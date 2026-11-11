@@ -11,6 +11,7 @@ Example:
 from __future__ import annotations
 
 import argparse
+import secrets
 import sys
 import time
 from collections.abc import Sequence
@@ -30,7 +31,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     base = args.base_url.rstrip("/")
     suffix = str(int(time.time()))
     email = f"smoke+{suffix}@example.com"
-    password = "SmokeTest123!"
+    password = secrets.token_urlsafe(24)
     team_slug = f"smoke-team-{suffix}"
     project_name = f"Smoke Project {suffix}"
     task_title = f"Smoke Task {suffix}"
