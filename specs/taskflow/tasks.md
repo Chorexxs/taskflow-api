@@ -52,9 +52,11 @@ Verificación actual (2026-11-11, P10): suite completa sobre PostgreSQL 16 →
 **214 passed**, 0 fallos, migraciones aplicadas por Alembic y **87,94 % de
 cobertura** (gate 80 %). Con el escape hatch `TEST_USE_SQLITE=1` → 211 passed,
 2 fallos de SSE y 1 skip del test de lock (requiere PostgreSQL). `npm run test`
-→ **48 passed** (72,3 % líneas / 76,9 % ramas); `npm run lint` → limpio;
+→ **51 passed** (72,6 % líneas / 77,14 % ramas); `npm run lint` → limpio;
 `npm run build` → correcto; migraciones `upgrade`/`downgrade -1`/`upgrade`
-reversibles. **Producción (2026-11-11):** InsForge migrado a `b2c3d4e5f6a7`
+reversibles. **Docker (2026-11-11):** `docker build -t taskflow-api:local .`
+correcto; imagen no-root (`taskflow`) con `HEALTHCHECK` sobre `/health/live`
+(B-04 resuelto). **Producción (2026-11-11):** InsForge migrado a `b2c3d4e5f6a7`
 (columna e índice de `position` y tabla `idempotency_keys` verificados, 0
 posiciones nulas); smoke de release **15/15**; Render sirve el código del Kanban
 (tarea nueva con `position` 1024) y la idempotencia responde con

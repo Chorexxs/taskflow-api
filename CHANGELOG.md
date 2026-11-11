@@ -26,6 +26,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `specs/taskflow/threat-model.md`: modelo STRIDE con 32 amenazas, mitigaciones y riesgos residuales (T-104).
 - Formularios del frontend con `label`/`htmlFor`, `id` y `name`; buscadores y filtros con `aria-label` (T-105).
 - El cliente SPA envía `Idempotency-Key` en las creaciones y la reutiliza en el reintento tras un 401 (T-106).
+- Build Docker verificado: usuario no-root `taskflow` y `HEALTHCHECK` sobre `/health/live` (B-04 resuelto).
 
 - Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.
 - Configuración central en `app/config.py` con validación y fail-fast en producción.

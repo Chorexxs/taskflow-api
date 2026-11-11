@@ -95,21 +95,26 @@ Origin https://evil.example → sin cabecera CORS
 
 ---
 
-## B-04 — Docker daemon
+## B-04 — Docker daemon: RESUELTO
 
-**Comando ejecutado:**
+**Estado:** resuelto (2026-11-11)
+
+Con Docker Desktop iniciado (`ServerVersion 29.9.3`) se ejecutó:
 
 ```bash
 docker build -t taskflow-api:local .
 ```
 
-**Salida:**
+Resultado: build correcto. Imagen verificada con `docker inspect`:
 
 ```text
-ERROR: failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine
+user=taskflow
+healthcheck=CMD-SHELL python -c "...urlopen('http://localhost:8000/health/live', timeout=3)"
+cmd=["python","-m","app.main"]
 ```
 
-Docker Desktop no está iniciado, así que la imagen no se pudo construir localmente. El `Dockerfile` se actualizó a Python 3.12, usuario no-root y `HEALTHCHECK`; CI puede validarlo cuando el runner tenga Docker o se use un build de Render.
+Cumple T-075: Python 3.12, usuario no-root y `HEALTHCHECK` sobre `/health/live`.
+La imagen no se publicó; el despliegue sigue siendo Render.
 
 ---
 
