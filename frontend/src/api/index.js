@@ -314,6 +314,18 @@ export const api = {
       return request('/api/v1/auth/login', { method: 'POST', body });
     },
 
+    verifyEmail: (token) =>
+      request('/api/v1/auth/verify-email', {
+        method: 'POST',
+        body: { token },
+      }),
+
+    resendVerification: (email) =>
+      request('/api/v1/auth/resend-verification', {
+        method: 'POST',
+        body: { email },
+      }),
+
     refresh: (refreshToken) =>
       request('/api/v1/auth/refresh', {
         method: 'POST',

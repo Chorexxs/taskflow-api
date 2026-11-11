@@ -7,6 +7,7 @@ Each model represents a database table with its columns and relationships.
 Models:
 - User: Registered users in the system
 - Team: Teams that users can create and join
+- EmailVerificationToken: Single-use email verification tokens
 - TeamMember: Many-to-many relationship between users and teams
 - Project: Projects within teams
 - Task: Tasks within projects
@@ -44,6 +45,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    true,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -60,6 +62,7 @@ class User(Base):
         email (String): Unique email address, used for login
         hashed_password (String): Bcrypt-hashed password
         is_active (Boolean): Whether the account is active
+        email_verified (Boolean): Whether the email address was verified
         is_blocked (Boolean): Whether the account is blocked (failed login attempts)
         failed_login_attempts (Integer): Count of consecutive failed logins
         locked_until (DateTime): If blocked, when the lock expires
@@ -78,6 +81,7 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
+    email_verified = Column(Boolean, nullable=False, default=True, server_default=true())
     is_blocked = Column(Boolean, default=False)
     failed_login_attempts = Column(Integer, default=0)
     locked_until = Column(DateTime(timezone=True), nullable=True)
@@ -90,6 +94,29 @@ class User(Base):
     password_changed_at = Column(DateTime(timezone=True), nullable=True)
     # Comma-separated notification types the user does not want to receive.
     muted_notification_types = Column(String(200), nullable=False, default="", server_default="")
+
+
+class EmailVerificationToken(Base):
+    """Single-use token for email verification (T-113).
+
+    Only a SHA-256 hash is stored, so a database leak does not expose usable
+    tokens. Tokens expire and are invalidated when a new one is issued.
+
+    Table: email_verification_tokens
+    """
+
+    __tablename__ = "email_verification_tokens"
+    __table_args__ = (
+        Index("ix_email_verification_tokens_user", "user_id"),
+        Index("ix_email_verification_tokens_expires", "expires_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    token_hash = Column(String(64), nullable=False, unique=True, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 class Team(Base):

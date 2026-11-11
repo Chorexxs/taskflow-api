@@ -25,7 +25,8 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Contraseñas ≥ 8 y ≤ 128, sin control chars | ✅ | `schemas.py`, T-027 |
 | Hash con bcrypt y salt por contraseña | ✅ | `app/auth.py` |
 | Bloqueo tras intentos fallidos | ✅ | `MAX_LOGIN_ATTEMPTS`, tests de lockout |
-| Sin mensajes que revelen si el email existe | ✅ | Login devuelve 401 genérico |
+| Sin mensajes que revelen si el email existe | ✅ | Login 401 genérico; registro y resend genéricos con `EMAIL_VERIFICATION_REQUIRED=true` (T-113) |
+| Verificación de email | ✅ | T-113: token de un solo uso (hash SHA-256, TTL 24 h), backend log/SMTP y pantalla de verificación |
 | Rate limiting en registro/login/refresh | ✅ | T-030/T-031, `tests/test_rate_limit_http.py`; IP real tras el proxy verificada en T-109 |
 | Cambio de contraseña exige la actual y revoca sesiones | ✅ | T-028, `token_version` |
 | MFA | ❌ | Fuera de alcance de este ciclo |
@@ -171,7 +172,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | SEC-ASVS-04 | Sin prueba de restore de backups | ✅ Resuelto (T-102) | — |
 | SEC-ASVS-05 | Integración de tests en SQLite | ✅ Resuelto (T-077): PostgreSQL con migraciones | — |
 | SEC-ASVS-06 | Imagen Docker con `.env`, `.git` y datos locales | ✅ Resuelto (T-108) | `.dockerignore` + Dockerfile mínimo + gate de CI |
-| SEC-ASVS-07 | Enumeración de cuentas y oráculo de bloqueo | Baja (aceptado) | Rate limit; requiere verificación por email para cerrar del todo |
+| SEC-ASVS-07 | Enumeración de cuentas y oráculo de bloqueo | ✅ Resuelto con `EMAIL_VERIFICATION_REQUIRED=true` (T-113); el bloqueo 423 sigue siendo un oráculo menor | Registro/resend genéricos; activar verificación en producción |
 | SEC-ASVS-08 | Rate limit confía en `X-Forwarded-For` del proxy | ✅ Resuelto (T-109) | `uvicorn` con `proxy_headers` y `FORWARDED_ALLOW_IPS`; verificado en producción |
 | SEC-ASVS-09 | Uploads sin antivirus | ✅ Resuelto (T-110) | ClamAV INSTREAM opcional; `CLAMAV_REQUIRED` para fail closed; el archivo infectado se rechaza antes de almacenar |
 | SEC-ASVS-10 | El bloqueo de cuenta no revoca sesiones existentes | Baja (aceptado) | Comprobar `is_blocked` en auth si el producto lo exige |

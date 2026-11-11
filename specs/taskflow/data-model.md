@@ -276,6 +276,7 @@ Migración `c9d0e1f2a3b4`: añade `dedupe_key` y
 | Email almacenado en minúsculas + unique funcional | Evitar duplicados `User@x.com` vs `user@x.com` |
 | `last_login_at timestamptz` | Operación y auditoría |
 | `password_changed_at timestamptz` | Revocación de sesiones |
+| `email_verified boolean NOT NULL DEFAULT true` | Verificación por email (T-113); las cuentas existentes quedan verificadas |
 | `token_version integer default 0` | Invalidar access tokens sin consultar tabla (opcional, alternativa a blacklist) |
 
 ### 3.2 `teams`
@@ -430,6 +431,20 @@ indexado); `checksum` en `b8c9d0e1f2a3`; backfill a InsForge Storage con
 
 Restricción única `(user_id, key)`. Migración `b2c3d4e5f6a7`.
 
+#### `email_verification_tokens` (implementada, T-113)
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `id` | `serial` | PK |
+| `user_id` | `integer` | FK `users.id` ON DELETE CASCADE, NOT NULL, índice |
+| `token_hash` | `char(64)` | UNIQUE NOT NULL (SHA-256) |
+| `expires_at` | `timestamptz` | NOT NULL, índice |
+| `used_at` | `timestamptz` | NULL |
+| `created_at` | `timestamptz` | NOT NULL, DEFAULT now() |
+
+Migración `c1d2e3f4a5b6`. Los tokens son de un solo uso y se invalidan al
+emitir uno nuevo o al consumirlos.
+
 ---
 
 ## 4. Índices objetivo
@@ -493,6 +508,7 @@ Restricción única `(user_id, key)`. Migración `b2c3d4e5f6a7`.
 | M-06 | Notificaciones | Añadir `read_at`; backfill desde `is_read`; índice; conservar `is_read` temporalmente | Eliminar `read_at`/índice |
 | M-07 | Invitaciones (opcional) | Crear `team_invites` | Drop table |
 | M-08 | Índices de lectura | **Implementado** en `a7b8c9d0e1f2` para team_members, projects, tasks, comments, attachments y notifications | Drop indexes |
+| M-09 | Verificación de email | **Implementado** en `c1d2e3f4a5b6` (T-113): `users.email_verified` default true + `email_verification_tokens` | Drop tabla y columna |
 
 ### Backfill de ejemplo (slugs)
 

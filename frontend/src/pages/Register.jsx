@@ -31,6 +31,7 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState('');
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -51,7 +52,12 @@ export default function Register() {
 
     setLoading(true);
     try {
-      await register(email, password);
+      const result = await register(email, password);
+      if (result?.message) {
+        setVerificationMessage(result.message);
+        toast.success('Check your email');
+        return;
+      }
       toast.success('Account created!');
       navigate('/');
     } catch (error) {
@@ -82,6 +88,23 @@ export default function Register() {
           </div>
           
           {/* Form */}
+          {verificationMessage ? (
+            <div className="space-y-4 text-center">
+              <p className="text-sm text-[var(--color-text-secondary)]">
+                {verificationMessage}
+              </p>
+              <p className="text-xs text-[var(--color-text-muted)]">
+                The link expires in 24 hours. Check your spam folder if you do
+                not see it.
+              </p>
+              <Link
+                to="/login"
+                className="inline-block text-sm text-[var(--color-accent)] hover:underline"
+              >
+                Back to sign in
+              </Link>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email field */}
             <div className="space-y-2">
@@ -155,6 +178,7 @@ export default function Register() {
               )}
             </button>
           </form>
+          )}
           
           {/* Login link */}
           <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">

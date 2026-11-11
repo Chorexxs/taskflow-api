@@ -104,13 +104,25 @@ class Settings(BaseSettings):
         "png,jpg,jpeg,gif,webp,pdf,txt,csv,json,md,doc,docx,xls,xlsx,ppt,pptx,zip"
     )
 
-    # Optional ClamAV scanning for uploads. Empty host disables it; if
-    # CLAMAV_REQUIRED is true an unavailable scanner rejects uploads (fail
-    # closed) instead of allowing them through.
+    # ClamAV scanning...
     CLAMAV_HOST: str = ""
     CLAMAV_PORT: int = 3310
     CLAMAV_TIMEOUT_SECONDS: float = 5.0
     CLAMAV_REQUIRED: bool = False
+
+    # Email verification. Disabled by default so existing deployments and
+    # existing accounts are unaffected; enable it once an email backend is set.
+    FRONTEND_URL: str = "http://localhost:5173"
+    EMAIL_VERIFICATION_REQUIRED: bool = False
+    EMAIL_VERIFICATION_TTL_HOURS: int = 24
+    EMAIL_BACKEND: str = "log"  # log | smtp
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "no-reply@taskflow.local"
+    SMTP_USE_TLS: bool = True
+    SMTP_USE_SSL: bool = False
 
     @field_validator("CLAMAV_PORT", mode="before")
     @classmethod
@@ -121,6 +133,33 @@ class Settings(BaseSettings):
         if not 1 <= port <= 65535:
             raise ValueError("CLAMAV_PORT must be between 1 and 65535")
         return port
+
+    @field_validator("SMTP_PORT", mode="before")
+    @classmethod
+    def _valid_smtp_port(cls, value):
+        if isinstance(value, str) and not value.strip():
+            raise ValueError("SMTP_PORT must be a valid port")
+        port = int(value)
+        if not 1 <= port <= 65535:
+            raise ValueError("SMTP_PORT must be between 1 and 65535")
+        return port
+
+    @field_validator("EMAIL_VERIFICATION_TTL_HOURS", mode="before")
+    @classmethod
+    def _positive_verification_ttl(cls, value):
+        if isinstance(value, str) and not value.strip():
+            raise ValueError("EMAIL_VERIFICATION_TTL_HOURS must be positive")
+        if int(value) <= 0:
+            raise ValueError("EMAIL_VERIFICATION_TTL_HOURS must be greater than zero")
+        return value
+
+    @field_validator("EMAIL_BACKEND", mode="before")
+    @classmethod
+    def _valid_email_backend(cls, value):
+        backend = str(value).strip().lower()
+        if backend not in {"log", "smtp"}:
+            raise ValueError("EMAIL_BACKEND must be 'log' or 'smtp'")
+        return backend
 
     @field_validator("CLAMAV_TIMEOUT_SECONDS", mode="before")
     @classmethod
@@ -288,6 +327,26 @@ class Settings(BaseSettings):
             ]
             if missing:
                 raise RuntimeError("STORAGE_BACKEND=insforge requires " + ", ".join(missing))
+
+        if self.EMAIL_BACKEND == "smtp":
+            missing = [
+                name
+                for name, value in (
+                    ("SMTP_HOST", self.SMTP_HOST),
+                    ("SMTP_FROM", self.SMTP_FROM),
+                )
+                if not value.strip()
+            ]
+            if missing:
+                raise RuntimeError("EMAIL_BACKEND=smtp requires " + ", ".join(missing))
+        if (
+            self.EMAIL_VERIFICATION_REQUIRED
+            and self.EMAIL_BACKEND != "smtp"
+            and not self.allows_dev_defaults
+        ):
+            raise RuntimeError(
+                "EMAIL_VERIFICATION_REQUIRED outside development/test requires EMAIL_BACKEND=smtp"
+            )
 
 
 settings = Settings()

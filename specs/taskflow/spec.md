@@ -126,16 +126,16 @@ Prioridad MoSCoW: **M** must, **S** should, **C** could.
 
 | ID | Requisito | Prio | Criterio de aceptación |
 |---|---|---|---|
-| FR-AUTH-01 | Registro con email único y contraseña | M | Email normalizado a minúsculas; contraseña 8–128 caracteres; 201 con `UserOut`; email duplicado → 409; rate limit 5/min/IP |
-| FR-AUTH-02 | Login con access + refresh | M | Credenciales válidas → 200 con `access_token`, `refresh_token`, `token_type=bearer`; credenciales inválidas → 401 genérico; cuenta bloqueada → 423; rate limit 10/min/IP |
+| FR-AUTH-01 | Registro con email único y contraseña | M | Email normalizado a minúsculas; contraseña 8-128 caracteres; 201 con `UserOut` (o `RegisterResponse` con mensaje si la verificación está activa); email duplicado → 409 con la verificación desactivada; rate limit 5/min/IP |
+| FR-AUTH-02 | Login con access + refresh | M | Credenciales válidas → 200 con `access_token`, `refresh_token`, `token_type=bearer`; credenciales inválidas → 401 genérico; cuenta bloqueada → 423; email sin verificar → 403 `EMAIL_NOT_VERIFIED`; rate limit 10/min/IP |
 | FR-AUTH-03 | Refresh con rotación | M | `POST /auth/refresh` acepta `{"refresh_token": "..."}` en body; valida tipo `refresh`, expiración, revocación y usuario activo; revoca el anterior y emite par nuevo; reutilización → 401 y revocación de la familia (S); token en query string → 422 |
 | FR-AUTH-04 | Logout real | M | `POST /auth/logout` con access en header y refresh en body; revoca ambos; 204; idempotente |
 | FR-AUTH-05 | Sesión automática en el cliente | M | Si el access expira o una request devuelve 401, el cliente refresca una sola vez y reintenta; si falla, limpia sesión y redirige a login |
 | FR-AUTH-06 | Bloqueo y rate limiting | M | 5 fallos consecutivos → bloqueo 15 min; contador se resetea al login exitoso; límites respaldados por Redis y consistentes entre instancias |
 | FR-AUTH-07 | Cambio de contraseña seguro | M | Requiere contraseña actual; valida política; revoca todas las sesiones; responde 200/204 |
-| FR-AUTH-08 | Perfil | M | `GET /users/me` devuelve id, email, is_active, created_at; actualización de email requiere contraseña actual y email único; nunca devuelve hash |
+| FR-AUTH-08 | Perfil | M | `GET /users/me` devuelve id, email, is_active, email_verified y created_at; actualización de email requiere contraseña actual y email único; nunca devuelve hash |
 | FR-AUTH-09 | Limpieza de tokens | S | Job programado elimina tokens/sesiones expirados; métrica de filas eliminadas |
-| FR-AUTH-10 | Reset de contraseña y verificación de email | C | Requiere proveedor de email; fuera de alcance si no se decide lo contrario |
+| FR-AUTH-10 | Verificación de email | M | Token de un solo uso (hash SHA-256, TTL 24 h) enviado por backend `log` (dev) o SMTP; `POST /auth/verify-email` y `/auth/resend-verification`; registro genérico cuando está activa; reset de contraseña sigue fuera de alcance |
 | FR-AUTH-11 | Auditoría de eventos de auth | S | Login exitoso/fallido, logout, refresh, bloqueo y cambio de contraseña quedan registrados sin PII sensible |
 
 ### 7.2 Equipos

@@ -216,6 +216,9 @@ export function AuthProvider({ children }) {
     if (data.id) {
       return login(email, password);
     }
+    if (data.message) {
+      return { message: data.message };
+    }
     throw new Error(data?.detail || 'Registration failed');
   };
 

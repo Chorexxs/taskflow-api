@@ -119,7 +119,12 @@ def get_user_by_id(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
-def create_user(db: Session, user: schemas.UserCreate):
+def create_user(
+    db: Session,
+    user: schemas.UserCreate,
+    *,
+    email_verified: bool = True,
+):
     """
     Create a new user in the database.
 
@@ -129,6 +134,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     Args:
         db (Session): SQLAlchemy database session.
         user (UserCreate): Schema containing email and password.
+        email_verified (bool): Initial verification state (T-113).
 
     Returns:
         User: The newly created user object with ID and timestamps.
@@ -141,7 +147,11 @@ def create_user(db: Session, user: schemas.UserCreate):
         >>> new_user = create_user(db, user_data)
     """
     hashed_password = get_password_hash(user.password)
-    db_user = models.User(email=user.email, hashed_password=hashed_password)
+    db_user = models.User(
+        email=user.email,
+        hashed_password=hashed_password,
+        email_verified=email_verified,
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

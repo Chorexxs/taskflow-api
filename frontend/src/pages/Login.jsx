@@ -15,6 +15,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/auth-context';
+import { api } from '../api';
 import toast from 'react-hot-toast';
 
 /**
@@ -30,6 +31,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -47,9 +49,23 @@ export default function Login() {
       toast.success('Welcome back!');
       navigate('/');
     } catch (error) {
-      toast.error(error.message);
+      if (error.status === 403 || /not verified/i.test(error.message || '')) {
+        setNeedsVerification(true);
+        toast.error('Verify your email before signing in');
+      } else {
+        toast.error(error.message);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      await api.auth.resendVerification(email);
+      toast.success('If the account exists, a new link was sent');
+    } catch {
+      toast.error('Could not resend the verification email');
     }
   };
 
@@ -130,6 +146,16 @@ export default function Login() {
               )}
             </button>
           </form>
+
+          {needsVerification && (
+            <button
+              type="button"
+              onClick={handleResend}
+              className="mt-4 w-full text-sm text-[var(--color-accent)] hover:underline"
+            >
+              Resend verification email
+            </button>
+          )}
           
           {/* Register link */}
           <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">

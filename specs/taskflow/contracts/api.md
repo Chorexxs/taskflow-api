@@ -14,6 +14,10 @@ Implementado en P1:
 
 - `POST /auth/refresh` acepta `{"refresh_token": "..."}` en el body y rota el token; el token en query string se rechaza con `422`.
 - `POST /auth/logout` revoca access + refresh y es idempotente (204).
+- `POST /auth/register` devuelve `RegisterResponse` con `message` cuando
+  `EMAIL_VERIFICATION_REQUIRED=true`; el duplicado responde igual para no
+  enumerar cuentas. `POST /auth/verify-email` consume el token y
+  `POST /auth/resend-verification` siempre responde 202 genérico.
 - CORS con allowlist (`CORS_ORIGINS`).
 - Uploads con nombre saneado, clave única, límite en streaming y allowlist MIME/extensión.
 - `AttachmentOut` sin `file_path` ni `storage_key`.
@@ -303,6 +307,8 @@ Aplicable a: equipos, miembros, proyectos, tareas, comentarios, adjuntos, notifi
 | `POST /auth/register` | 5 | 1 minuto/IP |
 | `POST /auth/login` | 10 | 1 minuto/IP |
 | `POST /auth/refresh` | 30 | 1 minuto/IP |
+| `POST /auth/verify-email` | 10 | 1 minuto/IP |
+| `POST /auth/resend-verification` | 3 | 1 minuto/IP |
 | `POST /auth/logout` | 60 | 1 minuto/IP |
 | `PUT /users/me` | 10 | 1 minuto/IP |
 | `GET /teams/{id}/search` | 60 | 1 minuto/IP |
@@ -332,10 +338,12 @@ Leyenda de permisos: **Público**, **Auth** (cualquier autenticado), **Member**,
 
 | Método | Ruta | Permiso | Request | Response | Status |
 |---|---|---|---|---|---|
-| POST | `/auth/register` | Público | `{email, password}` | `UserOut` | 201, 409, 422, 429 |
-| POST | `/auth/login` | Público | form `username,password` | `Token` | 200, 401, 423, 429 |
+| POST | `/auth/register` | Público | `{email, password}` | `UserOut`/`RegisterResponse` | 201, 400, 422, 429 |
+| POST | `/auth/login` | Público | form `username,password` | `Token` | 200, 401, 403, 423, 429 |
 | POST | `/auth/refresh` | Público (refresh) | `{refresh_token}` | `Token` | 200, 401, 422, 429 |
-| POST | `/auth/logout` | Auth | `{refresh_token}` | — | 204, 401 |
+| POST | `/auth/verify-email` | Público | `{token}` | `MessageResponse` | 200, 400, 422, 429 |
+| POST | `/auth/resend-verification` | Público | `{email}` | `MessageResponse` | 202, 422, 429 |
+| POST | `/auth/logout` | Auth | `{refresh_token}` | - | 204, 401 |
 
 ### 7.2 Users
 

@@ -208,6 +208,7 @@ class UserOut(UserBase):
         id (int): User's unique identifier
         email (EmailStr): User's email address
         is_active (bool): Whether the account is active
+        email_verified (bool): Whether the email was verified
         created_at (datetime): Account creation timestamp
 
     Config:
@@ -216,9 +217,46 @@ class UserOut(UserBase):
 
     id: int
     is_active: bool
+    email_verified: bool = True
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class RegisterResponse(BaseModel):
+    """Registration result; ``message`` is used when verification is required."""
+
+    id: int | None = None
+    email: EmailStr | None = None
+    is_active: bool | None = None
+    email_verified: bool | None = None
+    created_at: datetime | None = None
+    message: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EmailVerificationRequest(BaseModel):
+    """Payload for POST /auth/verify-email."""
+
+    token: str
+
+
+class ResendVerificationRequest(BaseModel):
+    """Payload for POST /auth/resend-verification."""
+
+    email: EmailStr
+
+    @field_validator("email", mode="after")
+    @classmethod
+    def normalize_email(cls, value: EmailStr) -> str:
+        return str(value).strip().lower()
+
+
+class MessageResponse(BaseModel):
+    """Generic message response for verification endpoints."""
+
+    message: str
 
 
 class Token(BaseModel):

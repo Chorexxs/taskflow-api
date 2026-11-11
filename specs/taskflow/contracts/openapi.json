@@ -284,6 +284,20 @@
         "title": "CommentUpdate",
         "type": "object"
       },
+      "EmailVerificationRequest": {
+        "description": "Payload for POST /auth/verify-email.",
+        "properties": {
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "EmailVerificationRequest",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -313,6 +327,20 @@
           }
         },
         "title": "LogoutRequest",
+        "type": "object"
+      },
+      "MessageResponse": {
+        "description": "Generic message response for verification endpoints.",
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "MessageResponse",
         "type": "object"
       },
       "NotificationOut": {
@@ -855,6 +883,96 @@
           "refresh_token"
         ],
         "title": "RefreshTokenRequest",
+        "type": "object"
+      },
+      "RegisterResponse": {
+        "description": "Registration result; ``message`` is used when verification is required.",
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "format": "email",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "email_verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Verified"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "title": "RegisterResponse",
+        "type": "object"
+      },
+      "ResendVerificationRequest": {
+        "description": "Payload for POST /auth/resend-verification.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "ResendVerificationRequest",
         "type": "object"
       },
       "SearchResult": {
@@ -1405,7 +1523,7 @@
         "type": "object"
       },
       "UserOut": {
-        "description": "Schema for user data returned to clients.\n\nUsed in responses that need to expose user information.\nDoes NOT include password or sensitive data.\n\nAttributes:\n    id (int): User's unique identifier\n    email (EmailStr): User's email address\n    is_active (bool): Whether the account is active\n    created_at (datetime): Account creation timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "description": "Schema for user data returned to clients.\n\nUsed in responses that need to expose user information.\nDoes NOT include password or sensitive data.\n\nAttributes:\n    id (int): User's unique identifier\n    email (EmailStr): User's email address\n    is_active (bool): Whether the account is active\n    email_verified (bool): Whether the email was verified\n    created_at (datetime): Account creation timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
         "properties": {
           "created_at": {
             "format": "date-time",
@@ -1416,6 +1534,11 @@
             "format": "email",
             "title": "Email",
             "type": "string"
+          },
+          "email_verified": {
+            "default": true,
+            "title": "Email Verified",
+            "type": "boolean"
           },
           "id": {
             "title": "Id",
@@ -1705,7 +1828,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserOut"
+                  "$ref": "#/components/schemas/RegisterResponse"
                 }
               }
             },
@@ -1723,6 +1846,90 @@
           }
         },
         "summary": "Register",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/resend-verification": {
+      "post": {
+        "description": "Resend a verification link without revealing whether the email exists.",
+        "operationId": "resend_verification_api_v1_auth_resend_verification_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendVerificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resend Verification",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-email": {
+      "post": {
+        "description": "Consume a single-use token and mark the account as verified.",
+        "operationId": "verify_email_api_v1_auth_verify_email_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailVerificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify Email",
         "tags": [
           "auth"
         ]

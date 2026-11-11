@@ -33,11 +33,18 @@ from app.auth import (
     verify_password,
 )
 from app.database import get_db
+from app.email import send_verification_email
+from app.email_verification import consume_token, issue_token
 from app.logging_config import get_logger
 from app.rate_limit import rate_limit
 
 router = APIRouter()
 logger = get_logger(__name__)
+
+GENERIC_VERIFICATION_MESSAGE = (
+    "If the email is available, we sent a verification link. "
+    "Check your inbox to complete registration."
+)
 
 
 def _user_id_from_token(db: Session, token: str | None) -> int | None:
@@ -59,7 +66,11 @@ def _user_id_from_token(db: Session, token: str | None) -> int | None:
     return user.id if user else None
 
 
-@router.post("/register", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=schemas.RegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 @rate_limit("5/minute")
 def register(
     request: Request,
@@ -103,11 +114,32 @@ def register(
     # Check if email already exists
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
+        if settings.EMAIL_VERIFICATION_REQUIRED:
+            # Do not reveal whether the address is registered.
+            logger.info("auth_register_duplicate_hidden", user_id=db_user.id)
+            return schemas.RegisterResponse(message=GENERIC_VERIFICATION_MESSAGE)
         raise HTTPException(status_code=400, detail="Email already registered")
 
     # Create the user
-    created_user = crud.create_user(db=db, user=user)
+    created_user = crud.create_user(
+        db=db,
+        user=user,
+        email_verified=not settings.EMAIL_VERIFICATION_REQUIRED,
+    )
     logger.info("auth_register_succeeded", user_id=created_user.id)
+
+    if settings.EMAIL_VERIFICATION_REQUIRED:
+        try:
+            token = issue_token(db, created_user)
+            send_verification_email(created_user.email, token)
+        except Exception as exc:  # pragma: no cover - provider failure
+            logger.warning(
+                "auth_verification_email_failed",
+                user_id=created_user.id,
+                error=str(exc),
+            )
+        logger.info("auth_register_pending_verification", user_id=created_user.id)
+        return schemas.RegisterResponse(message=GENERIC_VERIFICATION_MESSAGE)
     return created_user
 
 
@@ -195,6 +227,13 @@ def login(
     reset_failed_login(db, user)
     logger.info("auth_login_succeeded", user_id=user.id)
 
+    if settings.EMAIL_VERIFICATION_REQUIRED and not user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     # Generate tokens. `ver` lets a password change invalidate every session.
     token_data = {"sub": user.email, "ver": user.token_version or 0}
     access_token = create_access_token(data=token_data)
@@ -278,6 +317,53 @@ def refresh(
         "refresh_token": new_refresh_token,
         "token_type": "bearer",
     }
+
+
+@router.post("/verify-email", response_model=schemas.MessageResponse)
+@rate_limit("10/minute")
+def verify_email(
+    request: Request,
+    response: Response,
+    payload: schemas.EmailVerificationRequest,
+    db: Session = Depends(get_db),
+):
+    """Consume a single-use token and mark the account as verified."""
+    user = consume_token(db, payload.token)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification token",
+        )
+    logger.info("auth_email_verified", user_id=user.id)
+    return {"message": "Email verified. You can sign in now."}
+
+
+@router.post(
+    "/resend-verification",
+    response_model=schemas.MessageResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+@rate_limit("3/minute")
+def resend_verification(
+    request: Request,
+    response: Response,
+    payload: schemas.ResendVerificationRequest,
+    db: Session = Depends(get_db),
+):
+    """Resend a verification link without revealing whether the email exists."""
+    user = crud.get_user_by_email(db, payload.email)
+    if user is not None and not user.email_verified:
+        try:
+            token = issue_token(db, user)
+            send_verification_email(user.email, token)
+        except Exception as exc:  # pragma: no cover - provider failure
+            logger.warning(
+                "auth_verification_email_failed",
+                user_id=user.id,
+                error=str(exc),
+            )
+        logger.info("auth_verification_resent", user_id=user.id)
+    return {"message": ("If the account exists and needs verification, an email has been sent.")}
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

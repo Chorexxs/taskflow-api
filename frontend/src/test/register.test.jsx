@@ -79,4 +79,23 @@ describe('Register', () => {
     expect(mockApi.auth.login).not.toHaveBeenCalled()
     expect(screen.getByPlaceholderText('you@example.com')).toBeInTheDocument()
   })
+
+  it('shows the verification message instead of logging in', async () => {
+    mockApi.auth.register.mockResolvedValue({
+      message: 'If the email is available, we sent a verification link.',
+    })
+
+    renderRegister()
+
+    await userEvent.type(screen.getByPlaceholderText('you@example.com'), 'new@example.com')
+    const [password, confirmation] = passwordInputs()
+    await userEvent.type(password, 'password123')
+    await userEvent.type(confirmation, 'password123')
+    await userEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(
+      await screen.findByText(/we sent a verification link/i),
+    ).toBeInTheDocument()
+    expect(mockApi.auth.login).not.toHaveBeenCalled()
+  })
 })

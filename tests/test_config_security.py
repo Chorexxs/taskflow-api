@@ -52,3 +52,28 @@ def test_development_and_test_allow_short_keys():
 
 def test_valid_production_configuration_passes():
     _production().validate_runtime()
+
+
+def test_verification_requires_smtp_outside_development():
+    with pytest.raises(RuntimeError, match="EMAIL_BACKEND=smtp"):
+        _production(EMAIL_VERIFICATION_REQUIRED=True, EMAIL_BACKEND="log").validate_runtime()
+
+
+def test_smtp_backend_requires_host_and_from():
+    with pytest.raises(RuntimeError, match="SMTP_HOST"):
+        _production(
+            EMAIL_BACKEND="smtp", SMTP_HOST="", SMTP_FROM="no-reply@example.com"
+        ).validate_runtime()
+    with pytest.raises(RuntimeError, match="SMTP_FROM"):
+        _production(
+            EMAIL_BACKEND="smtp", SMTP_HOST="smtp.example.com", SMTP_FROM=""
+        ).validate_runtime()
+
+
+def test_valid_smtp_configuration_for_verification_passes():
+    _production(
+        EMAIL_VERIFICATION_REQUIRED=True,
+        EMAIL_BACKEND="smtp",
+        SMTP_HOST="smtp.example.com",
+        SMTP_FROM="no-reply@example.com",
+    ).validate_runtime()
