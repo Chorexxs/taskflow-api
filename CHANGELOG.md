@@ -19,6 +19,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `scripts/import_github_backlog.py`; 6 labels, 10 milestones y 95 issues importados en GitHub (T-003).
 - Orden estable del Kanban: columna `tasks.position`, migración `f0e1f2a3b4c5` con backfill e índice `(project_id, status, position)` (T-096).
 - `app/jobs.py` y `scripts/purge_retention.py`: purga idempotente de notificaciones (90 d) y actividad (1 año) (T-098).
+- `Idempotency-Key` en POST de equipos, proyectos, tareas, comentarios y adjuntos, con tabla `idempotency_keys` y migración `b2c3d4e5f6a7` (T-100).
 
 - Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.
 - Configuración central en `app/config.py` con validación y fail-fast en producción.
@@ -84,6 +85,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Decisión final de ADR-001: se mantiene Bearer + auto-refresh y se documentan los disparadores para reabrirla (T-097).
 - Retención de datos aplicada al arrancar y disponible como script programable (T-098).
 - Contratos y checklist sin afirmaciones obsoletas sobre cookies, checksums, paginación y query string (T-099).
+- Un reintento con la misma `Idempotency-Key` devuelve la respuesta original con `Idempotent-Replayed: true`; cuerpo distinto → 422 y petición en vuelo → 409 (T-100).
+- La purga de retención también elimina claves de idempotencia caducadas (`IDEMPOTENCY_KEY_TTL_HOURS`, 24 h) (T-100).
 
 ### Corregido
 

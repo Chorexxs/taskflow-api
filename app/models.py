@@ -14,6 +14,7 @@ Models:
 - Attachment: File attachments on tasks
 - ActivityLog: Audit trail for entity changes
 - Notification: User notifications
+- IdempotencyKey: Stored responses for idempotent POST requests
 - RevokedToken: Tokens that have been invalidated
 
 Relationships:
@@ -41,6 +42,7 @@ from sqlalchemy import (
     LargeBinary,
     Numeric,
     String,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
@@ -460,6 +462,48 @@ class Notification(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User")
+
+
+class IdempotencyKey(Base):
+    """Stored response for an idempotent POST (T-100).
+
+    A client that sends ``Idempotency-Key`` gets the first response replayed on
+    every retry with the same key, so a network failure never creates duplicate
+    teams, projects, tasks or comments.
+
+    Attributes:
+        id (Integer): Primary key, auto-generated
+        user_id (Integer): Owner of the key; keys are scoped per user
+        key (String): Client-provided idempotency key
+        method (String): HTTP method of the original request
+        path (String): Request path, so the same key cannot hit another resource
+        request_hash (String): SHA-256 of method, path and JSON payload
+        status_code (Integer): Stored response status (NULL while in flight)
+        response_body (Text): Stored JSON response body
+        created_at (DateTime): Reservation timestamp
+        completed_at (DateTime): When the response was stored
+
+    Table: idempotency_keys
+    """
+
+    __tablename__ = "idempotency_keys"
+    __table_args__ = (
+        UniqueConstraint("user_id", "key", name="uq_idempotency_keys_user_key"),
+        Index("ix_idempotency_keys_created_at", "created_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    key = Column(String(255), nullable=False)
+    method = Column(String(10), nullable=False)
+    path = Column(String(500), nullable=False)
+    request_hash = Column(String(64), nullable=False)
+    status_code = Column(Integer, nullable=True)
+    response_body = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class RevokedToken(Base):

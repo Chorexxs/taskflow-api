@@ -37,6 +37,7 @@ from app.auth import get_current_user
 from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_team_member
+from app.idempotency import IdempotencyGuard, get_idempotency_guard
 from app.logging_config import get_logger
 from app.rate_limit import rate_limit
 from app.storage import StorageError, get_storage
@@ -146,6 +147,7 @@ async def upload_attachment(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
+    guard: IdempotencyGuard = Depends(get_idempotency_guard),
 ):
     """
     Upload a file attachment to a task.
@@ -207,6 +209,12 @@ async def upload_attachment(
         raise HTTPException(status_code=400, detail="Empty files are not allowed")
 
     checksum = hashlib.sha256(contents).hexdigest()
+
+    # The file hash is part of the fingerprint: retrying the same upload returns
+    # the original attachment instead of storing the bytes again.
+    if (replay := guard.replay({"filename": original_filename, "checksum": checksum})) is not None:
+        return replay
+
     file_path = None
     content = None
     storage_key = None
@@ -273,6 +281,7 @@ async def upload_attachment(
         original_filename,
     )
 
+    guard.store(status.HTTP_201_CREATED, schemas.AttachmentOut.model_validate(attachment))
     return attachment
 
 

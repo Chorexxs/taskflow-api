@@ -54,6 +54,23 @@ en el mismo origen).
 | Upload | `multipart/form-data` |
 | Download | `application/octet-stream` o el MIME real |
 
+### 1.4 Idempotencia
+
+Los `POST` que crean recursos (`/teams/`, `/projects/`, `/tasks/`, `/comments/`
+y `/attachments/`) aceptan la cabecera opcional `Idempotency-Key`:
+
+- La clave se limita a 1–255 caracteres ASCII visibles y se guarda por usuario.
+- El primer `POST` reserva la clave y, al terminar, guarda `status_code` y el
+  cuerpo JSON de la respuesta.
+- Un reintento con la misma clave y el mismo cuerpo devuelve **la respuesta
+  original** con `Idempotent-Replayed: true`; no crea otro recurso.
+- Reutilizar la clave con otro cuerpo o ruta devuelve `422`.
+- Si el primer intento sigue en curso, el segundo recibe `409`; una reserva
+  huérfana (proceso caído) se reutiliza tras 60 s.
+- Un error del servidor libera la clave para que el cliente pueda reintentar.
+- Las claves caducan a las 24 h (`IDEMPOTENCY_KEY_TTL_HOURS`) y la purga de
+  retención las elimina.
+
 ---
 
 ## 2. Autenticación

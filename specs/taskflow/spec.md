@@ -250,7 +250,7 @@ Prioridad MoSCoW: **M** must, **S** should, **C** could.
 | FR-API-03 | OpenAPI como contrato | M | `/openapi.json` generado en desarrollo/test; snapshot en CI; deshabilitado con `/docs` y `/redoc` en producción; cambios revisados |
 | FR-API-04 | Semántica HTTP | M | 201 creación, 204 sin contenido, 409 conflicto, 422 validación; `DELETE` documentado |
 | FR-API-05 | Rate limit headers | S | `X-RateLimit-*` y `Retry-After` en 429 |
-| FR-API-06 | Idempotencia | C | `Idempotency-Key` en POST críticos (subida, creación) |
+| FR-API-06 | Idempotencia | C | `Idempotency-Key` en POST críticos (equipos, proyectos, tareas, comentarios y adjuntos): reintento devuelve la respuesta original con `Idempotent-Replayed`; clave distinta de cuerpo/ruta → 422; en vuelo → 409 |
 | FR-API-07 | Deprecación | S | Campos/endpoints legacy marcados y con fecha de retirada |
 
 ---

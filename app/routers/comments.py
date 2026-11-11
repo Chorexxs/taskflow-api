@@ -24,6 +24,7 @@ from app.dependencies import (
     get_current_team_member,
     get_team_from_id_or_slug,
 )
+from app.idempotency import IdempotencyGuard, get_idempotency_guard
 
 _MENTION_PATTERN = re.compile(r"@([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})")
 
@@ -68,6 +69,7 @@ def create_comment(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
+    guard: IdempotencyGuard = Depends(get_idempotency_guard),
 ):
     """
     Create a comment on a task.
@@ -93,6 +95,9 @@ def create_comment(
         ...   -H "Content-Type: application/json" \\
         ...   -d '{"content":"This looks great!"}'
     """
+    if (replay := guard.replay(comment)) is not None:
+        return replay
+
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
     new_comment = crud.create_comment(db, comment, task.id, current_user.id)
 
@@ -133,6 +138,7 @@ def create_comment(
         )
         notified_user_ids.add(mentioned_user.id)
 
+    guard.store(status.HTTP_201_CREATED, schemas.CommentOut.model_validate(new_comment))
     return new_comment
 
 

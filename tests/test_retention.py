@@ -78,7 +78,7 @@ def test_purge_deletes_only_rows_outside_the_retention_window(client: TestClient
 
     counts = purge_expired_data(db_session, now=now)
 
-    assert counts == {"notifications": 1, "activity": 1}
+    assert counts == {"notifications": 1, "activity": 1, "idempotency": 0}
     remaining_notifications = {row.id for row in db_session.query(models.Notification).all()}
     remaining_activity = {row.id for row in db_session.query(models.ActivityLog).all()}
     assert remaining_notifications == {fresh_notification}
@@ -95,8 +95,8 @@ def test_purge_is_idempotent(client: TestClient, db_session):
     first = purge_expired_data(db_session, now=now)
     second = purge_expired_data(db_session, now=now)
 
-    assert first == {"notifications": 1, "activity": 1}
-    assert second == {"notifications": 0, "activity": 0}
+    assert first == {"notifications": 1, "activity": 1, "idempotency": 0}
+    assert second == {"notifications": 0, "activity": 0, "idempotency": 0}
 
 
 def test_purge_accepts_custom_windows(client: TestClient, db_session):
@@ -111,6 +111,35 @@ def test_purge_accepts_custom_windows(client: TestClient, db_session):
         activity_days=60,
     )
 
-    assert counts == {"notifications": 1, "activity": 1}
+    assert counts == {"notifications": 1, "activity": 1, "idempotency": 0}
     # The 30-day-old activity entry is inside the 60-day window.
     assert db_session.query(models.ActivityLog).count() == 1
+
+
+def test_purge_removes_expired_idempotency_keys(client: TestClient, db_session):
+    now = datetime.now(timezone.utc)
+    user_id = _user_id(client)
+    old = models.IdempotencyKey(
+        user_id=user_id,
+        key="old-key",
+        method="POST",
+        path="/api/v1/teams/",
+        request_hash="a" * 64,
+        created_at=now - timedelta(hours=48),
+    )
+    fresh = models.IdempotencyKey(
+        user_id=user_id,
+        key="fresh-key",
+        method="POST",
+        path="/api/v1/teams/",
+        request_hash="b" * 64,
+        created_at=now - timedelta(hours=1),
+    )
+    db_session.add_all([old, fresh])
+    db_session.commit()
+
+    counts = purge_expired_data(db_session, now=now)
+
+    assert counts["idempotency"] == 1
+    remaining = [row.key for row in db_session.query(models.IdempotencyKey).all()]
+    assert remaining == ["fresh-key"]

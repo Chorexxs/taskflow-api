@@ -413,6 +413,23 @@ indexado); `checksum` en `b8c9d0e1f2a3`; backfill a InsForge Storage con
 
 Índice único parcial: `(team_id, email) WHERE accepted_at IS NULL`.
 
+#### `idempotency_keys` (implementada, T-100)
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `id` | `serial` | PK |
+| `user_id` | `integer` | FK `users.id` ON DELETE CASCADE, NOT NULL, índice |
+| `key` | `varchar(255)` | NOT NULL |
+| `method` | `varchar(10)` | NOT NULL |
+| `path` | `varchar(500)` | NOT NULL |
+| `request_hash` | `char(64)` | NOT NULL (SHA-256 de método, ruta y cuerpo) |
+| `status_code` | `integer` | NULL mientras está en vuelo |
+| `response_body` | `text` | NULL mientras está en vuelo |
+| `created_at` | `timestamptz` | NOT NULL, DEFAULT now(), índice |
+| `completed_at` | `timestamptz` | NULL |
+
+Restricción única `(user_id, key)`. Migración `b2c3d4e5f6a7`.
+
 ---
 
 ## 4. Índices objetivo
@@ -505,6 +522,7 @@ ALTER TABLE projects ALTER COLUMN slug SET NOT NULL;
 | `revoked_access_tokens` expirados | 15 min + margen | Limpieza al arrancar |
 | `notifications` | 90 días | **Implementado** (T-098): `purge_expired_data` al arrancar y `scripts/purge_retention.py`; `NOTIFICATION_RETENTION_DAYS` |
 | `activity_logs` | 1 año | **Implementado** (T-098): misma purga; `ACTIVITY_RETENTION_DAYS` |
+| `idempotency_keys` | 24 h | **Implementado** (T-100): misma purga; `IDEMPOTENCY_KEY_TTL_HOURS` |
 | Adjuntos de tareas borradas | Inmediato | Servicio de borrado + reconciliación |
 | Equipos/proyectos archivados | 30 días antes de purga (si aplica) | Job + confirmación |
 | Backups | 30 días | InsForge/ops |

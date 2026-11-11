@@ -1985,6 +1985,24 @@
       "post": {
         "description": "Create a new team.\n\nCreates a new team and adds the creator as an admin member.\nThe team requires a unique slug that can be used in URLs.\n\nArgs:\n    team (TeamCreate): Schema with name, slug, and optional description.\n    current_user (User): The authenticated user (creator becomes admin).\n    db (Session): Database session (injected by FastAPI).\n\nReturns:\n    TeamOut: The newly created team.\n\nRaises:\n    HTTPException 400: If the team slug already exists.\n\nExample:\n    >>> curl -X POST https://api.taskflow.com/api/v1/teams/ \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\" \\\n    ...   -H \"Content-Type: application/json\" \\\n    ...   -d '{\"name\":\"My Team\",\"slug\":\"my-team\",\"description\":\"A team\"}'",
         "operationId": "create_team_api_v1_teams__post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -2466,6 +2484,22 @@
               "title": "Team Id Or Slug",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
           }
         ],
         "requestBody": {
@@ -2709,6 +2743,22 @@
             "schema": {
               "title": "Project Id Or Name",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -3232,6 +3282,22 @@
               "title": "Task Id Or Title",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
           }
         ],
         "requestBody": {
@@ -3542,6 +3608,22 @@
             "schema": {
               "title": "Task Id Or Title",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],

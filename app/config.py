@@ -52,6 +52,8 @@ class Settings(BaseSettings):
     # scripts/purge_retention.py for scheduled executions.
     NOTIFICATION_RETENTION_DAYS: int = 90
     ACTIVITY_RETENTION_DAYS: int = 365
+    # Idempotency-Key responses are kept for retries and then purged.
+    IDEMPOTENCY_KEY_TTL_HOURS: int = 24
 
     # Database
     DATABASE_URL: str = ""
@@ -110,6 +112,7 @@ class Settings(BaseSettings):
     @field_validator(
         "NOTIFICATION_RETENTION_DAYS",
         "ACTIVITY_RETENTION_DAYS",
+        "IDEMPOTENCY_KEY_TTL_HOURS",
         mode="before",
     )
     @classmethod

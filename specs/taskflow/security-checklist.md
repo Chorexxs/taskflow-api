@@ -140,7 +140,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Paginación uniforme | ✅ | T-038 |
 | Rate limit con `Retry-After` | ✅ | T-031 |
 | Versionado `/api/v1` | ✅ | Routers |
-| Idempotencia en POST críticos | 🟡 | No implementada; evaluar en P7 |
+| Idempotencia en POST críticos | ✅ | T-100: `Idempotency-Key` con replay, 422/409 y purga a 24 h |
 
 ## V14 — Configuración
 

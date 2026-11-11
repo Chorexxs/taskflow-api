@@ -22,6 +22,7 @@ from app import crud, models, schemas
 from app.auth import get_current_user
 from app.database import get_db
 from app.dependencies import get_current_team_admin, get_current_team_member
+from app.idempotency import IdempotencyGuard, get_idempotency_guard
 from app.rate_limit import rate_limit
 
 router = APIRouter()
@@ -57,6 +58,7 @@ def create_team(
     team: schemas.TeamCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
+    guard: IdempotencyGuard = Depends(get_idempotency_guard),
 ):
     """
     Create a new team.
@@ -81,12 +83,18 @@ def create_team(
         ...   -H "Content-Type: application/json" \\
         ...   -d '{"name":"My Team","slug":"my-team","description":"A team"}'
     """
+    # Replay a previous response if the client retried with the same key.
+    if (replay := guard.replay(team)) is not None:
+        return replay
+
     # Check if slug already exists
     existing_team = crud.get_team_by_slug(db, team.slug)
     if existing_team:
         raise HTTPException(status_code=400, detail="Team slug already exists")
 
-    return crud.create_team(db, team, current_user.id)
+    created = crud.create_team(db, team, current_user.id)
+    guard.store(status.HTTP_201_CREATED, schemas.TeamOut.model_validate(created))
+    return created
 
 
 @router.get("/", response_model=schemas.PaginatedTeamResponse)

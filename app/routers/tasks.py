@@ -25,6 +25,7 @@ from app import crud, models, schemas
 from app.auth import get_current_user
 from app.database import get_db
 from app.dependencies import get_current_team_member
+from app.idempotency import IdempotencyGuard, get_idempotency_guard
 from app.logging_config import get_logger
 from app.storage import StorageError, get_storage
 
@@ -139,6 +140,7 @@ def create_task(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
+    guard: IdempotencyGuard = Depends(get_idempotency_guard),
 ):
     """
     Create a new task within a project.
@@ -165,6 +167,9 @@ def create_task(
     """
     from app.dependencies import get_team_from_id_or_slug
 
+    if (replay := guard.replay(task)) is not None:
+        return replay
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
 
@@ -177,6 +182,7 @@ def create_task(
 
     new_task = crud.create_task(db, task, project.id, current_user.id)
     crud.log_activity(db, "task", new_task.id, "created", current_user.id, None, new_task.title)
+    guard.store(status.HTTP_201_CREATED, schemas.TaskOut.model_validate(new_task))
     return new_task
 
 

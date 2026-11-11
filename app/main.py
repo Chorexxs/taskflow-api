@@ -295,8 +295,14 @@ app.add_middleware(
     allow_origins=cors_origins,
     allow_credentials="*" not in cors_origins,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Requested-With"],
-    expose_headers=["X-Request-ID"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-Request-ID",
+        "X-Requested-With",
+        "Idempotency-Key",
+    ],
+    expose_headers=["X-Request-ID", "Idempotent-Replayed"],
 )
 
 # Custom logging middleware for request/response logging

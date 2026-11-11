@@ -20,25 +20,30 @@ def purge_expired_data(
     now: datetime | None = None,
     notification_days: int | None = None,
     activity_days: int | None = None,
+    idempotency_hours: int | None = None,
 ) -> dict[str, int]:
-    """Delete notifications and activity older than their retention window.
+    """Delete data older than its retention window.
 
     Args:
         db (Session): Database session.
         now (datetime | None): Reference instant; defaults to UTC now.
         notification_days (int | None): Override ``NOTIFICATION_RETENTION_DAYS``.
         activity_days (int | None): Override ``ACTIVITY_RETENTION_DAYS``.
+        idempotency_hours (int | None): Override ``IDEMPOTENCY_KEY_TTL_HOURS``.
 
     Returns:
-        dict[str, int]: ``{"notifications": n, "activity": m}`` deleted rows.
-        Running the function twice is safe: the second call returns zeros.
+        dict[str, int]: Deleted rows for ``notifications``, ``activity`` and
+        ``idempotency``. Running the function twice is safe: the second call
+        returns zeros.
     """
     reference = now or datetime.now(timezone.utc)
     notification_window = notification_days or settings.NOTIFICATION_RETENTION_DAYS
     activity_window = activity_days or settings.ACTIVITY_RETENTION_DAYS
+    idempotency_window = idempotency_hours or settings.IDEMPOTENCY_KEY_TTL_HOURS
 
     notification_cutoff = reference - timedelta(days=notification_window)
     activity_cutoff = reference - timedelta(days=activity_window)
+    idempotency_cutoff = reference - timedelta(hours=idempotency_window)
 
     notifications_deleted = (
         db.query(models.Notification)
@@ -50,6 +55,15 @@ def purge_expired_data(
         .filter(models.ActivityLog.created_at < activity_cutoff)
         .delete(synchronize_session=False)
     )
+    idempotency_deleted = (
+        db.query(models.IdempotencyKey)
+        .filter(models.IdempotencyKey.created_at < idempotency_cutoff)
+        .delete(synchronize_session=False)
+    )
     db.commit()
 
-    return {"notifications": notifications_deleted, "activity": activity_deleted}
+    return {
+        "notifications": notifications_deleted,
+        "activity": activity_deleted,
+        "idempotency": idempotency_deleted,
+    }

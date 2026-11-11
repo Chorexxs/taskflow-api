@@ -24,6 +24,7 @@ from app.dependencies import (
     get_current_team_member,
     get_team_from_id_or_slug,
 )
+from app.idempotency import IdempotencyGuard, get_idempotency_guard
 from app.logging_config import get_logger
 
 router = APIRouter()
@@ -88,6 +89,7 @@ def create_project(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     member: models.TeamMember = Depends(get_current_team_member),
+    guard: IdempotencyGuard = Depends(get_idempotency_guard),
 ):
     """
     Create a new project within a team.
@@ -113,6 +115,9 @@ def create_project(
     """
     from app.dependencies import get_team_from_id_or_slug
 
+    if (replay := guard.replay(project)) is not None:
+        return replay
+
     team = get_team_from_id_or_slug(db, team_id_or_slug)
     try:
         new_project = crud.create_project(db, project, team.id, current_user.id)
@@ -121,6 +126,7 @@ def create_project(
     crud.log_activity(
         db, "project", new_project.id, "created", current_user.id, None, new_project.name
     )
+    guard.store(status.HTTP_201_CREATED, schemas.ProjectOut.model_validate(new_project))
     return new_project
 
 
