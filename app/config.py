@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     MAX_LOGIN_ATTEMPTS: int = 5
     LOCKOUT_DURATION_MINUTES: int = 15
 
+    # Data retention (Q-08). Housekeeping runs at startup and through
+    # scripts/purge_retention.py for scheduled executions.
+    NOTIFICATION_RETENTION_DAYS: int = 90
+    ACTIVITY_RETENTION_DAYS: int = 365
+
     # Database
     DATABASE_URL: str = ""
     # "prefer" works for local Postgres and most managed providers; use
@@ -100,6 +105,20 @@ class Settings(BaseSettings):
             raise ValueError("token lifetime must be a positive integer")
         if int(value) <= 0:
             raise ValueError("token lifetime must be greater than zero")
+        return value
+
+    @field_validator(
+        "NOTIFICATION_RETENTION_DAYS",
+        "ACTIVITY_RETENTION_DAYS",
+        mode="before",
+    )
+    @classmethod
+    def _positive_retention_days(cls, value):
+        """Retention windows must be positive, otherwise everything is purged."""
+        if isinstance(value, str) and not value.strip():
+            raise ValueError("retention must be a positive integer")
+        if int(value) <= 0:
+            raise ValueError("retention must be greater than zero")
         return value
 
     @property

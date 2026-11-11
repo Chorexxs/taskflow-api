@@ -129,12 +129,17 @@ async def lifespan(app: FastAPI):
         try:
             from app.auth import clean_expired_tokens
             from app.database import get_db_context
+            from app.jobs import purge_expired_data
 
             with get_db_context() as db:
                 clean_expired_tokens(db)
             logger.info("expired_tokens_cleaned")
+
+            with get_db_context() as db:
+                retention = purge_expired_data(db)
+            logger.info("retention_purged", **retention)
         except Exception as exc:  # pragma: no cover - defensive
-            logger.warning("token_cleanup_failed", error=str(exc))
+            logger.warning("housekeeping_failed", error=str(exc))
 
     logger.info("application_started")
     yield

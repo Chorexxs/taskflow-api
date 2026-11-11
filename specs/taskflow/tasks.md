@@ -40,7 +40,7 @@
 
 **Completada (P9):** `T-095` (sincronizar InsForge con `alembic upgrade head` antes del deploy; causa raíz de B-05).
 
-**Completada (P10, seguimiento 2026-11-11):** `T-096` (orden estable del Kanban con `tasks.position`, migración `f0e1f2a3b4c5`, `PATCH /status` atómico con `position` y reordenación en el tablero), `T-097` (decisión final de ADR-001: se mantiene Bearer + auto-refresh; cookies de terceros inviables sin BFF y riesgo residual registrado).
+**Completada (P10, seguimiento 2026-11-11):** `T-096` (orden estable del Kanban con `tasks.position`, migración `f0e1f2a3b4c5`, `PATCH /status` atómico con `position` y reordenación en el tablero), `T-097` (decisión final de ADR-001: se mantiene Bearer + auto-refresh; cookies de terceros inviables sin BFF y riesgo residual registrado), `T-098` (purga idempotente de notificaciones >90 d y actividad >1 año, al arrancar y con `scripts/purge_retention.py`).
 
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 

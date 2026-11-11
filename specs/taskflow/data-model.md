@@ -501,10 +501,10 @@ ALTER TABLE projects ALTER COLUMN slug SET NOT NULL;
 
 | Dato | Retención | Mecanismo |
 |---|---|---|
-| `refresh_sessions` expiradas | 7 días | Job diario |
-| `revoked_access_tokens` expirados | 15 min + margen | Job horario |
-| `notifications` leídas | 90 días | Job diario (configurable) |
-| `activity_logs` | 1 año | Job mensual/particionado (futuro) |
+| `refresh_sessions` expiradas | 7 días | Limpieza al arrancar (`clean_expired_tokens`) |
+| `revoked_access_tokens` expirados | 15 min + margen | Limpieza al arrancar |
+| `notifications` | 90 días | **Implementado** (T-098): `purge_expired_data` al arrancar y `scripts/purge_retention.py`; `NOTIFICATION_RETENTION_DAYS` |
+| `activity_logs` | 1 año | **Implementado** (T-098): misma purga; `ACTIVITY_RETENTION_DAYS` |
 | Adjuntos de tareas borradas | Inmediato | Servicio de borrado + reconciliación |
 | Equipos/proyectos archivados | 30 días antes de purga (si aplica) | Job + confirmación |
 | Backups | 30 días | InsForge/ops |

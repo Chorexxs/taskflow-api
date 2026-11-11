@@ -358,7 +358,7 @@ Reglas transversales:
 | ID | Requisito | Métrica |
 |---|---|---|
 | NFR-PRIV-01 | Sin PII en logs | Revisión de muestras |
-| NFR-PRIV-02 | Retención documentada | Tokens 7 días, notificaciones 90 días, actividad 1 año (propuesta) |
+| NFR-PRIV-02 | Retención documentada | Tokens 7 días, notificaciones 90 días y actividad 1 año, aplicados por la purga de T-098 (`scripts/purge_retention.py`) |
 | NFR-PRIV-03 | Acceso mínimo a adjuntos | Solo miembros del equipo |
 
 ---
@@ -462,7 +462,7 @@ Y los tests de integración pasan
 | Q-05 | ¿Proyectos se archivan o se borran? | Archivar por defecto; borrado definitivo solo admin con confirmación | P3 |
 | Q-06 | ¿Proyectos con slug? | Sí, único por equipo; migrar búsquedas por nombre | P3 |
 | Q-07 | ¿Orden manual de tareas? | Añadir `position` por columna (FR-TASK-08) | P4 |
-| Q-08 | ¿Retención de datos? | Tokens 7 d, notificaciones 90 d, actividad 1 año | P6 |
+| Q-08 | ¿Retención de datos? | Tokens 7 d, notificaciones 90 d, actividad 1 año; implementado en T-098 | P6 |
 | Q-09 | ¿Transferencia de propiedad del equipo? | Fuera de alcance; el último admin no puede salir | P3 |
 | Q-10 | ¿Reset de contraseña? | Could; requiere email | P6 |
 
