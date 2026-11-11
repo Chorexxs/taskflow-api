@@ -391,7 +391,7 @@ si hay más de un proyecto con ese nombre, responde `409`.
 | GET | `/teams/{team}/projects/{project}/tasks/` | Member | filtros + paginación | `Paginated<TaskOut>` | 200 |
 | GET | `/teams/{team}/projects/{project}/tasks/{task}` | Member | — | `TaskOut` | 200, 404 |
 | PATCH | `/teams/{team}/projects/{project}/tasks/{task}` | Creator/Admin (todos los campos); Member (solo status) | `{title?,description?,status?,priority?,due_date?}` | `TaskOut` | 200, 403, 404, 422 |
-| PATCH | `/teams/{team}/projects/{project}/tasks/{task}/status` | Member | `{status}` (sin campos extra) | `TaskOut` | 200, 403, 404, 422 |
+| PATCH | `/teams/{team}/projects/{project}/tasks/{task}/status` | Member | `{status, position?}` (sin campos extra) | `TaskOut` | 200, 403, 404, 422 |
 | DELETE | `/teams/{team}/projects/{project}/tasks/{task}` | Creator/Admin | — | — | 204, 403, 404 |
 | PATCH | `/teams/{team}/projects/{project}/tasks/{task}/assign` | Admin/Creator | `{user_id}` | `TaskOut` | 200, 400, 403, 404 |
 | GET | `/teams/{team}/projects/{project}/tasks/{task}/activity` | Member | `page,page_size` | `Paginated<ActivityLogOut>` | 200, 403 |
@@ -404,6 +404,15 @@ si hay más de un proyecto con ese nombre, responde `409`.
 | PATCH | `.../tasks/{task}` | Creator/Admin | Resto de campos |
 
 `assigned_to` en creación y `user_id` en assign deben ser miembros del equipo. El payload de assign es `{user_id}` (no `{assigned_to}`).
+
+**Orden del Kanban (T-096, FR-TASK-08):** `position` es un índice fraccional
+(`numeric(20,10)`) estable dentro de `(proyecto, estado)`. Al crear una tarea se
+añade al final de `todo` con un hueco de 1024. `PATCH .../status` acepta
+`position` opcional: el cliente envía el punto medio entre las tarjetas vecinas
+donde se soltó la tarjeta. Si se omite y cambia el estado, la tarea se añade al
+final de la columna destino. Estado y posición se confirman en la misma
+transacción; reordenar dentro de la misma columna no genera actividad.
+`GET .../tasks/?sort_by=position&order=asc` devuelve el orden del tablero.
 
 ### 7.6 Comments
 
@@ -521,7 +530,7 @@ responde **503** con `Retry-After`. El frontend usa `fetch` streaming
   "description": "El refresh falla",
   "status": "todo",
   "priority": "high",
-  "position": 0,
+  "position": 1024,
   "assigned_to": 2,
   "assignee": { "id": 2, "email": "dev@example.com" },
   "due_date": "2026-11-15T00:00:00Z",

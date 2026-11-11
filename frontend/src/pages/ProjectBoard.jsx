@@ -30,6 +30,7 @@ import { api } from '../api'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Plus, Filter, X, Activity, Settings, Archive } from 'lucide-react'
 import { formatActivityAction, formatActivityActor, formatActivityValue } from '../utils/activity'
+import { positionBetween, toPosition } from '../utils/kanban'
 import TaskCard from '../components/TaskCard'
 
 /**
@@ -173,6 +174,8 @@ export default function ProjectBoard() {
         ...filters,
         page,
         page_size: 50,
+        sort_by: 'position',
+        order: 'asc',
       }),
     retry: false,
   })
@@ -261,7 +264,8 @@ export default function ProjectBoard() {
   })
 
   const updateTaskMutation = useMutation({
-    mutationFn: ({ taskId, status }) => api.tasks.updateStatus(token, teamId, projectId, taskId, status),
+    mutationFn: ({ taskId, status, position }) =>
+      api.tasks.updateStatus(token, teamId, projectId, taskId, status, position),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
       toast.success('Task updated!')
@@ -282,67 +286,63 @@ export default function ProjectBoard() {
 
   const handleDragEnd = (event) => {
     const { active, over } = event
-    
-    if (!over) return
+    setActiveTask(null)
+
+    if (!over || String(over.id) === String(active.id)) return
 
     const taskId = active.id
-    let newStatus
+    const taskList = [...taskColumns.todo, ...taskColumns.in_progress, ...taskColumns.done]
+    const task = taskList.find(t => String(t.id) === String(taskId))
+    if (!task) return
 
-    if (COLUMNS.some(col => col.id === over.id)) {
-      newStatus = over.id
-    } else {
-      const taskList = [...taskColumns.todo, ...taskColumns.in_progress, ...taskColumns.done]
-      const overTask = taskList.find(t => String(t.id) === String(over.id))
-      
-      if (overTask) {
-        newStatus = overTask.status
-      } else {
-        newStatus = over?.dataset?.colId || null
-      }
-    }
+    const overTask = taskList.find(t => String(t.id) === String(over.id))
+    const newStatus = COLUMNS.some(col => col.id === over.id)
+      ? over.id
+      : overTask?.status || over?.data?.current?.status || null
 
     if (!newStatus) return
 
-    const task = taskColumns.todo.find(t => String(t.id) === String(taskId))
-      || taskColumns.in_progress.find(t => String(t.id) === String(taskId))
-      || taskColumns.done.find(t => String(t.id) === String(taskId))
-    
-    if (!task) return
-    
-    if (task.status !== newStatus) {
-      setTaskColumns(prev => {
-        const newColumns = { ...prev }
-        const oldStatus = task.status
-        
-        const taskIndex = newColumns[oldStatus].findIndex(t => String(t.id) === String(taskId))
-        if (taskIndex > -1) {
-          const [movedTask] = newColumns[oldStatus].splice(taskIndex, 1)
-          movedTask.status = newStatus
-          
-          const priorityOrder = { high: 0, medium: 1, low: 2 }
-          const targetTasks = newColumns[newStatus]
-          const insertIndex = targetTasks.findIndex(t => 
-            priorityOrder[movedTask.priority] < priorityOrder[t.priority]
-          )
-          
-          if (insertIndex === -1) {
-            newColumns[newStatus] = [...targetTasks, movedTask]
-          } else {
-            newColumns[newStatus] = [
-              ...targetTasks.slice(0, insertIndex),
-              movedTask,
-              ...targetTasks.slice(insertIndex)
-            ]
-          }
-        }
-        
-        return newColumns
-      })
-      
-      updateTaskMutation.mutate({ taskId: task.id, status: newStatus })
+    const sourceStatus = task.status
+    // Remove the dragged card from its current column before computing the
+    // drop slot, so same-column moves do not count it twice.
+    const sourceRemaining = taskColumns[sourceStatus].filter(
+      t => String(t.id) !== String(taskId)
+    )
+    const targetRemaining = sourceStatus === newStatus
+      ? sourceRemaining
+      : taskColumns[newStatus].filter(t => String(t.id) !== String(taskId))
+
+    let insertIndex = targetRemaining.length
+    if (overTask) {
+      const overIndex = targetRemaining.findIndex(t => String(t.id) === String(over.id))
+      if (overIndex > -1) insertIndex = overIndex
     }
-    
-    setActiveTask(null)
+
+    const previous = insertIndex > 0 ? targetRemaining[insertIndex - 1].position : null
+    const next = insertIndex < targetRemaining.length
+      ? targetRemaining[insertIndex].position
+      : null
+    const position = positionBetween(previous, next)
+
+    const movedTask = { ...task, status: newStatus, position }
+    const newColumns = {
+      ...taskColumns,
+      [newStatus]: [
+        ...targetRemaining.slice(0, insertIndex),
+        movedTask,
+        ...targetRemaining.slice(insertIndex),
+      ],
+    }
+    if (sourceStatus !== newStatus) {
+      newColumns[sourceStatus] = sourceRemaining
+    }
+    setTaskColumns(newColumns)
+
+    const statusChanged = sourceStatus !== newStatus
+    const positionChanged = Math.abs(toPosition(task.position) - position) > 1e-9
+    if (statusChanged || positionChanged) {
+      updateTaskMutation.mutate({ taskId: task.id, status: newStatus, position })
+    }
   }
 
   const handleCreateTask = (e) => {
@@ -378,9 +378,10 @@ export default function ProjectBoard() {
   }
 
   /**
-   * Gets tasks for a specific column with search filtering and priority sorting
-   * Searches task title and description, sorts by priority (high > medium > low)
-   * 
+   * Gets tasks for a specific column with search filtering and stable ordering.
+   * The API returns tasks sorted by `position`; priority is only a tiebreaker
+   * for legacy rows that still share position 0.
+   *
    * @param {string} status - Column status to get tasks for (todo/in_progress/done)
    * @returns {Array<Object>} Filtered and sorted tasks for the column
    */
@@ -397,7 +398,11 @@ export default function ProjectBoard() {
       )
     }
     const priorityOrder = { high: 0, medium: 1, low: 2 }
-    return filtered.sort((a, b) => (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1))
+    return [...filtered].sort((a, b) => {
+      const byPosition = toPosition(a.position) - toPosition(b.position)
+      if (byPosition !== 0) return byPosition
+      return (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1)
+    })
   }
 
   return (

@@ -92,7 +92,12 @@ describe('ProjectBoard', () => {
       'access-token',
       'team-one',
       '10',
-      expect.objectContaining({ page: 1, page_size: 50 }),
+      expect.objectContaining({
+        page: 1,
+        page_size: 50,
+        sort_by: 'position',
+        order: 'asc',
+      }),
     )
   })
 

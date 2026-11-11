@@ -25,14 +25,20 @@ Key patterns used:
 import re
 import unicodedata
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any
 
 from fastapi import Depends
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
 from app.auth import get_current_user, get_password_hash, verify_password
 from app.events import notification_bus
+
+# Gap between consecutive Kanban positions. Clients insert between neighbours
+# with a midpoint, so the gap only shrinks on repeated inserts in the same slot.
+POSITION_GAP = Decimal("1024")
 
 
 def paginate_query(query, page: int, page_size: int):
@@ -752,12 +758,28 @@ def restore_project(db: Session, project_id: int):
     return db_project
 
 
+def _next_task_position(db: Session, project_id: int, status: str) -> Decimal:
+    """Return the position that appends a task to the end of a column."""
+    current_max = (
+        db.query(func.max(models.Task.position))
+        .filter(
+            models.Task.project_id == project_id,
+            models.Task.status == status,
+        )
+        .scalar()
+    )
+    if current_max is None:
+        return POSITION_GAP
+    return Decimal(str(current_max)) + POSITION_GAP
+
+
 def create_task(db: Session, task: schemas.TaskCreate, project_id: int, user_id: int):
     """
     Create a new task within a project.
 
     Creates a task with the given title, description, priority, and optional
-    due date and assignee. The task is created with status "todo".
+    due date and assignee. The task is created with status "todo" at the end of
+    that Kanban column.
 
     Args:
         db (Session): SQLAlchemy database session.
@@ -783,6 +805,7 @@ def create_task(db: Session, task: schemas.TaskCreate, project_id: int, user_id:
         description=task.description,
         priority=task.priority.value,
         due_date=task.due_date,
+        position=_next_task_position(db, project_id, "todo"),
         created_by=user_id,
         assigned_to=task.assigned_to,
     )
@@ -849,7 +872,7 @@ def get_tasks_by_project(
         assigned_to (int | None): Filter by assignee user ID.
         due_before (datetime | None): Filter tasks due before this date.
         due_after (datetime | None): Filter tasks due after this date.
-        sort_by (str): Field to sort by ("created_at", "title", "priority", "due_date", "status").
+        sort_by (str): Field to sort by ("created_at", "title", "priority", "due_date", "status", "position").
         order (str): Sort order ("asc" or "desc").
         page (int): Page number (1-indexed).
         page_size (int): Items per page (max 100).
@@ -897,14 +920,17 @@ def get_tasks_by_project(
         order_col = models.Task.priority
     elif sort_by == "status":
         order_col = models.Task.status
+    elif sort_by == "position":
+        order_col = models.Task.position
     else:
         order_col = models.Task.created_at
 
-    # Apply sorting
+    # Apply sorting. Kanban order needs a deterministic tiebreaker so cards
+    # with the same position never jump between requests.
     if order == "asc":
-        query = query.order_by(order_col.asc())
+        query = query.order_by(order_col.asc(), models.Task.id.asc())
     else:
-        query = query.order_by(order_col.desc())
+        query = query.order_by(order_col.desc(), models.Task.id.desc())
 
     # Get total count (before pagination)
     total = query.count()
@@ -963,14 +989,20 @@ def update_task_status(
     task_id: int,
     new_status: schemas.TaskStatus,
     changed_by: int,
+    position: float | None = None,
 ):
-    """Change only a task's Kanban status and log it in one transaction.
+    """Change a task's Kanban status and position in one transaction.
+
+    When ``position`` is omitted and the column changes, the task is appended to
+    the end of the destination column. When the status does not change the call
+    only reorders the task.
 
     Args:
         db (Session): SQLAlchemy database session.
         task_id (int): ID of the task to move.
         new_status (TaskStatus): Destination column.
         changed_by (int): User performing the move.
+        position (float | None): Explicit fractional position inside the column.
 
     Returns:
         Task | None: Updated task, or ``None`` if it does not exist.
@@ -979,17 +1011,26 @@ def update_task_status(
     if not db_task:
         return None
     old_status = db_task.status
-    db_task.status = new_status.value
-    db.add(
-        models.ActivityLog(
-            entity_type="task",
-            entity_id=db_task.id,
-            action="updated_status",
-            changed_by=changed_by,
-            old_value=old_status,
-            new_value=new_status.value,
+    target_status = new_status.value
+
+    if position is not None:
+        db_task.position = Decimal(str(position))
+    elif target_status != old_status:
+        db_task.position = _next_task_position(db, db_task.project_id, target_status)
+
+    db_task.status = target_status
+
+    if target_status != old_status:
+        db.add(
+            models.ActivityLog(
+                entity_type="task",
+                entity_id=db_task.id,
+                action="updated_status",
+                changed_by=changed_by,
+                old_value=old_status,
+                new_value=target_status,
+            )
         )
-    )
     db.commit()
     db.refresh(db_task)
     return db_task

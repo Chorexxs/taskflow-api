@@ -307,6 +307,11 @@ Migración `c9d0e1f2a3b4`: añade `dedupe_key` y
 
 ### 3.5 `tasks`
 
+**Estado (T-096):** `position numeric(20,10) NOT NULL DEFAULT 0` implementado en
+`f0e1f2a3b4c5`, con backfill por columna en orden de creación e índice
+`(project_id, status, position)`. Las tareas nuevas se añaden al final de su
+columna con un hueco de 1024.
+
 | Cambio | Motivo |
 |---|---|
 | `position numeric(20,10) NOT NULL DEFAULT 0` | Orden estable en Kanban |
@@ -467,7 +472,7 @@ indexado); `checksum` en `b8c9d0e1f2a3`; backfill a InsForge Storage con
 | M-02 | Slugs de proyecto | Añadir `slug NULL`; backfill `slugify(name)` + sufijo; unique; `NOT NULL` | Eliminar unique/columna |
 | M-03 | Storage de adjuntos | **Implementado**: `checksum` (`b8c9d0e1f2a3`), `storage_key` (`d0e1f2a3b4c5`), `StorageService` con backend InsForge Storage y backfill verificado | Limpiar `storage_key` y volver a `database`/`local`; `content`/`file_path` se conservan |
 | M-04 | Sesiones de refresh | Crear `refresh_sessions` y `revoked_access_tokens`; dual-write; migrar tokens vigentes; retirar `revoked_tokens` en release posterior | Volver a `revoked_tokens`; conservar tablas |
-| M-05 | Posición de tareas | Añadir `position NULL`; backfill por `created_at`; default; `NOT NULL` | Eliminar columna |
+| M-05 | Posición de tareas | **Implementado** en `f0e1f2a3b4c5` (T-096): `position NULL` → backfill por `(project_id, status, created_at)` con huecos de 1024 → `NOT NULL DEFAULT 0` + índice `(project_id, status, position)` | `downgrade` elimina índice y columna |
 | M-06 | Notificaciones | Añadir `read_at`; backfill desde `is_read`; índice; conservar `is_read` temporalmente | Eliminar `read_at`/índice |
 | M-07 | Invitaciones (opcional) | Crear `team_invites` | Drop table |
 | M-08 | Índices de lectura | **Implementado** en `a7b8c9d0e1f2` para team_members, projects, tasks, comments, attachments y notifications | Drop indexes |

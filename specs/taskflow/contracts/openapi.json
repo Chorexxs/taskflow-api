@@ -945,7 +945,7 @@
         "type": "object"
       },
       "TaskOut": {
-        "description": "Schema for task response data.\n\nUsed in task list, detail, and creation endpoints.\nIncludes assignee information for displaying task ownership.\n\nAttributes:\n    id (int): Task's unique identifier\n    project_id (int): Project the task belongs to\n    title (str): Task title\n    description (str | None): Task description\n    status (TaskStatus): Task status\n    priority (TaskPriority): Task priority\n    assigned_to (int | None): User ID of assignee\n    assignee (UserMini | None): Full assignee user object\n    due_date (datetime | None): Task due date\n    created_by (int): ID of user who created the task\n    created_at (datetime): Task creation timestamp\n    updated_at (datetime): Last update timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
+        "description": "Schema for task response data.\n\nUsed in task list, detail, and creation endpoints.\nIncludes assignee information for displaying task ownership.\n\nAttributes:\n    id (int): Task's unique identifier\n    project_id (int): Project the task belongs to\n    title (str): Task title\n    description (str | None): Task description\n    status (TaskStatus): Task status\n    priority (TaskPriority): Task priority\n    assigned_to (int | None): User ID of assignee\n    assignee (UserMini | None): Full assignee user object\n    due_date (datetime | None): Task due date\n    position (float): Stable order inside the Kanban column\n    created_by (int): ID of user who created the task\n    created_at (datetime): Task creation timestamp\n    updated_at (datetime): Last update timestamp\n\nConfig:\n    from_attributes: Allows creation from ORM objects",
         "properties": {
           "assigned_to": {
             "anyOf": [
@@ -1004,6 +1004,10 @@
             "title": "Id",
             "type": "integer"
           },
+          "position": {
+            "title": "Position",
+            "type": "number"
+          },
           "priority": {
             "$ref": "#/components/schemas/TaskPriority"
           },
@@ -1034,6 +1038,7 @@
           "assigned_to",
           "assignee",
           "due_date",
+          "position",
           "created_by",
           "created_at",
           "updated_at"
@@ -1063,8 +1068,21 @@
       },
       "TaskStatusUpdate": {
         "additionalProperties": false,
-        "description": "Payload for the dedicated Kanban status endpoint.\n\nOnly ``status`` is accepted, so a member cannot smuggle other task edits\nthrough the status-only permission. Used in\n``PATCH .../tasks/{id}/status``.",
+        "description": "Payload for the dedicated Kanban status endpoint.\n\nOnly ``status`` and the optional ``position`` are accepted, so a member\ncannot smuggle other task edits through the status-only permission. Used in\n``PATCH .../tasks/{id}/status``.\n\n``position`` is a fractional index: clients send the midpoint between the\nneighbours where the card was dropped. When omitted, the task is appended\nto the end of the destination column.",
         "properties": {
+          "position": {
+            "anyOf": [
+              {
+                "maximum": 1000000000.0,
+                "minimum": -1000000000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
           "status": {
             "$ref": "#/components/schemas/TaskStatus"
           }
@@ -3723,7 +3741,7 @@
     },
     "/api/v1/teams/{team_id_or_slug}/projects/{project_id_or_name}/tasks/{task_id_or_title}/status": {
       "patch": {
-        "description": "Move a task between Kanban columns.\n\nAny team member may call this endpoint; it only accepts ``status`` so the\nstatus-only permission cannot be used to edit other task fields. The task\nupdate and the activity entry are committed in the same transaction.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    status_update (TaskStatusUpdate): Destination status.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    TaskOut: Updated task.",
+        "description": "Move a task between Kanban columns and reorder it inside a column.\n\nAny team member may call this endpoint; it only accepts ``status`` and an\noptional ``position`` so the status-only permission cannot be used to edit\nother task fields. Status, position and the activity entry are committed in\nthe same transaction.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    project_id_or_name (str): The project identifier (ID or name).\n    task_id_or_title (str): The task identifier (ID or title).\n    status_update (TaskStatusUpdate): Destination status and position.\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n    member (TeamMember): Team membership check (injected via dependency).\n\nReturns:\n    TaskOut: Updated task.",
         "operationId": "update_task_status_api_v1_teams__team_id_or_slug__projects__project_id_or_name__tasks__task_id_or_title__status_patch",
         "parameters": [
           {

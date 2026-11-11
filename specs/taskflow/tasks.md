@@ -40,6 +40,8 @@
 
 **Completada (P9):** `T-095` (sincronizar InsForge con `alembic upgrade head` antes del deploy; causa raíz de B-05).
 
+**Completada (P10, seguimiento 2026-11-11):** `T-096` (orden estable del Kanban con `tasks.position`, migración `f0e1f2a3b4c5`, `PATCH /status` atómico con `position` y reordenación en el tablero).
+
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
 **Completada (P0):** `T-007` (pre-commit con `ruff`, `ruff format`, `gitleaks`, eslint y mypy; `pre-commit run --all-files` verde), `T-004` (ADR-001…011 aceptados con responsable y desviaciones documentadas), `T-010` (política de ramas, PR, release y rollback en `CONTRIBUTING.md`), `T-009` (entornos local/CI/preview/staging/producción en `environments.md`), `T-003` (6 labels, 10 milestones y 95 issues importados).
@@ -232,6 +234,22 @@ con `headers_enabled` rompía cualquier respuesta 2xx de un endpoint limitado, y
 | T-093 | Corregir 500 en respuestas 2xx de endpoints con rate limit | S0 | T-031 | XS | FR-AUTH-06, NFR-SEC-04 | Registro/login 2xx con cabeceras `X-RateLimit-*`; test de regresión |
 | T-094 | `/health` no debe bloquear si Redis no está configurado o no responde | S1 | T-079 | XS | NFR-PERF-01, NFR-OBS-03 | `/health` < 300 ms sin `REDIS_URL`; timeouts cortos si existe |
 | T-095 | Sincronizar migraciones de producción antes del deploy | S0 | T-024 | XS | NFR-REL-04 | `alembic current` = head; registro/login 2xx |
+
+---
+
+## P10 — Seguimiento post-release (2026-11-11)
+
+Origen: revisión de la documentación contra el código tras cerrar P9. Detecta
+un requisito funcional sin implementar (FR-TASK-08/M-05), la decisión de
+ADR-001 aplazada a un P7 ya cerrado, la retención de datos de Q-08 y drift
+documental.
+
+| ID | Tarea | Prioridad | Dep. | Tamaño | Refs | Aceptación |
+|---|---|---|---|---|---|---|
+| T-096 | Orden estable del Kanban: `tasks.position`, migración M-05, `PATCH /status` con `position` y reordenación en el tablero | S1 | T-045 | M | FR-TASK-08, M-05 | Migración reversible; estado+posición atómicos; lista ordenada por `position`; tests backend y frontend |
+| T-097 | Cerrar ADR-001: decisión formal sobre cookies `httpOnly` + CSRF | S1 | T-026 | S | FR-AUTH-05, NFR-SEC-07 | Decisión registrada en ADR/checklist; riesgo residual o migración documentada |
+| T-098 | Job de retención de notificaciones (90 d) y actividad (1 año) | S2 | T-029 | S | Q-08, NFR-REL-04 | Purga idempotente y observable; tests; runbook |
+| T-099 | Corregir drift documental de contratos y checklist | S3 | — | XS | NFR-MAINT-02 | 0 afirmaciones obsoletas verificables |
 
 ---
 

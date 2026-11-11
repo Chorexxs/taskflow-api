@@ -28,6 +28,8 @@ Relationships:
 - User 1:N RevokedToken
 """
 
+from decimal import Decimal
+
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -37,6 +39,7 @@ from sqlalchemy import (
     Index,
     Integer,
     LargeBinary,
+    Numeric,
     String,
     UniqueConstraint,
 )
@@ -231,6 +234,7 @@ class Task(Base):
         priority (String): Task priority ("low", "medium", "high")
         assigned_to (Integer): Foreign key to User assigned to this task (optional)
         due_date (DateTime): Optional due date
+        position (Numeric): Stable order inside the (project, status) column
         created_by (Integer): Foreign key to User who created the task
         created_at (DateTime): Task creation timestamp
         updated_at (DateTime): Last update timestamp
@@ -244,6 +248,7 @@ class Task(Base):
     Indexes:
         - ix_tasks_project_status: Composite index for filtering by project and status
         - ix_tasks_project_priority: Composite index for filtering by project and priority
+        - ix_tasks_project_status_position: Index for ordered Kanban columns
         - ix_tasks_assigned_to: Index for filtering by assignee
         - ix_tasks_due_date: Index for filtering by due date
         - ix_tasks_created_at: Index for sorting by creation date
@@ -254,6 +259,7 @@ class Task(Base):
         CheckConstraint("status IN ('todo', 'in_progress', 'done')", name="ck_tasks_status"),
         CheckConstraint("priority IN ('low', 'medium', 'high')", name="ck_tasks_priority"),
         Index("ix_tasks_project_status", "project_id", "status"),
+        Index("ix_tasks_project_status_position", "project_id", "status", "position"),
         Index("ix_tasks_project_priority", "project_id", "priority"),
         Index("ix_tasks_project_assignee_status", "project_id", "assigned_to", "status"),
         Index("ix_tasks_project_due_date", "project_id", "due_date"),
@@ -270,6 +276,7 @@ class Task(Base):
     priority = Column(String(20), default="medium")
     assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
     due_date = Column(DateTime(timezone=True), nullable=True)
+    position = Column(Numeric(20, 10), nullable=False, default=Decimal("0"), server_default="0")
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

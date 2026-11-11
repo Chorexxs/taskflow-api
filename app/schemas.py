@@ -48,7 +48,7 @@ import re
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 # Pattern to match control characters that should be removed from input
 CONTROL_CHARS_PATTERN = re.compile(r"[\x00-\x1f\x7f-\x9f]")
@@ -634,14 +634,19 @@ class TaskAssign(BaseModel):
 class TaskStatusUpdate(BaseModel):
     """Payload for the dedicated Kanban status endpoint.
 
-    Only ``status`` is accepted, so a member cannot smuggle other task edits
-    through the status-only permission. Used in
+    Only ``status`` and the optional ``position`` are accepted, so a member
+    cannot smuggle other task edits through the status-only permission. Used in
     ``PATCH .../tasks/{id}/status``.
+
+    ``position`` is a fractional index: clients send the midpoint between the
+    neighbours where the card was dropped. When omitted, the task is appended
+    to the end of the destination column.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
     status: TaskStatus
+    position: float | None = Field(default=None, ge=-1_000_000_000, le=1_000_000_000)
 
 
 class TaskOut(BaseModel):
@@ -661,6 +666,7 @@ class TaskOut(BaseModel):
         assigned_to (int | None): User ID of assignee
         assignee (UserMini | None): Full assignee user object
         due_date (datetime | None): Task due date
+        position (float): Stable order inside the Kanban column
         created_by (int): ID of user who created the task
         created_at (datetime): Task creation timestamp
         updated_at (datetime): Last update timestamp
@@ -678,6 +684,7 @@ class TaskOut(BaseModel):
     assigned_to: int | None
     assignee: UserMini | None
     due_date: datetime | None
+    position: float
     created_by: int
     created_at: datetime
     updated_at: datetime
