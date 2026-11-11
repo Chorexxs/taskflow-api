@@ -214,3 +214,22 @@ Cada fila referencia la mitigación principal y su evidencia.
 
 Cualquier amenaza nueva se registra con ID `TM-##` y se enlaza a un `T-###`
 antes de implementar la mitigación.
+
+## 11. Revisión 2026-11-11 (auditoría full)
+
+Auditoría de seguridad completa sobre `307d345`; sin SEC-0. Corregidos en T-108:
+
+- **SEC-1.1:** imagen Docker con `.env`/`.git` → `.dockerignore`, Dockerfile
+  mínimo y gate de CI que verifica el contenido de la imagen (TM-27/TM-31).
+- **SEC-2.1:** Sentry sin PII/bodies → configuración explícita y scrubbing
+  (TM-07/TM-14).
+- **SEC-2.2:** bodies JSON/form sin límite y creaciones sin rate limit →
+  middleware de tamaño y límites por endpoint (TM-15/TM-22).
+- **SEC-2.3:** clave/algoritmo/TLS sin validar → fail-fast de configuración
+  (TM-02/TM-27).
+- **SEC-2.4:** `/health` filtraba errores de DB → mensaje genérico (TM-14).
+- **SEC-2.5:** logout no limpiaba React Query → caché limpiada (TM-09).
+
+Residuales aceptados: enumeración de cuentas (SEC-ASVS-07), confianza en el
+proxy para rate limit (SEC-ASVS-08), magic bytes/antivirus (SEC-ASVS-09) y
+bloqueo sin revocación de sesiones (SEC-ASVS-10).

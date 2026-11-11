@@ -70,7 +70,9 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Sin algoritmos propios | ✅ | `PyJWT`, `bcrypt` |
 | Secretos fuera del código | ✅ | `.env`, fail-fast en producción |
 | `SECRET_KEY` sin fallback en producción | ✅ | `app/config.py` |
+| `SECRET_KEY` y algoritmo robustos | ✅ | T-108: longitud ≥32, `SECRET_KEY_PREVIOUS` ≥32 y `ALGORITHM` limitado a HS256/384/512 |
 | TLS en despliegue | ✅ | Render/Vercel/InsForge; HSTS |
+| TLS obligatorio a la base de datos | ✅ | T-108: `DB_SSLMODE` debe ser `require`/`verify-*` en producción |
 | Rotación de claves documentada | ✅ | T-103/ADR-012: `SECRET_KEY_PREVIOUS` acepta tokens antiguos durante la ventana; procedimiento en `plan.md` §10 |
 
 ## V7 — Errores y logging
@@ -80,6 +82,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Errores sin stack trace al cliente | ✅ | Envelope + handler global |
 | `request_id` en respuestas y logs | ✅ | `middleware.py`, `logging_config.py` |
 | Sin contraseñas, tokens ni PII en logs | ✅ | T-033, `tests/test_auth_audit.py` |
+| Sentry sin PII ni bodies | ✅ | T-108: `send_default_pii=False`, `max_request_body_size="never"` y `before_send` que redacta credenciales |
 | Eventos de auth auditados | ✅ | login/logout/refresh/lockout/cambio de credenciales |
 | Retención de logs | 🟡 | Depende del proveedor; no configurada explícitamente |
 
@@ -107,7 +110,8 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Control | Estado | Evidencia |
 |---|---|---|
 | Sin dependencias sin pin | ✅ | `requirements.txt`, `package-lock.json` |
-| Auditoría de dependencias | ✅ | `npm audit --omit=dev` → 0; Renovate/Dependabot |
+| Auditoría de dependencias | ✅ | `npm audit --omit=dev` → 0 y gate en CI; `pip-audit` en backend; Renovate/Dependabot |
+| Imagen Docker sin secretos ni datos locales | ✅ | T-108: `.dockerignore` + copia mínima; CI verifica que no contiene `.env`, `.git`, `tests` ni `frontend` |
 | Sin ejecución de archivos subidos | ✅ | Adjuntos servidos como descarga; allowlist |
 | Revisión de dependencias nuevas | ✅ | PR + lockfiles |
 
@@ -116,6 +120,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Control | Estado | Evidencia |
 |---|---|---|
 | Límites de recursos (paginación ≤ 100) | ✅ | T-038 |
+| Límite de body JSON/form y rate limit en creaciones | ✅ | T-108: 1 MB JSON, 64 KB form y límites por endpoint |
 | Idempotencia de logout | ✅ | Tests P1 |
 | Coherencia de borrados | ✅ | T-044, cascada y limpieza |
 | Reasignación al expulsar | ✅ | T-042 |
@@ -130,6 +135,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Descarga autenticada y team-scoped | ✅ | `attachments.py` |
 | Storage persistente en producción | ✅ | `STORAGE_BACKEND=insforge` (bucket privado con `storage_key`) |
 | Checksum de adjuntos | ✅ | T-055: SHA-256 calculado durante el streaming y almacenado en la DB |
+| Magic bytes / antivirus | 🟡 | Allowlist de extensión/MIME y descarga forzada; falta inspección de contenido (deuda) |
 
 ## V13 — API
 
@@ -160,12 +166,19 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 |---|---|---|---|
 | SEC-ASVS-01 | Sin cookies `httpOnly`; token accesible desde JS | Baja (riesgo aceptado) | T-097 / ADR-001: decisión final de mantener Bearer; reabrir si hay BFF, XSS explotable o se relaja la CSP |
 | SEC-ASVS-02 | Checksum de adjuntos | ✅ Resuelto (T-055) | — |
-| SEC-ASVS-03 | Carrera teórica al degradar/expulsar al último admin | Baja | T-082/constraint futuro |
+| SEC-ASVS-03 | Carrera al degradar/expulsar al último admin | ✅ Resuelto (T-101) | Lock `FOR UPDATE` + test de concurrencia |
 | SEC-ASVS-04 | Sin prueba de restore de backups | ✅ Resuelto (T-102) | — |
 | SEC-ASVS-05 | Integración de tests en SQLite | ✅ Resuelto (T-077): PostgreSQL con migraciones | — |
+| SEC-ASVS-06 | Imagen Docker con `.env`, `.git` y datos locales | ✅ Resuelto (T-108) | `.dockerignore` + Dockerfile mínimo + gate de CI |
+| SEC-ASVS-07 | Enumeración de cuentas y oráculo de bloqueo | Baja (aceptado) | Rate limit; requiere verificación por email para cerrar del todo |
+| SEC-ASVS-08 | Rate limit confía en `X-Forwarded-For` del proxy | Baja | Verificar `forwarded_allow_ips` en Render |
+| SEC-ASVS-09 | Uploads sin magic bytes ni antivirus | Baja | Deuda de nuevo ciclo |
+| SEC-ASVS-10 | El bloqueo de cuenta no revoca sesiones existentes | Baja (aceptado) | Comprobar `is_blocked` en auth si el producto lo exige |
 
 ## Firma
 
-Revisión realizada por el agente el 2026-11-10 contra el código y los specs del
-repositorio. Los puntos 🟡 quedan registrados como deuda aceptada; no hay
-hallazgos críticos abiertos (`SEC-0`/`CA-0` = 0).
+Revisión realizada por el agente el 2026-11-11 contra el código y los specs del
+repositorio, con auditoría full de seguridad (SEC-1.1…SEC-4.6). Los puntos 🟡
+quedan registrados como deuda aceptada; no hay hallazgos críticos abiertos
+(`SEC-0`/`CA-0` = 0) y los hallazgos SEC-1/SEC-2 de la auditoría están corregidos
+en T-108.

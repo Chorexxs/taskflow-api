@@ -21,12 +21,19 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `app/jobs.py` y `scripts/purge_retention.py`: purga idempotente de notificaciones (90 d) y actividad (1 año) (T-098).
 - `Idempotency-Key` en POST de equipos, proyectos, tareas, comentarios y adjuntos, con tabla `idempotency_keys` y migración `b2c3d4e5f6a7` (T-100).
 - Bloqueo `SELECT … FOR UPDATE` sobre el equipo al expulsar miembros o cambiar roles, para que dos operaciones concurrentes no dejen el equipo sin admin (T-101).
+- CI ejecuta `npm audit --omit=dev` y construye la imagen Docker como gates de seguridad; el compose publica solo en loopback y el smoke usa contraseña aleatoria (T-108).
 - `scripts/backup_restore_drill.py` y `app/backup.py`: dump con `pg_dump`, restore con `pg_restore` y verificación de tablas, filas y revisión Alembic (T-102).
 - Rotación de `SECRET_KEY` sin cortar sesiones: `SECRET_KEY_PREVIOUS` solo verifica durante la ventana de rotación (T-103, ADR-012).
 - `specs/taskflow/threat-model.md`: modelo STRIDE con 32 amenazas, mitigaciones y riesgos residuales (T-104).
 - Formularios del frontend con `label`/`htmlFor`, `id` y `name`; buscadores y filtros con `aria-label` (T-105).
 - El cliente SPA envía `Idempotency-Key` en las creaciones y la reutiliza en el reintento tras un 401 (T-106).
+- Limpieza de caché de React Query al cerrar sesión y al recibir `taskflow:logout` (T-108).
 - Build Docker verificado: usuario no-root `taskflow` y `HEALTHCHECK` sobre `/health/live` (B-04 resuelto).
+- Imagen Docker mínima: `.dockerignore` y copia solo de `app/`, `alembic/` y `scripts/`; CI verifica que no contiene `.env`, `.git`, `tests` ni `frontend` (T-108).
+- Límite de body JSON (1 MB) y formulario (64 KB), rate limits en creaciones y `Cache-Control: no-store` en respuestas de tokens (T-108).
+- Sentry con `send_default_pii=False`, bodies deshabilitados y `before_send` que redacta credenciales (T-108).
+- Validación de `SECRET_KEY`/`SECRET_KEY_PREVIOUS` (≥32), algoritmo HS256/384/512 y TLS obligatorio a PostgreSQL en producción (T-108).
+- `/health` ya no devuelve detalles de la excepción de base de datos (T-108).
 - Frontend actualizado a Vite 8, Vitest 5 y `@vitest/coverage-v8` 5; CI usa Node 24 y la cobertura se restaura con tests de equipo, tablero y tarea (T-107).
 
 - Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.
