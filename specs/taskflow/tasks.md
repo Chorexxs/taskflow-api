@@ -58,7 +58,9 @@ Vitest 5 con Node 24); `npm run lint` → limpio; `npm run build` → correcto;
 `upgrade`/`downgrade -1`/`upgrade` reversibles. **Auditoría de seguridad
 (2026-11-11):** full, sin SEC-0; SEC-1/SEC-2 corregidos en T-108 (imagen Docker
 sin secretos, Sentry sin PII, body limits, config fail-fast, health genérico y
-caché de logout). **Docker (2026-11-11):** `docker build -t taskflow-api:local .`
+caché de logout). **Proxy (T-109):** verificado en producción que dos
+`X-Forwarded-For` distintas tienen buckets independientes (10 peticiones → 429
+para una IP; otra IP → 401). **Docker (2026-11-11):** `docker build -t taskflow-api:local .`
 correcto; imagen no-root (`taskflow`) con `HEALTHCHECK` sobre `/health/live`
 (B-04 resuelto). **Producción (2026-11-11):** InsForge migrado a `b2c3d4e5f6a7`
 (columna e índice de `position` y tabla `idempotency_keys` verificados, 0

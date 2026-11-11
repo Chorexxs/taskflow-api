@@ -26,7 +26,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Hash con bcrypt y salt por contraseña | ✅ | `app/auth.py` |
 | Bloqueo tras intentos fallidos | ✅ | `MAX_LOGIN_ATTEMPTS`, tests de lockout |
 | Sin mensajes que revelen si el email existe | ✅ | Login devuelve 401 genérico |
-| Rate limiting en registro/login/refresh | ✅ | T-030/T-031, `tests/test_rate_limit_http.py` |
+| Rate limiting en registro/login/refresh | ✅ | T-030/T-031, `tests/test_rate_limit_http.py`; IP real tras el proxy verificada en T-109 |
 | Cambio de contraseña exige la actual y revoca sesiones | ✅ | T-028, `token_version` |
 | MFA | ❌ | Fuera de alcance de este ciclo |
 
