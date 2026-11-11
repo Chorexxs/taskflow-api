@@ -22,6 +22,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `Idempotency-Key` en POST de equipos, proyectos, tareas, comentarios y adjuntos, con tabla `idempotency_keys` y migración `b2c3d4e5f6a7` (T-100).
 - Bloqueo `SELECT … FOR UPDATE` sobre el equipo al expulsar miembros o cambiar roles, para que dos operaciones concurrentes no dejen el equipo sin admin (T-101).
 - `scripts/backup_restore_drill.py` y `app/backup.py`: dump con `pg_dump`, restore con `pg_restore` y verificación de tablas, filas y revisión Alembic (T-102).
+- Rotación de `SECRET_KEY` sin cortar sesiones: `SECRET_KEY_PREVIOUS` solo verifica durante la ventana de rotación (T-103, ADR-012).
 
 - Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.
 - Configuración central en `app/config.py` con validación y fail-fast en producción.
@@ -90,6 +91,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Un reintento con la misma `Idempotency-Key` devuelve la respuesta original con `Idempotent-Replayed: true`; cuerpo distinto → 422 y petición en vuelo → 409 (T-100).
 - La purga de retención también elimina claves de idempotencia caducadas (`IDEMPOTENCY_KEY_TTL_HOURS`, 24 h) (T-100).
 - Las comprobaciones de último admin se ejecutan bajo un lock de fila del equipo; el test de concurrencia se ejecuta sobre PostgreSQL (T-101).
+- `decode_token` acepta la clave anterior (`SECRET_KEY_PREVIOUS`) si la firma con la primaria no coincide, manteniendo la sesión durante la rotación (T-103).
 
 ### Corregido
 

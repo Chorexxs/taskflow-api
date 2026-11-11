@@ -17,6 +17,7 @@
 | ADR-009 | Dependencias fijadas + Renovate/Dependabot; Python 3.12 | Aceptado |
 | ADR-010 | Rate limiting con Redis para múltiples instancias | Aceptado |
 | ADR-011 | Identificadores `id`/`slug`; nombres/títulos deprecados | Aceptado |
+| ADR-012 | Rotación de `SECRET_KEY` con clave dual (`SECRET_KEY_PREVIOUS` solo verifica) | Aceptado (T-103) |
 
 **Revisión formal (T-004, 2026-11-10):** los 11 ADRs quedan aceptados y con responsable asignado (responsable del proyecto). Los ADRs que estaban `propuesto` se aceptaron con la implementación ya realizada y las desviaciones documentadas: ADR-002 (SSE implementado, pub/sub en T-081), ADR-003 (object storage InsForge implementado en T-054, verificado en producción) y ADR-006/007 (dark-only y “añadir miembro existente”).
 

@@ -42,6 +42,8 @@ class Settings(BaseSettings):
 
     # Security / JWT
     SECRET_KEY: str = ""
+    # Previous key accepted only for verification during a rotation window.
+    SECRET_KEY_PREVIOUS: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -212,6 +214,9 @@ class Settings(BaseSettings):
                 RuntimeWarning,
                 stacklevel=2,
             )
+        previous = self.SECRET_KEY_PREVIOUS.strip()
+        if previous and previous == self.SECRET_KEY:
+            raise RuntimeError("SECRET_KEY_PREVIOUS must differ from SECRET_KEY")
         if not self.DATABASE_URL:
             if self.is_production:
                 raise RuntimeError("DATABASE_URL must be set in production")

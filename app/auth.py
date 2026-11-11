@@ -16,7 +16,7 @@ The authentication system uses:
 
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Any
 
 import bcrypt
 import jwt
@@ -39,7 +39,44 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 # Secret used to sign JWTs. In production `app.config` guarantees it is
 # configured; in development it falls back to a clearly insecure key.
-SECRET_KEY = settings.secret_key
+# Signing always uses the primary key; verification also accepts the optional
+# previous key during a rotation window (T-103).
+def signing_key() -> str:
+    """Return the key used to sign new tokens."""
+    return settings.secret_key
+
+
+def verification_keys() -> tuple[str, ...]:
+    """Return the primary key followed by the previous key, when configured."""
+    primary = settings.secret_key
+    previous = settings.SECRET_KEY_PREVIOUS.strip()
+    if previous and previous != primary:
+        return (primary, previous)
+    return (primary,)
+
+
+def decode_token(token: str, *, options: dict[str, Any] | None = None) -> dict:
+    """Decode a JWT, accepting tokens signed with the previous key.
+
+    During a key rotation both keys are valid: new tokens are signed with
+    ``SECRET_KEY`` and tokens issued before the rotation still verify with
+    ``SECRET_KEY_PREVIOUS`` until they expire or the previous key is removed.
+    Any error other than a signature failure (expired, malformed, wrong type)
+    is propagated unchanged.
+    """
+    last_error: Exception | None = None
+    for key in verification_keys():
+        try:
+            return jwt.decode(
+                token,
+                key,
+                algorithms=[settings.ALGORITHM],
+                options=options,
+            )
+        except jwt.InvalidSignatureError as exc:
+            last_error = exc
+            continue
+    raise last_error if last_error is not None else jwt.InvalidTokenError("invalid token")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -118,7 +155,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     to_encode.update({"exp": expire, "type": "access"})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, signing_key(), algorithm=settings.ALGORITHM)
     return encoded_jwt
 
 
@@ -150,7 +187,7 @@ def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> 
         expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     token_jti = str(uuid.uuid4())
     to_encode.update({"exp": expire, "type": "refresh", "jti": token_jti})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, signing_key(), algorithm=settings.ALGORITHM)
     return encoded_jwt
 
 
@@ -213,7 +250,7 @@ def revoke_token(db: Session, token: str, token_type: str = "access") -> None:
     if db.query(RevokedToken).filter(RevokedToken.token == token).first():
         return
 
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[settings.ALGORITHM])
+    payload = decode_token(token)
     exp = payload.get("exp")
     expires_at = (
         datetime.fromtimestamp(exp, tz=timezone.utc)
@@ -368,7 +405,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = decode_token(token)
         token_type = payload.get("type")
         if token_type != "access":
             raise HTTPException(
@@ -456,7 +493,7 @@ def get_current_user_from_refresh(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = decode_token(token)
         token_type = payload.get("type")
         if token_type != "refresh":
             raise HTTPException(

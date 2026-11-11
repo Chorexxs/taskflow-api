@@ -71,7 +71,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Secretos fuera del código | ✅ | `.env`, fail-fast en producción |
 | `SECRET_KEY` sin fallback en producción | ✅ | `app/config.py` |
 | TLS en despliegue | ✅ | Render/Vercel/InsForge; HSTS |
-| Rotación de claves documentada | 🟡 | Procedimiento en `plan.md`; falta automatizar |
+| Rotación de claves documentada | ✅ | T-103/ADR-012: `SECRET_KEY_PREVIOUS` acepta tokens antiguos durante la ventana; procedimiento en `plan.md` §10 |
 
 ## V7 — Errores y logging
 

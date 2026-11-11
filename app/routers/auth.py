@@ -14,7 +14,6 @@ Security features:
 - Token rotation on refresh
 """
 
-import jwt
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from jwt import PyJWTError
@@ -22,10 +21,10 @@ from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.auth import (
-    SECRET_KEY,
     check_user_locked,
     create_access_token,
     create_refresh_token,
+    decode_token,
     get_revoked_token,
     record_failed_login,
     reset_failed_login,
@@ -50,12 +49,7 @@ def _user_id_from_token(db: Session, token: str | None) -> int | None:
     if not token:
         return None
     try:
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[settings.ALGORITHM],
-            options={"verify_exp": False},
-        )
+        payload = decode_token(token, options={"verify_exp": False})
     except PyJWTError:
         return None
     email = payload.get("sub")

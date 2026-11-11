@@ -40,7 +40,7 @@
 
 **Completada (P9):** `T-095` (sincronizar InsForge con `alembic upgrade head` antes del deploy; causa raíz de B-05).
 
-**Completada (P10, seguimiento 2026-11-11):** `T-096` (orden estable del Kanban con `tasks.position`, migración `f0e1f2a3b4c5`, `PATCH /status` atómico con `position` y reordenación en el tablero), `T-097` (decisión final de ADR-001: se mantiene Bearer + auto-refresh; cookies de terceros inviables sin BFF y riesgo residual registrado), `T-098` (purga idempotente de notificaciones >90 d y actividad >1 año, al arrancar y con `scripts/purge_retention.py`), `T-099` (drift documental: contratos, checklist y README sin afirmaciones obsoletas), `T-100` (idempotencia en POST críticos con `Idempotency-Key`: replay, 422/409, purga a 24 h y migración `b2c3d4e5f6a7`), `T-101` (bloqueo `FOR UPDATE` del equipo al expulsar o cambiar roles, con test de concurrencia sobre PostgreSQL), `T-102` (drill de backup/restore con `scripts/backup_restore_drill.py` y verificación de tablas, filas y revisión Alembic).
+**Completada (P10, seguimiento 2026-11-11):** `T-096` (orden estable del Kanban con `tasks.position`, migración `f0e1f2a3b4c5`, `PATCH /status` atómico con `position` y reordenación en el tablero), `T-097` (decisión final de ADR-001: se mantiene Bearer + auto-refresh; cookies de terceros inviables sin BFF y riesgo residual registrado), `T-098` (purga idempotente de notificaciones >90 d y actividad >1 año, al arrancar y con `scripts/purge_retention.py`), `T-099` (drift documental: contratos, checklist y README sin afirmaciones obsoletas), `T-100` (idempotencia en POST críticos con `Idempotency-Key`: replay, 422/409, purga a 24 h y migración `b2c3d4e5f6a7`), `T-101` (bloqueo `FOR UPDATE` del equipo al expulsar o cambiar roles, con test de concurrencia sobre PostgreSQL), `T-102` (drill de backup/restore con `scripts/backup_restore_drill.py` y verificación de tablas, filas y revisión Alembic), `T-103` (rotación de `SECRET_KEY` con clave dual y ADR-012).
 
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
@@ -49,8 +49,8 @@
 **Pendientes de P0:** ninguno.
 
 Verificación actual (2026-11-11, P10): suite completa sobre PostgreSQL 16 →
-**206 passed**, 0 fallos, migraciones aplicadas por Alembic y **87,78 % de
-cobertura** (gate 80 %). Con el escape hatch `TEST_USE_SQLITE=1` → 203 passed,
+**214 passed**, 0 fallos, migraciones aplicadas por Alembic y **87,94 % de
+cobertura** (gate 80 %). Con el escape hatch `TEST_USE_SQLITE=1` → 211 passed,
 2 fallos de SSE y 1 skip del test de lock (requiere PostgreSQL). `npm run test`
 → **48 passed** (72,3 % líneas / 76,9 % ramas); `npm run lint` → limpio;
 `npm run build` → correcto; migraciones `upgrade`/`downgrade -1`/`upgrade`
@@ -268,6 +268,7 @@ documental.
 | T-100 | Idempotencia en POST críticos con `Idempotency-Key` | S1 | T-039 | M | FR-API-06 | Reintento devuelve la respuesta original; 422/409; purga a 24 h; tests |
 | T-101 | Serializar cambios de membresía para proteger al último admin | S2 | T-041, T-042 | S | FR-TEAM-04, FR-TEAM-05 | `FOR UPDATE` sobre el equipo; test en PostgreSQL de bloqueo concurrente |
 | T-102 | Drill de backup/restore automatizado y verificado | S2 | T-080 | M | NFR-REL-04 | Dump, restore y comparación de tablas/filas/revisión; evidencia y runbook |
+| T-103 | Rotación de `SECRET_KEY` con clave dual | S2 | T-017 | S | NFR-SEC-02, ADR-012 | `SECRET_KEY_PREVIOUS` solo verifica; tokens antiguos válidos durante la ventana; tests y procedimiento |
 
 ---
 

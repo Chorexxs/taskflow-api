@@ -308,6 +308,34 @@
 
 ---
 
+### ADR-012 — Rotación de `SECRET_KEY`
+
+**Estado:** aceptado (T-103, 2026-11-11).
+**Responsable:** responsable del proyecto.
+
+**Contexto:** rotar `SECRET_KEY` sin soporte de clave anterior invalidaría todos
+los access y refresh tokens de golpe (usuarios deslogueados y refresh en vuelo
+fallando).
+
+**Decisión:** rotación con clave dual.
+
+- `SECRET_KEY` es la única clave de firma.
+- `SECRET_KEY_PREVIOUS` es opcional y **solo se usa para verificar**.
+- `decode_token` prueba la clave primaria y, si la firma no coincide, la
+  anterior; el resto de errores (expirado, malformado) se propagan igual.
+- Procedimiento: (1) generar la clave nueva; (2) configurar
+  `SECRET_KEY=<nueva>` y `SECRET_KEY_PREVIOUS=<antigua>` en Render; (3)
+  desplegar; (4) esperar `REFRESH_TOKEN_EXPIRE_DAYS` (7 días) y retirar
+  `SECRET_KEY_PREVIOUS`. No se toca `users.token_version`.
+- Si se sospecha compromiso, se rota sin periodo de gracia (no se define
+  `SECRET_KEY_PREVIOUS`) y se incrementa `token_version` para revocar sesiones.
+
+**Consecuencias:** durante la ventana conviven dos claves de verificación; el
+riesgo es acotado y desaparece al retirar la anterior. La rotación es un cambio
+de entorno, no requiere migración de datos.
+
+---
+
 ## 5. Fases de entrega
 
 ### P0 — Gobernanza y baseline (1–2 días)
@@ -586,7 +614,14 @@ stages:
 
 ## 10. Seguridad operativa
 
-- Rotación de `SECRET_KEY` documentada (invalida sesiones; coordinar).
+- Rotación de `SECRET_KEY` con clave dual (ADR-012): `SECRET_KEY` firma,
+  `SECRET_KEY_PREVIOUS` solo verifica. Procedimiento:
+  1. Generar una clave nueva (`openssl rand -hex 32`).
+  2. En Render: `SECRET_KEY=<nueva>`, `SECRET_KEY_PREVIOUS=<antigua>`.
+  3. Desplegar y verificar login/refresh.
+  4. Tras `REFRESH_TOKEN_EXPIRE_DAYS`, vaciar `SECRET_KEY_PREVIOUS`.
+  Ante sospecha de compromiso: rotar sin periodo de gracia e incrementar
+  `users.token_version` para revocar todas las sesiones.
 - Gestión de secretos en Render/Vercel, nunca en repo.
 - CORS por entorno (`CORS_ORIGINS`).
 - CSP compatible con Vite/Vercel; revisar `connect-src` para API y SSE.

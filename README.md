@@ -309,7 +309,7 @@ Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y 
 
 - Build: `pip install -r requirements.txt`
 - Start: `python -m app.main` (o `uvicorn app.main:app`)
-- Variables: `DATABASE_URL`, `DB_SSLMODE=require`, `SECRET_KEY`, `ENVIRONMENT=production`, `CORS_ORIGINS=https://taskflow-api-tau.vercel.app`, `STORAGE_BACKEND=insforge`, `INSFORGE_URL`, `INSFORGE_API_KEY`, `INSFORGE_STORAGE_BUCKET=taskflow-attachments`; opcionales `REDIS_URL`, `SENTRY_DSN`.
+- Variables: `DATABASE_URL`, `DB_SSLMODE=require`, `SECRET_KEY`, `ENVIRONMENT=production`, `CORS_ORIGINS=https://taskflow-api-tau.vercel.app`, `STORAGE_BACKEND=insforge`, `INSFORGE_URL`, `INSFORGE_API_KEY`, `INSFORGE_STORAGE_BUCKET=taskflow-attachments`; opcionales `SECRET_KEY_PREVIOUS` (solo durante la rotación), `REDIS_URL`, `SENTRY_DSN`.
   - Si usas un dominio propio en Vercel, añádelo separado por comas.
   - Sin `CORS_ORIGINS`, la app **no arranca en producción** (fail-fast).
 - Ejecutar `alembic upgrade head` antes del despliegue. `alembic/env.py` usa `DATABASE_URL`.
