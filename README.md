@@ -53,7 +53,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Auth** | JWT (`PyJWT`), bcrypt, access 15 min + refresh 7 días |
 | **Seguridad** | SlowAPI, headers de seguridad, lockout de cuenta, CORS por allowlist |
 | **Observabilidad** | structlog (JSON + request ID), Sentry opcional |
-| **Frontend** | React 18, Vite 5, React Router 7 |
+| **Frontend** | React 18, Vite 8, React Router 7 |
 | **Datos front** | TanStack React Query 5, `fetch` |
 | **UI** | Tailwind CSS 4, Lucide React, React Hot Toast, `@dnd-kit` |
 | **Tests** | pytest + pytest-cov (180, 87 %), Vitest + Testing Library (43, 71,6 %) |
@@ -209,6 +209,8 @@ uvicorn app.main:app --reload
 
 ### Frontend
 
+Requiere **Node ≥ 22.12** (CI usa Node 24; Vite 8 y Vitest 5 no soportan Node 20).
+
 ```bash
 cd frontend
 npm install
@@ -286,7 +288,7 @@ pytest tests/test_auth.py::test_register_user
 # Frontend
 cd frontend
 npm run test
-npm run test:coverage   # umbrales: 70 % líneas/ramas, 40 % funciones
+npm run test:coverage   # umbrales: 70 % líneas/sentencias, 55 % ramas, 40 % funciones
 npm run lint
 npm run build
 ```

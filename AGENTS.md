@@ -18,7 +18,7 @@ TaskFlow es una API REST para gestión de tareas en equipo, con frontend React. 
 ### Stack
 
 - **Backend:** Python 3.12, FastAPI, Uvicorn, SQLAlchemy 2, PostgreSQL, Alembic, Pydantic v2.
-- **Frontend:** React 18, Vite 5, React Router 7, TanStack Query 5, Tailwind CSS 4.
+- **Frontend:** React 18, Vite 8, Vitest 5, React Router 7, TanStack Query 5, Tailwind CSS 4.
 - **Tests:** pytest (backend), Vitest + Testing Library (frontend).
 - **Deploy:** Render (API), Vercel (frontend), InsForge (PostgreSQL).
 
@@ -286,7 +286,7 @@ Reglas:
 - No usar servicios externos reales.
 - Frontend: Vitest + Testing Library + jsdom; mockear `../api` y `react-hot-toast`.
 - Los tests de integración usan PostgreSQL vía `TEST_DATABASE_URL`, con el esquema creado por Alembic y tablas truncadas entre tests (ADR-008). `TEST_USE_SQLITE=1` es solo un atajo para runs unitarios.
-- Cobertura obligatoria en CI: **80 % backend** (`--cov-fail-under`) y **70 % frontend** en líneas/ramas (`vitest` thresholds). No bajar los umbrales sin justificarlo en el PR.
+- Cobertura obligatoria en CI: **80 % backend** (`--cov-fail-under`) y **70 % frontend** en líneas/sentencias (`vitest` thresholds), con **55 % de ramas** porque el proveedor v8 de Vitest 5 mide todos los archivos fuente. No bajar los umbrales sin justificarlo en el PR.
 
 ---
 

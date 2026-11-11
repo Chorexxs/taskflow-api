@@ -3,6 +3,9 @@
     "private": true,
     "version": "0.0.0",
     "type": "module",
+    "engines": {
+        "node": ">=22.12.0"
+    },
     "scripts": {
         "dev": "vite",
         "build": "vite build",
@@ -25,14 +28,14 @@
     },
     "devDependencies": {
         "@eslint/js": "^9.13.0",
-        "@tailwindcss/vite": "^4.2.2",
+        "@tailwindcss/vite": "^4.3.5",
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.1.0",
         "@testing-library/user-event": "^14.6.1",
         "@types/react": "^18.3.12",
         "@types/react-dom": "^18.3.1",
-        "@vitejs/plugin-react": "^4.3.3",
-        "@vitest/coverage-v8": "^2.1.8",
+        "@vitejs/plugin-react": "^6.3.0",
+        "@vitest/coverage-v8": "^5.1.0",
         "eslint": "^9.13.0",
         "eslint-plugin-react": "^7.37.2",
         "eslint-plugin-react-hooks": "^5.0.0",
@@ -41,7 +44,7 @@
         "jsdom": "^26.0.0",
         "msw": "^2.11.1",
         "tailwindcss": "^4.2.2",
-        "vite": "^5.4.10",
-        "vitest": "^2.1.8"
+        "vite": "^8.3.8",
+        "vitest": "^5.1.0"
     }
 }

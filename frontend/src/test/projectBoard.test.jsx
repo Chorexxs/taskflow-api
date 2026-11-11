@@ -161,4 +161,68 @@ describe('ProjectBoard', () => {
       ),
     )
   })
+
+  it('filters tasks by the search box', async () => {
+    const secondTask = {
+      id: 2,
+      title: 'Task Two',
+      description: 'Another one',
+      status: 'todo',
+      priority: 'low',
+      created_by: 1,
+      assignee: null,
+      due_date: null,
+    }
+    mockApi.tasks.list.mockResolvedValue({
+      items: [task, secondTask],
+      total: 2,
+      page: 1,
+      pages: 1,
+      has_next: false,
+    })
+    renderBoard()
+
+    expect(await screen.findByText('Task Two')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Search tasks'), 'Task One')
+
+    await waitFor(() => expect(screen.queryByText('Task Two')).not.toBeInTheDocument())
+    expect(screen.getByText('Task One')).toBeInTheDocument()
+  })
+
+  it('paginates the task list', async () => {
+    mockApi.tasks.list.mockResolvedValue({
+      items: [task],
+      total: 60,
+      page: 1,
+      pages: 2,
+      has_next: true,
+    })
+    renderBoard()
+
+    await screen.findByText('Task One')
+    await userEvent.click(screen.getByRole('button', { name: /next/i }))
+
+    await waitFor(() =>
+      expect(mockApi.tasks.list).toHaveBeenLastCalledWith(
+        'access-token',
+        'team-one',
+        '10',
+        expect.objectContaining({ page: 2 }),
+      ),
+    )
+  })
+
+  it('archives the project after confirmation', async () => {
+    window.confirm = vi.fn(() => true)
+    mockApi.projects.archive.mockResolvedValue({ id: 10, status: 'archived' })
+    renderBoard()
+
+    await screen.findByText('Task One')
+    await userEvent.click(await screen.findByRole('button', { name: /project settings/i }))
+    await userEvent.click(screen.getByRole('button', { name: /archive project/i }))
+
+    await waitFor(() =>
+      expect(mockApi.projects.archive).toHaveBeenCalledWith('access-token', 'team-one', '10'),
+    )
+  })
 })

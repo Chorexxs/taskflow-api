@@ -27,6 +27,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Formularios del frontend con `label`/`htmlFor`, `id` y `name`; buscadores y filtros con `aria-label` (T-105).
 - El cliente SPA envía `Idempotency-Key` en las creaciones y la reutiliza en el reintento tras un 401 (T-106).
 - Build Docker verificado: usuario no-root `taskflow` y `HEALTHCHECK` sobre `/health/live` (B-04 resuelto).
+- Frontend actualizado a Vite 8, Vitest 5 y `@vitest/coverage-v8` 5; CI usa Node 24 y la cobertura se restaura con tests de equipo, tablero y tarea (T-107).
 
 - Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.
 - Configuración central en `app/config.py` con validación y fail-fast en producción.

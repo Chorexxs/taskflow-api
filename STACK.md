@@ -56,7 +56,7 @@
 
 - **React 18** — UI.
 - **React Router 7** — routing SPA.
-- **Vite 5** — dev server y build.
+- **Vite 8** - dev server y build.
 
 ### Estado y datos
 

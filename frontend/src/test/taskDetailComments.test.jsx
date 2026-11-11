@@ -38,7 +38,12 @@ const mockApi = vi.hoisted(() => ({
     delete: vi.fn(() => Promise.resolve()),
   },
   attachments: {
-    list: vi.fn(() => Promise.resolve([])),
+    list: vi.fn(() => Promise.resolve([
+      { id: 1, filename: 'note.txt', file_size: 1024 },
+    ])),
+    upload: vi.fn(() => Promise.resolve({ id: 2, filename: 'note.txt' })),
+    delete: vi.fn(() => Promise.resolve()),
+    download: vi.fn(() => Promise.resolve(new Blob(['hello']))),
   },
   teams: {
     listMembers: vi.fn(() => Promise.resolve([
@@ -199,5 +204,82 @@ describe('TaskDetail - Comment Editing and Deletion', () => {
         expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete this comment?')
       })
     }
+  })
+
+  it('edits and saves the task', async () => {
+    const user = userEvent.setup()
+    mockApi.tasks.update = vi.fn(() => Promise.resolve({ id: 1, title: 'Updated task' }))
+    const TaskDetail = (await import('../pages/TaskDetail')).default
+    renderWithProviders(<TaskDetail />)
+
+    await screen.findByText('Test Task')
+    await user.click(screen.getByRole('button', { name: 'Edit task' }))
+    const title = screen.getByLabelText('Title')
+    await user.clear(title)
+    await user.type(title, 'Updated task')
+    await user.click(screen.getByRole('button', { name: /^save$/i }))
+
+    await waitFor(() =>
+      expect(mockApi.tasks.update).toHaveBeenCalledWith(
+        'test-token',
+        '1',
+        '1',
+        '1',
+        expect.objectContaining({ title: 'Updated task' }),
+      ),
+    )
+  })
+
+  it('uploads an attachment', async () => {
+    const user = userEvent.setup()
+    const TaskDetail = (await import('../pages/TaskDetail')).default
+    renderWithProviders(<TaskDetail />)
+
+    await screen.findByText('Test Task')
+    const file = new File(['hello'], 'note.txt', { type: 'text/plain' })
+    await user.upload(screen.getByLabelText('Upload attachment'), file)
+
+    await waitFor(() => expect(mockApi.attachments.upload).toHaveBeenCalled())
+  })
+
+  it('downloads and deletes an attachment', async () => {
+    const user = userEvent.setup()
+    window.URL.createObjectURL = vi.fn(() => 'blob:mock')
+    window.URL.revokeObjectURL = vi.fn()
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    const TaskDetail = (await import('../pages/TaskDetail')).default
+    renderWithProviders(<TaskDetail />)
+
+    await screen.findByText('note.txt')
+
+    await user.click(screen.getByRole('button', { name: 'Download note.txt' }))
+    await waitFor(() =>
+      expect(mockApi.attachments.download).toHaveBeenCalledWith(
+        'test-token',
+        '1',
+        '1',
+        '1',
+        1,
+      ),
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Delete note.txt' }))
+    await waitFor(() =>
+      expect(mockApi.attachments.delete).toHaveBeenCalledWith(
+        'test-token',
+        '1',
+        '1',
+        '1',
+        1,
+      ),
+    )
+  })
+
+  it('shows an error state when the task cannot be loaded', async () => {
+    mockApi.tasks.get.mockRejectedValueOnce(new Error('not found'))
+    const TaskDetail = (await import('../pages/TaskDetail')).default
+    renderWithProviders(<TaskDetail />)
+
+    expect(await screen.findByText('Could not load this task')).toBeInTheDocument()
   })
 })

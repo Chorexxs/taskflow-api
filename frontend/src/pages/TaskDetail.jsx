@@ -360,6 +360,7 @@ export default function TaskDetail() {
                   {canEdit && (
                     <button
                       onClick={handleStartEdit}
+                      aria-label="Edit task"
                       className="p-1.5 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -448,12 +449,14 @@ export default function TaskDetail() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleDownload(attachment)}
+                    aria-label={`Download ${attachment.filename}`}
                     className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all"
                   >
                     <Download className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => deleteAttachmentMutation.mutate(attachment.id)}
+                    aria-label={`Delete ${attachment.filename}`}
                     className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-priority-high)] transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
