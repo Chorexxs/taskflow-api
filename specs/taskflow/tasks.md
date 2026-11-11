@@ -52,9 +52,10 @@ Verificación actual (2026-11-11, P10): suite completa sobre PostgreSQL 16 →
 **214 passed**, 0 fallos, migraciones aplicadas por Alembic y **87,94 % de
 cobertura** (gate 80 %). Con el escape hatch `TEST_USE_SQLITE=1` → 211 passed,
 2 fallos de SSE y 1 skip del test de lock (requiere PostgreSQL). `npm run test`
-→ **51 passed** (72,6 % líneas / 77,14 % ramas); `npm run lint` → limpio;
-`npm run build` → correcto; migraciones `upgrade`/`downgrade -1`/`upgrade`
-reversibles. **Docker (2026-11-11):** `docker build -t taskflow-api:local .`
+→ **69 passed** (72,31 % líneas / 59,68 % ramas / 61,89 % funciones; Vite 8 y
+Vitest 5 con Node 24); `npm run lint` → limpio; `npm run build` → correcto;
+`npm audit --omit=dev` → 0 vulnerabilidades; migraciones
+`upgrade`/`downgrade -1`/`upgrade` reversibles. **Docker (2026-11-11):** `docker build -t taskflow-api:local .`
 correcto; imagen no-root (`taskflow`) con `HEALTHCHECK` sobre `/health/live`
 (B-04 resuelto). **Producción (2026-11-11):** InsForge migrado a `b2c3d4e5f6a7`
 (columna e índice de `position` y tabla `idempotency_keys` verificados, 0
