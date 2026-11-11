@@ -5,7 +5,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Copy only what the API needs at runtime. Never use `COPY . .`: it would
+# include .env, .git, local databases and the frontend.
+COPY app ./app
+COPY alembic ./alembic
+COPY alembic.ini .
+COPY scripts ./scripts
 
 RUN useradd --create-home --uid 1001 taskflow \
     && mkdir -p /app/uploads \

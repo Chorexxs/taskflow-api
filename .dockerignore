@@ -1,0 +1,29 @@
+# Build context hygiene: never bake secrets, local data, tooling or the
+# frontend into the API image. Keep this list in sync with the Dockerfile.
+.git
+.gitignore
+.github
+.vscode
+.opencode
+.agents
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+ENV/
+tests/
+specs/
+frontend/
+uploads/
+temp.db
+*.db
+*.sqlite
+coverage/
+htmlcov/
+.DS_Store
