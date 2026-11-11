@@ -43,7 +43,8 @@ def _is_webp(data: bytes) -> bool:
 
 
 def _is_pdf(data: bytes) -> bool:
-    return data.startswith(b"%PDF-")
+    # The PDF header may be preceded by up to 1024 bytes of junk.
+    return b"%PDF-" in data[:1024]
 
 
 def _is_zip(data: bytes) -> bool:

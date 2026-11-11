@@ -49,8 +49,8 @@
 **Pendientes de P0:** ninguno.
 
 Verificación actual (2026-11-11, P10): suite completa sobre PostgreSQL 16 →
-**232 passed**, 0 fallos, migraciones aplicadas por Alembic y **88,33 % de
-cobertura** (gate 80 %). Con el escape hatch `TEST_USE_SQLITE=1` → 229 passed,
+**233 passed**, 0 fallos, migraciones aplicadas por Alembic y **88,38 % de
+cobertura** (gate 80 %). Con el escape hatch `TEST_USE_SQLITE=1` → 230 passed,
 2 fallos de SSE y 1 skip del test de lock (requiere PostgreSQL). `npm run test`
 → **70 passed** (72,31 % líneas / 59,68 % ramas / 61,89 % funciones; Vite 8 y
 Vitest 5 con Node 24); `npm run lint` → limpio; `npm run build` → correcto;

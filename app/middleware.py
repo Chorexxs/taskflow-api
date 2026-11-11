@@ -30,7 +30,26 @@ MAX_FORM_BODY_BYTES = 64 * 1024
 
 
 class BodySizeLimitMiddleware(BaseHTTPMiddleware):
-    """Reject oversized JSON/form bodies before FastAPI parses them."""
+    """Reject oversized JSON/form bodies before FastAPI parses them.
+
+    ``Content-Length`` is checked first, but the body is also read with a hard
+    cap so a chunked request (or a lying header) cannot bypass the limit.
+    """
+
+    @staticmethod
+    def _too_large() -> JSONResponse:
+        return JSONResponse(
+            status_code=413,
+            content={
+                "detail": "Request body too large",
+                "error": {
+                    "code": "FILE_TOO_LARGE",
+                    "message": "Request body too large",
+                    "details": None,
+                    "request_id": request_id_context.get(),
+                },
+            },
+        )
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         content_type = request.headers.get("content-type", "").split(";")[0].strip().lower()
@@ -53,18 +72,23 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
                     content_length=length,
                     limit=limit,
                 )
-                return JSONResponse(
-                    status_code=413,
-                    content={
-                        "detail": "Request body too large",
-                        "error": {
-                            "code": "FILE_TOO_LARGE",
-                            "message": "Request body too large",
-                            "details": None,
-                            "request_id": request_id_context.get(),
-                        },
-                    },
-                )
+                return self._too_large()
+
+            chunks: list[bytes] = []
+            total = 0
+            async for chunk in request.stream():
+                total += len(chunk)
+                if total > limit:
+                    logger.warning(
+                        "request_body_too_large",
+                        path=request.url.path,
+                        content_length=total,
+                        limit=limit,
+                    )
+                    return self._too_large()
+                chunks.append(chunk)
+            # Let FastAPI reuse the bytes we already read.
+            request._body = b"".join(chunks)  # type: ignore[attr-defined]
 
         return await call_next(request)
 
