@@ -400,7 +400,7 @@ frontend/src/
 ├── App.jsx
 └── main.jsx
 
-specs/taskflow/          # SDD: constitución, baseline, spec, plan, tasks, datos, API
+specs/taskflow/          # SDD: constitución, baseline, spec, plan, tasks, datos, API, threat-model
 specs/audit/             # Auditorías bajo demanda: código y ciberseguridad
 tests/                   # pytest
 alembic/                 # migraciones
@@ -423,6 +423,7 @@ alembic/                 # migraciones
 | [`blockers.md`](./specs/taskflow/blockers.md) | Bloqueos de despliegue y credenciales |
 | [`environments.md`](./specs/taskflow/environments.md) | Local, CI, preview, staging y producción |
 | [`release-checklist.md`](./specs/taskflow/release-checklist.md) | Checklist de release y smoke de performance |
+| [`threat-model.md`](./specs/taskflow/threat-model.md) | Modelo STRIDE, mitigaciones y riesgos residuales |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Ramas, PR, release y rollback |
 
 ### Auditorías bajo demanda

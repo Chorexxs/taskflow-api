@@ -164,7 +164,7 @@ frontend/src/
 ├── App.jsx
 └── main.jsx
 
-specs/taskflow/          # SDD (constitution, baseline, spec, plan, tasks, data, API)
+specs/taskflow/          # SDD (constitution, baseline, spec, plan, tasks, data, API, threat-model)
 specs/audit/             # Auditorías bajo demanda (código y ciberseguridad)
 tests/                   # pytest
 alembic/                 # migraciones

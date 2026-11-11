@@ -16,7 +16,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Autenticación centralizada y reutilizada | ✅ | `app/auth.py`, `get_current_user` |
 | Autorización en servidor para cada endpoint | ✅ | Matriz de permisos + `tests/test_permission_matrix.py` |
 | Decisiones de seguridad registradas | ✅ | `DECISIONS.md`, ADR-001…011 |
-| Amenazas y riesgos identificados | 🟡 | `plan.md` §riesgos; falta revisión STRIDE formal |
+| Amenazas y riesgos identificados | ✅ | `threat-model.md` (STRIDE, TM-01…TM-32) con mitigaciones y riesgos residuales (T-104) |
 
 ## V2 — Autenticación
 

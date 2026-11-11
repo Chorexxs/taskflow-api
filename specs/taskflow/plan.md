@@ -609,6 +609,7 @@ stages:
 - **Métricas:** latencia p50/p95, tasa 5xx, logins fallidos, refresh fallidos, uploads fallidos, tamaño de colas/jobs.
 - **Alertas:** 5xx > 1% durante 5 min; readiness fallando; errores de migración; storage lleno.
 - **SLOs:** 99.5% disponibilidad; p95 < 300 ms lecturas; p95 < 500 ms escrituras.
+- **Modelo de amenazas:** [`threat-model.md`](./threat-model.md) (STRIDE, T-104); revisión trimestral y ante cambios de auth, uploads, SSE o infraestructura.
 
 ---
 

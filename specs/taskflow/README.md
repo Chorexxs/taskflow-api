@@ -31,6 +31,7 @@ El paquete documenta dos estados:
 | 6 | [`data-model.md`](./data-model.md) | Modelo actual y objetivo, constraints, índices y migraciones | Antes de cambiar la DB |
 | 7 | [`contracts/api.md`](./contracts/api.md) | Convenciones HTTP, errores, paginación, auth y catálogo de endpoints | Antes de cambiar la API |
 | 8 | [`security-checklist.md`](./security-checklist.md) | Checklist ASVS L2 y deuda de seguridad aceptada | Antes de un release |
+| 9 | [`threat-model.md`](./threat-model.md) | Modelo STRIDE: activos, fronteras, amenazas, mitigaciones y riesgos residuales | Al tocar auth, uploads, SSE o infraestructura |
 
 ### Auditorías bajo demanda
 

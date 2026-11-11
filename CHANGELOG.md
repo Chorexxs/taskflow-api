@@ -23,6 +23,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Bloqueo `SELECT … FOR UPDATE` sobre el equipo al expulsar miembros o cambiar roles, para que dos operaciones concurrentes no dejen el equipo sin admin (T-101).
 - `scripts/backup_restore_drill.py` y `app/backup.py`: dump con `pg_dump`, restore con `pg_restore` y verificación de tablas, filas y revisión Alembic (T-102).
 - Rotación de `SECRET_KEY` sin cortar sesiones: `SECRET_KEY_PREVIOUS` solo verifica durante la ventana de rotación (T-103, ADR-012).
+- `specs/taskflow/threat-model.md`: modelo STRIDE con 32 amenazas, mitigaciones y riesgos residuales (T-104).
 
 - Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.
 - Configuración central en `app/config.py` con validación y fail-fast en producción.

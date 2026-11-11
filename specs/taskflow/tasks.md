@@ -40,7 +40,7 @@
 
 **Completada (P9):** `T-095` (sincronizar InsForge con `alembic upgrade head` antes del deploy; causa raíz de B-05).
 
-**Completada (P10, seguimiento 2026-11-11):** `T-096` (orden estable del Kanban con `tasks.position`, migración `f0e1f2a3b4c5`, `PATCH /status` atómico con `position` y reordenación en el tablero), `T-097` (decisión final de ADR-001: se mantiene Bearer + auto-refresh; cookies de terceros inviables sin BFF y riesgo residual registrado), `T-098` (purga idempotente de notificaciones >90 d y actividad >1 año, al arrancar y con `scripts/purge_retention.py`), `T-099` (drift documental: contratos, checklist y README sin afirmaciones obsoletas), `T-100` (idempotencia en POST críticos con `Idempotency-Key`: replay, 422/409, purga a 24 h y migración `b2c3d4e5f6a7`), `T-101` (bloqueo `FOR UPDATE` del equipo al expulsar o cambiar roles, con test de concurrencia sobre PostgreSQL), `T-102` (drill de backup/restore con `scripts/backup_restore_drill.py` y verificación de tablas, filas y revisión Alembic), `T-103` (rotación de `SECRET_KEY` con clave dual y ADR-012).
+**Completada (P10, seguimiento 2026-11-11):** `T-096` (orden estable del Kanban con `tasks.position`, migración `f0e1f2a3b4c5`, `PATCH /status` atómico con `position` y reordenación en el tablero), `T-097` (decisión final de ADR-001: se mantiene Bearer + auto-refresh; cookies de terceros inviables sin BFF y riesgo residual registrado), `T-098` (purga idempotente de notificaciones >90 d y actividad >1 año, al arrancar y con `scripts/purge_retention.py`), `T-099` (drift documental: contratos, checklist y README sin afirmaciones obsoletas), `T-100` (idempotencia en POST críticos con `Idempotency-Key`: replay, 422/409, purga a 24 h y migración `b2c3d4e5f6a7`), `T-101` (bloqueo `FOR UPDATE` del equipo al expulsar o cambiar roles, con test de concurrencia sobre PostgreSQL), `T-102` (drill de backup/restore con `scripts/backup_restore_drill.py` y verificación de tablas, filas y revisión Alembic), `T-103` (rotación de `SECRET_KEY` con clave dual y ADR-012), `T-104` (modelo STRIDE formal en `threat-model.md` con 32 amenazas, mitigaciones y riesgos residuales).
 
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
@@ -269,6 +269,7 @@ documental.
 | T-101 | Serializar cambios de membresía para proteger al último admin | S2 | T-041, T-042 | S | FR-TEAM-04, FR-TEAM-05 | `FOR UPDATE` sobre el equipo; test en PostgreSQL de bloqueo concurrente |
 | T-102 | Drill de backup/restore automatizado y verificado | S2 | T-080 | M | NFR-REL-04 | Dump, restore y comparación de tablas/filas/revisión; evidencia y runbook |
 | T-103 | Rotación de `SECRET_KEY` con clave dual | S2 | T-017 | S | NFR-SEC-02, ADR-012 | `SECRET_KEY_PREVIOUS` solo verifica; tokens antiguos válidos durante la ventana; tests y procedimiento |
+| T-104 | Modelo STRIDE formal | S2 | T-035 | M | NFR-SEC-01 | Activos, fronteras, amenazas TM-01…TM-32, mitigaciones y riesgos residuales; revisión trimestral |
 
 ---
 
