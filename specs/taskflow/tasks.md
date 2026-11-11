@@ -55,11 +55,12 @@ con **87,32 % de cobertura** (gate 80 %). `npm run test` → **48 passed** (72,3
 líneas / 76,9 % ramas); `npm run lint` → limpio; `npm run build` → correcto;
 `alembic upgrade head` + `downgrade -1` + `upgrade head` → correcto en SQLite
 (`f0e1f2a3b4c5`). **Producción (2026-11-11):** InsForge migrado a
-`f0e1f2a3b4c5` (columna e índice verificados, 0 posiciones nulas) y smoke de
-release **15/15**; Render ya sirve el código del Kanban (tarea nueva con
-`position` 1024). Histórico: 180 tests/87 % sobre PostgreSQL 15, InsForge en
-`d0e1f2a3b4c5`, `STORAGE_BACKEND=insforge`, Render live con smoke **15/15** y
-CORS verificado; p95 < 33 ms en lecturas; SSE **500/500**.
+`b2c3d4e5f6a7` (columna e índice de `position` y tabla `idempotency_keys`
+verificados, 0 posiciones nulas); smoke de release **15/15**; Render sirve el
+código del Kanban (tarea nueva con `position` 1024) y la idempotencia responde
+con `Idempotent-Replayed: true` en el reintento. Histórico: 180 tests/87 % sobre
+PostgreSQL 15, `STORAGE_BACKEND=insforge`, CORS verificado; p95 < 33 ms en
+lecturas; SSE **500/500**.
 
 ---
 
