@@ -56,6 +56,50 @@ describe('API client', () => {
     expect(JSON.parse(options.body)).toEqual({ user_id: 42 })
   })
 
+  it('sends an Idempotency-Key when creating resources', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ id: 1 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await api.teams.create('token', { name: 'Team', slug: 'team' })
+
+    const [, options] = fetchMock.mock.calls[0]
+    const key = options.headers['Idempotency-Key']
+    expect(typeof key).toBe('string')
+    expect(key.length).toBeGreaterThan(8)
+  })
+
+  it('generates a new key per create and reuses an explicit one', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ id: 1 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await api.teams.create('token', { name: 'A', slug: 'a' })
+    await api.teams.create('token', { name: 'B', slug: 'b' })
+    await api.teams.create('token', { name: 'C', slug: 'c' }, 'fixed-key')
+
+    const keys = fetchMock.mock.calls.map(([, options]) => options.headers['Idempotency-Key'])
+    expect(keys[0]).not.toBe(keys[1])
+    expect(keys[2]).toBe('fixed-key')
+  })
+
+  it('keeps the Idempotency-Key across the 401 refresh retry', async () => {
+    localStorage.setItem('refresh_token', 'old-refresh')
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ detail: 'expired' }, 401))
+      .mockResolvedValueOnce(
+        jsonResponse({ access_token: 'new-access', refresh_token: 'new-refresh' }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ id: 1 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await api.tasks.create('old-access', 'team', 'project', { title: 'Task' })
+
+    const firstKey = fetchMock.mock.calls[0][1].headers['Idempotency-Key']
+    const retriedKey = fetchMock.mock.calls[2][1].headers['Idempotency-Key']
+    expect(firstKey).toBeTruthy()
+    expect(retriedKey).toBe(firstKey)
+  })
+
   it('returns null for 204 responses', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })))
 

@@ -50,6 +50,19 @@ function emitSessionEvent(name, detail) {
   }
 }
 
+/**
+ * Generate a key for the `Idempotency-Key` header.
+ *
+ * A retry (including the transparent 401 refresh) reuses the same key, so the
+ * API replays the original response instead of creating a duplicate resource.
+ */
+export function newIdempotencyKey() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `tf-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function clearStoredSession() {
   if (typeof localStorage === 'undefined') return;
   localStorage.removeItem('access_token');
@@ -112,7 +125,7 @@ async function refreshSession() {
 
 async function request(
   path,
-  { method = 'GET', token, body, headers = {}, signal, retry = false } = {},
+  { method = 'GET', token, body, headers = {}, signal, retry = false, idempotencyKey } = {},
 ) {
   const isFormData = body instanceof FormData;
   const isUrlEncoded = body instanceof URLSearchParams;
@@ -122,6 +135,7 @@ async function request(
       ? { 'Content-Type': 'application/json' }
       : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
     ...headers,
   };
 
@@ -150,6 +164,7 @@ async function request(
         headers,
         signal,
         retry: true,
+        idempotencyKey,
       });
     }
 
@@ -329,8 +344,13 @@ export const api = {
       request(`/api/v1/teams/${teamId}/members${buildQuery(params)}`, { token }).then(
         (data) => data.items ?? data,
       ),
-    create: (token, data) =>
-      request('/api/v1/teams/', { method: 'POST', token, body: data }),
+    create: (token, data, idempotencyKey = newIdempotencyKey()) =>
+      request('/api/v1/teams/', {
+        method: 'POST',
+        token,
+        body: data,
+        idempotencyKey,
+      }),
     update: (token, teamId, data) =>
       request(`/api/v1/teams/${teamId}`, { method: 'PATCH', token, body: data }),
     addMember: (token, teamId, email, role) =>
@@ -364,11 +384,12 @@ export const api = {
       }).then((data) => data.items ?? data),
     get: (token, teamId, projectId) =>
       request(`/api/v1/teams/${teamId}/projects/${projectId}`, { token }),
-    create: (token, teamId, data) =>
+    create: (token, teamId, data, idempotencyKey = newIdempotencyKey()) =>
       request(`/api/v1/teams/${teamId}/projects/`, {
         method: 'POST',
         token,
         body: data,
+        idempotencyKey,
       }),
     update: (token, teamId, projectId, data) =>
       request(`/api/v1/teams/${teamId}/projects/${projectId}`, {
@@ -408,11 +429,12 @@ export const api = {
       request(`/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}`, {
         token,
       }),
-    create: (token, teamId, projectId, data) =>
+    create: (token, teamId, projectId, data, idempotencyKey = newIdempotencyKey()) =>
       request(`/api/v1/teams/${teamId}/projects/${projectId}/tasks/`, {
         method: 'POST',
         token,
         body: data,
+        idempotencyKey,
       }),
     update: (token, teamId, projectId, taskId, data) =>
       request(`/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}`, {
@@ -453,10 +475,10 @@ export const api = {
         `/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/comments/${buildQuery(params)}`,
         { token },
       ),
-    create: (token, teamId, projectId, taskId, data) =>
+    create: (token, teamId, projectId, taskId, data, idempotencyKey = newIdempotencyKey()) =>
       request(
         `/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/comments/`,
-        { method: 'POST', token, body: data },
+        { method: 'POST', token, body: data, idempotencyKey },
       ),
     update: (token, teamId, projectId, taskId, commentId, data) =>
       request(
@@ -471,10 +493,10 @@ export const api = {
   },
 
   attachments: {
-    upload: (token, teamId, projectId, taskId, formData) =>
+    upload: (token, teamId, projectId, taskId, formData, idempotencyKey = newIdempotencyKey()) =>
       request(
         `/api/v1/teams/${teamId}/projects/${projectId}/tasks/${taskId}/attachments/`,
-        { method: 'POST', token, body: formData },
+        { method: 'POST', token, body: formData, idempotencyKey },
       ),
     list: (token, teamId, projectId, taskId, params = {}) =>
       request(

@@ -70,6 +70,9 @@ y `/attachments/`) aceptan la cabecera opcional `Idempotency-Key`:
 - Un error del servidor libera la clave para que el cliente pueda reintentar.
 - Las claves caducan a las 24 h (`IDEMPOTENCY_KEY_TTL_HOURS`) y la purga de
   retención las elimina.
+- El cliente SPA genera una clave por creación (equipos, proyectos, tareas,
+  comentarios y adjuntos) y la reutiliza en el reintento transparente tras un
+  `401`, evitando duplicados por refresh o doble envío (T-106).
 
 ---
 
