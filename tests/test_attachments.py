@@ -76,6 +76,34 @@ def setup_full_hierarchy_with_task(client: TestClient, owner_email: str):
     return owner_token
 
 
+def test_upload_rejects_content_that_does_not_match_the_extension(client: TestClient):
+    owner_token = setup_full_hierarchy_with_task(client, "signature@example.com")
+    headers = {"Authorization": f"Bearer {owner_token}"}
+    url = "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/attachments/"
+
+    mismatch = client.post(
+        url,
+        files={"file": ("fake.png", b"not a png", "image/png")},
+        headers=headers,
+    )
+    assert mismatch.status_code == 415
+    assert "does not match" in mismatch.json()["detail"]
+
+    executable = client.post(
+        url,
+        files={"file": ("payload.txt", b"MZ\x90\x00", "text/plain")},
+        headers=headers,
+    )
+    assert executable.status_code == 415
+
+    valid = client.post(
+        url,
+        files={"file": ("note.txt", b"hello", "text/plain")},
+        headers=headers,
+    )
+    assert valid.status_code == 201
+
+
 def test_upload_attachment_requires_file(client: TestClient):
     owner_token = setup_full_hierarchy_with_task(client, "upload@example.com")
 

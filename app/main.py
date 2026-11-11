@@ -515,4 +515,14 @@ def health_ready():
 # Reads PORT from environment variable (default: 8000)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port)
+    # Render terminates TLS and forwards the real client IP in
+    # X-Forwarded-For. The API port is not publicly reachable, so trusting the
+    # proxy header is required for per-client rate limiting. Override with
+    # FORWARDED_ALLOW_IPS if the proxy addresses are known.
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=port,
+        proxy_headers=True,
+        forwarded_allow_ips=os.environ.get("FORWARDED_ALLOW_IPS", "*"),
+    )

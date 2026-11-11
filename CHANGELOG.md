@@ -34,6 +34,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Sentry con `send_default_pii=False`, bodies deshabilitados y `before_send` que redacta credenciales (T-108).
 - Validación de `SECRET_KEY`/`SECRET_KEY_PREVIOUS` (≥32), algoritmo HS256/384/512 y TLS obligatorio a PostgreSQL en producción (T-108).
 - `/health` ya no devuelve detalles de la excepción de base de datos (T-108).
+- Rate limit por IP real: uvicorn confía en `X-Forwarded-For` del proxy de Render (`FORWARDED_ALLOW_IPS`, por defecto `*` porque el puerto no es público) y se verificó en producción (T-109).
+- Uploads validan magic bytes contra la extensión y rechazan ejecutables (`MZ`, `ELF`, Mach-O, shebang); JSON debe ser JSON válido (T-109).
 - Frontend actualizado a Vite 8, Vitest 5 y `@vitest/coverage-v8` 5; CI usa Node 24 y la cobertura se restaura con tests de equipo, tablero y tarea (T-107).
 
 - Paquete SDD completo en `specs/taskflow/`: constitución, baseline, spec, plan, tareas, modelo de datos y contrato de API.

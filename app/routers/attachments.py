@@ -41,6 +41,7 @@ from app.idempotency import IdempotencyGuard, get_idempotency_guard
 from app.logging_config import get_logger
 from app.rate_limit import rate_limit
 from app.storage import StorageError, get_storage
+from app.uploads import validate_file_signature
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -209,6 +210,13 @@ async def upload_attachment(
         raise HTTPException(status_code=400, detail="Empty files are not allowed")
 
     checksum = hashlib.sha256(contents).hexdigest()
+    try:
+        validate_file_signature(bytes(contents), extension)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=str(exc),
+        ) from exc
 
     # The file hash is part of the fingerprint: retrying the same upload returns
     # the original attachment instead of storing the bytes again.

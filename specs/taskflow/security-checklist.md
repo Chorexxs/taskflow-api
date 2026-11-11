@@ -135,7 +135,7 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | Descarga autenticada y team-scoped | ✅ | `attachments.py` |
 | Storage persistente en producción | ✅ | `STORAGE_BACKEND=insforge` (bucket privado con `storage_key`) |
 | Checksum de adjuntos | ✅ | T-055: SHA-256 calculado durante el streaming y almacenado en la DB |
-| Magic bytes / antivirus | 🟡 | Allowlist de extensión/MIME y descarga forzada; falta inspección de contenido (deuda) |
+| Magic bytes / antivirus | 🟡 | T-109: se valida el contenido contra la extensión y se rechazan ejecutables; falta antivirus/cuarentena |
 
 ## V13 — API
 
@@ -171,8 +171,8 @@ Leyenda: ✅ cumple · 🟡 parcial o con riesgo aceptado · ❌ no aplica / pen
 | SEC-ASVS-05 | Integración de tests en SQLite | ✅ Resuelto (T-077): PostgreSQL con migraciones | — |
 | SEC-ASVS-06 | Imagen Docker con `.env`, `.git` y datos locales | ✅ Resuelto (T-108) | `.dockerignore` + Dockerfile mínimo + gate de CI |
 | SEC-ASVS-07 | Enumeración de cuentas y oráculo de bloqueo | Baja (aceptado) | Rate limit; requiere verificación por email para cerrar del todo |
-| SEC-ASVS-08 | Rate limit confía en `X-Forwarded-For` del proxy | Baja | Verificar `forwarded_allow_ips` en Render |
-| SEC-ASVS-09 | Uploads sin magic bytes ni antivirus | Baja | Deuda de nuevo ciclo |
+| SEC-ASVS-08 | Rate limit confía en `X-Forwarded-For` del proxy | ✅ Resuelto (T-109) | `uvicorn` con `proxy_headers` y `FORWARDED_ALLOW_IPS`; verificado en producción |
+| SEC-ASVS-09 | Uploads sin magic bytes ni antivirus | 🟡 | T-109 valida magic bytes y ejecutables; antivirus/cuarentena pendiente |
 | SEC-ASVS-10 | El bloqueo de cuenta no revoca sesiones existentes | Baja (aceptado) | Comprobar `is_blocked` en auth si el producto lo exige |
 
 ## Firma
