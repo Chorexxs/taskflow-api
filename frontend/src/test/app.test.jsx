@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -66,5 +66,28 @@ describe('App routing', () => {
 
     expect(await screen.findByTestId('layout')).toBeInTheDocument()
     expect(await screen.findByText('My Teams')).toBeInTheDocument()
+  })
+
+  it('does not refetch the user when the client refreshes the token', async () => {
+    localStorage.setItem('access_token', 'access-token')
+    localStorage.setItem('refresh_token', 'refresh-token')
+    mockApi.users.me.mockResolvedValue({ id: 1, email: 'admin@test.com' })
+
+    renderApp('/')
+    await screen.findByTestId('layout')
+    await waitFor(() => expect(mockApi.users.me).toHaveBeenCalledTimes(1))
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('taskflow:session', {
+          detail: { access_token: 'refreshed-token', refresh_token: 'refresh-2' },
+        }),
+      )
+    })
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(mockApi.users.me).toHaveBeenCalledTimes(1)
   })
 })

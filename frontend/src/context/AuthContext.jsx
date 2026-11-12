@@ -154,7 +154,12 @@ export function AuthProvider({ children }) {
    */
   useEffect(() => {
     const onSession = (event) => {
-      if (event.detail?.access_token) setAccessToken(event.detail.access_token);
+      if (event.detail?.access_token) {
+        // A refresh keeps the same user and the client already validated the
+        // session, so the effect must not request /users/me again.
+        userFetchedForToken.current = event.detail.access_token;
+        setAccessToken(event.detail.access_token);
+      }
       if (event.detail?.refresh_token) setRefreshToken(event.detail.refresh_token);
     };
     const onLogout = () => {

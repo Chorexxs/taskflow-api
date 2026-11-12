@@ -314,7 +314,7 @@ documental.
 | T-126 | Dividir `crud.py` y `schemas.py` por dominio | S3 | — | L | NFR-MAINT-06, CA-2-02 | Paquetes `app/crud/` y `app/schemas/` con re-export; ningún módulo >600 líneas; suite y OpenAPI sin cambios |
 | T-127 | Extraer componentes de las páginas grandes | S3 | — | M | NFR-MAINT-06, CA-2-02 | Modales, filtros y paneles extraídos; `ProjectBoard`/`TeamDetail`/`TaskDetail` por debajo de 600 líneas; tests y build verdes |
 | T-128 | Reducir los round trips SQL por acción | S2 | — | M | NFR-PERF-01, NFR-MAINT-06, FR-TEAM-06, FR-TASK-04 | Auth y membresía en una sola query; `expire_on_commit=False`; sin lookups duplicados de equipo/proyecto/tarea; presupuesto de statements por endpoint con test |
-| T-129 | Evitar el `/users/me` duplicado al iniciar sesión | S3 | — | XS | NFR-PERF-01, FR-UI-01 | `login` carga el usuario una sola vez; el efecto del token no repite la petición; test de regresión |
+| T-129 | Evitar el `/users/me` duplicado al iniciar sesión | S3 | — | XS | NFR-PERF-01, FR-UI-01 | `login` carga el usuario una sola vez y la rotación de tokens reutiliza esa carga; el efecto del token no repite la petición; test de regresión |
 
 ---
 
