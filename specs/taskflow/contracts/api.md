@@ -360,8 +360,8 @@ Leyenda de permisos: **Público**, **Auth** (cualquier autenticado), **Member**,
 
 | Método | Ruta | Permiso | Request | Response | Status |
 |---|---|---|---|---|---|
-| POST | `/teams/` | Auth | `{name, description?, slug?}` | `TeamOut` | 201, 409, 422 |
-| GET | `/teams/` | Auth | `page,page_size` | `Paginated<TeamOut>` | 200 |
+| POST | `/teams/` | Auth | `{name, slug, description?}` | `TeamOut` | 201, 409, 422 |
+| GET | `/teams/` | Auth | `page,page_size` | `Paginated<TeamSummaryOut>` | 200 |
 | GET | `/teams/{team}` | Member | — | `TeamOut` | 200, 403, 404 |
 | PATCH | `/teams/{team}` | Admin | `{name?,description?}` | `TeamOut` | 200, 400, 403, 404 |
 | GET | `/teams/{team}/search` | Member | `q,page,page_size` | `{projects:{items,...},tasks:{items,...}}` | 200, 422 |
@@ -531,6 +531,24 @@ responde **503** con `Retry-After`. El frontend usa `fetch` streaming
   "description": "Equipo de producto",
   "created_by": 1,
   "created_at": "2026-11-09T14:30:00Z"
+}
+```
+
+### `TeamSummaryOut`
+
+`GET /teams/` añade el rol del solicitante y el número de proyectos del equipo
+(FR-TEAM-02); el conteo incluye proyectos archivados.
+
+```json
+{
+  "id": 1,
+  "name": "Product",
+  "slug": "product",
+  "description": "Equipo de producto",
+  "created_by": 1,
+  "created_at": "2026-11-09T14:30:00Z",
+  "role": "admin",
+  "project_count": 3
 }
 ```
 

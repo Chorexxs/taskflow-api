@@ -379,6 +379,13 @@ class TeamOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class TeamSummaryOut(TeamOut):
+    """Team list item with the caller's role and project count (FR-TEAM-02)."""
+
+    role: TeamRole
+    project_count: int
+
+
 class TeamMemberOut(BaseModel):
     """
     Schema for team member response with user details.
@@ -912,9 +919,9 @@ class PaginatedProjectResponse(BaseModel):
 
 
 class PaginatedTeamResponse(BaseModel):
-    """Paginated list of teams."""
+    """Paginated list of teams, including the caller's role."""
 
-    items: list[TeamOut]
+    items: list[TeamSummaryOut]
     total: int
     page: int
     pages: int

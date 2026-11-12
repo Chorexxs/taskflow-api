@@ -296,14 +296,44 @@ def get_team_by_slug(db: Session, slug: str):
 
 
 def get_teams_by_user_paginated(db: Session, user_id: int, page: int, page_size: int):
-    """Return a page of teams for a user, ordered by name."""
+    """Return a page of teams for a user, with role and project count.
+
+    Both fields are required by FR-TEAM-02. They are computed in the same query
+    (correlated subquery) so the list does not issue one count per team.
+    """
+    project_count = (
+        db.query(func.count(models.Project.id))
+        .filter(models.Project.team_id == models.Team.id)
+        .correlate(models.Team)
+        .scalar_subquery()
+    )
     query = (
-        db.query(models.Team)
-        .join(models.TeamMember)
+        db.query(
+            models.Team,
+            models.TeamMember.role,
+            project_count.label("project_count"),
+        )
+        .join(models.TeamMember, models.TeamMember.team_id == models.Team.id)
         .filter(models.TeamMember.user_id == user_id)
         .order_by(models.Team.name, models.Team.id)
     )
-    return paginate_query(query, page, page_size)
+    total = query.count()
+    rows = query.offset((page - 1) * page_size).limit(page_size).all()
+    pages = (total + page_size - 1) // page_size
+    items = [
+        {
+            "id": team.id,
+            "name": team.name,
+            "slug": team.slug,
+            "description": team.description,
+            "created_by": team.created_by,
+            "created_at": team.created_at,
+            "role": role,
+            "project_count": int(count or 0),
+        }
+        for team, role, count in rows
+    ]
+    return items, total, pages
 
 
 def add_member(db: Session, team_id: int, user_id: int, role: str):

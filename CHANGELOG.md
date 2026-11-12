@@ -7,6 +7,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Añadido
 
+- `GET /teams/` devuelve `role` (admin/member) y `project_count` por equipo, calculado en la misma consulta; el Dashboard muestra ambos (T-123, FR-TEAM-02).
 - `CONTRIBUTING.md` con política de ramas, PR, release y rollback (T-010).
 - `specs/taskflow/environments.md` con local, CI, preview, staging y producción (T-009).
 - `specs/taskflow/release-checklist.md`, `scripts/smoke_performance.py` y `scripts/smoke_release.py` (T-080).

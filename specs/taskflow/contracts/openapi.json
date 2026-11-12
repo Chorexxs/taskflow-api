@@ -695,7 +695,7 @@
         "type": "object"
       },
       "PaginatedTeamResponse": {
-        "description": "Paginated list of teams.",
+        "description": "Paginated list of teams, including the caller's role.",
         "properties": {
           "has_next": {
             "title": "Has Next",
@@ -703,7 +703,7 @@
           },
           "items": {
             "items": {
-              "$ref": "#/components/schemas/TeamOut"
+              "$ref": "#/components/schemas/TeamSummaryOut"
             },
             "title": "Items",
             "type": "array"
@@ -1422,6 +1422,62 @@
         ],
         "title": "TeamRole",
         "type": "string"
+      },
+      "TeamSummaryOut": {
+        "description": "Team list item with the caller's role and project count (FR-TEAM-02).",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "integer"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "project_count": {
+            "title": "Project Count",
+            "type": "integer"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TeamRole"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "description",
+          "created_by",
+          "created_at",
+          "role",
+          "project_count"
+        ],
+        "title": "TeamSummaryOut",
+        "type": "object"
       },
       "TeamUpdate": {
         "description": "Editable team fields. Only admins may change them.",

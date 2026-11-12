@@ -135,6 +135,13 @@ export default function Dashboard() {
                   {team.description}
                 </p>
               )}
+              <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)] mb-3">
+                <span>
+                  {team.project_count ?? 0}{' '}
+                  {(team.project_count ?? 0) === 1 ? 'project' : 'projects'}
+                </span>
+                {team.role && <span className="uppercase tracking-wider">{team.role}</span>}
+              </div>
               <div className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
                 <ChevronRight className="w-4 h-4" />
                 View team

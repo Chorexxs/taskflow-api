@@ -219,3 +219,57 @@ def test_update_member_role(client: TestClient):
     assert response.status_code == 200
     data = response.json()
     assert data["role"] == "admin"
+
+
+def test_team_list_includes_role_and_project_count(client: TestClient):
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "summary-owner@example.com", "password": "password123"},
+    )
+    owner = client.post(
+        "/api/v1/auth/login",
+        data={"username": "summary-owner@example.com", "password": "password123"},
+    ).json()["access_token"]
+    headers = {"Authorization": f"Bearer {owner}"}
+
+    created = client.post(
+        "/api/v1/teams/",
+        json={"name": "Summary Team", "slug": "summary-team"},
+        headers=headers,
+    )
+    assert created.status_code == 201, created.text
+    slug = created.json()["slug"]
+
+    for name in ("One", "Two"):
+        assert (
+            client.post(
+                f"/api/v1/teams/{slug}/projects/",
+                json={"name": name},
+                headers=headers,
+            ).status_code
+            == 201
+        )
+
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "summary-member@example.com", "password": "password123"},
+    )
+    member = client.post(
+        "/api/v1/auth/login",
+        data={"username": "summary-member@example.com", "password": "password123"},
+    ).json()["access_token"]
+    client.post(
+        f"/api/v1/teams/{slug}/members",
+        json={"email": "summary-member@example.com", "role": "member"},
+        headers=headers,
+    )
+
+    owner_item = client.get("/api/v1/teams/", headers=headers).json()["items"][0]
+    assert owner_item["role"] == "admin"
+    assert owner_item["project_count"] == 2
+
+    member_item = client.get(
+        "/api/v1/teams/", headers={"Authorization": f"Bearer {member}"}
+    ).json()["items"][0]
+    assert member_item["role"] == "member"
+    assert member_item["project_count"] == 2
