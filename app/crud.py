@@ -475,9 +475,14 @@ def get_team_members(db: Session, team_id: int):
 
 
 def get_team_members_paginated(db: Session, team_id: int, page: int, page_size: int):
-    """Return a page of team members, ordered by join order."""
+    """Return a page of team members, ordered by join order.
+
+    ``joinedload`` keeps ``TeamMemberOut.user`` from triggering one extra
+    SELECT per member (T-117).
+    """
     query = (
         db.query(models.TeamMember)
+        .options(joinedload(models.TeamMember.user))
         .filter(models.TeamMember.team_id == team_id)
         .order_by(models.TeamMember.user_id)
     )
