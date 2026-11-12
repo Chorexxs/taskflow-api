@@ -21,11 +21,13 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/auth-context'
-import { useDialogA11y } from '../hooks/useDialogA11y'
 import QueryError from '../components/QueryError'
 import { api } from '../api'
+import InviteMemberDialog from '../components/teams/InviteMemberDialog'
+import CreateProjectDialog from '../components/teams/CreateProjectDialog'
+import EditProjectDialog from '../components/teams/EditProjectDialog'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Plus, Crown, X, FolderOpen, ChevronRight, Edit2, Save, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, Crown, FolderOpen, ChevronRight, Edit2, Save, Trash2 } from 'lucide-react'
 
 /**
  * TeamDetail Component - Main page for viewing and managing a single team
@@ -70,9 +72,6 @@ export default function TeamDetail() {
   const [showEditTeam, setShowEditTeam] = useState(false)
   const [teamForm, setTeamForm] = useState({ name: '', description: '' })
   const [showArchived, setShowArchived] = useState(false)
-  const inviteDialogRef = useDialogA11y(showInvite, () => setShowInvite(false))
-  const createProjectDialogRef = useDialogA11y(showCreateProject, () => setShowCreateProject(false))
-  const editProjectDialogRef = useDialogA11y(showEditProject, () => setShowEditProject(false))
 
   const { user, accessToken } = useAuth()
   const token = accessToken
@@ -538,179 +537,41 @@ export default function TeamDetail() {
       </main>
 
       {showInvite && (
-        <div ref={inviteDialogRef} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Add team member">
-          <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Invite Member</h3>
-              <button 
-                onClick={() => setShowInvite(false)}
-                className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleInvite} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="invite-email" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Email</label>
-                <input
-                  type="email"
-                  id="invite-email"
-                  name="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  required
-                  className="input-field"
-                  placeholder="colleague@example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="invite-role" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Role</label>
-                <select
-                  id="invite-role"
-                  name="role"
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value)}
-                  className="input-field"
-                >
-                  <option value="member">Member</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowInvite(false)}
-                  className="btn-secondary text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={inviteMutation.isPending}
-                  className="btn-primary text-sm"
-                >
-                  {inviteMutation.isPending ? 'Sending...' : 'Send Invite'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <InviteMemberDialog
+          email={inviteEmail}
+          role={inviteRole}
+          onEmailChange={setInviteEmail}
+          onRoleChange={setInviteRole}
+          onSubmit={handleInvite}
+          isPending={inviteMutation.isPending}
+          onClose={() => setShowInvite(false)}
+        />
       )}
 
       {showCreateProject && (
-        <div ref={createProjectDialogRef} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Create project">
-          <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Create Project</h3>
-              <button 
-                onClick={() => setShowCreateProject(false)}
-                className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleCreateProject} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="create-project-name" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Name</label>
-                <input
-                  type="text"
-                  id="create-project-name"
-                  name="name"
-                  value={newProject.name}
-                  onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                  required
-                  className="input-field"
-                  placeholder="My Project"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="create-project-description" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
-                <textarea
-                  id="create-project-description"
-                  name="description"
-                  value={newProject.description}
-                  onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                  className="input-field min-h-[80px] resize-none"
-                  placeholder="Optional description..."
-                />
-              </div>
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateProject(false)}
-                  className="btn-secondary text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createProjectMutation.isPending}
-                  className="btn-primary text-sm"
-                >
-                  {createProjectMutation.isPending ? 'Creating...' : 'Create Project'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CreateProjectDialog
+          form={newProject}
+          onChange={setNewProject}
+          onSubmit={handleCreateProject}
+          isPending={createProjectMutation.isPending}
+          onClose={() => setShowCreateProject(false)}
+        />
       )}
 
       {showEditProject && (
-        <div ref={editProjectDialogRef} className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-label="Edit project">
-          <div className="bg-[var(--color-bg-secondary)] rounded-xl shadow-xl max-w-md w-full">
-            <div className="flex items-center justify-between p-4 border-b border-subtle">
-              <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Edit Project</h2>
-              <button
-                onClick={() => { setShowEditProject(false); setEditingProject(null); }}
-                className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={(e) => { e.preventDefault(); handleSaveEditProject(); }} className="p-4 space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="team-edit-project-name" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Name</label>
-                <input
-                  type="text"
-                  id="team-edit-project-name"
-                  name="name"
-                  value={editProjectForm.name}
-                  onChange={(e) => setEditProjectForm({ ...editProjectForm, name: e.target.value })}
-                  required
-                  className="input-field"
-                  placeholder="My Project"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="team-edit-project-description" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
-                <textarea
-                  id="team-edit-project-description"
-                  name="description"
-                  value={editProjectForm.description}
-                  onChange={(e) => setEditProjectForm({ ...editProjectForm, description: e.target.value })}
-                  className="input-field min-h-[80px] resize-none"
-                  placeholder="Optional description..."
-                />
-              </div>
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => { setShowEditProject(false); setEditingProject(null); }}
-                  className="btn-secondary text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={updateProjectMutation.isPending || !editProjectForm.name.trim()}
-                  className="btn-primary text-sm"
-                >
-                  {updateProjectMutation.isPending ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <EditProjectDialog
+          form={editProjectForm}
+          onChange={setEditProjectForm}
+          onSubmit={(event) => {
+            event.preventDefault()
+            handleSaveEditProject()
+          }}
+          isPending={updateProjectMutation.isPending}
+          onClose={() => {
+            setShowEditProject(false)
+            setEditingProject(null)
+          }}
+        />
       )}
     </div>
   )

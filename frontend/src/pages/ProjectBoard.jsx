@@ -23,16 +23,19 @@
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { DndContext, closestCorners, DragOverlay, useDroppable, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
+import { DndContext, closestCorners, DragOverlay, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useAuth } from '../context/auth-context'
-import { useDialogA11y } from '../hooks/useDialogA11y'
 import { api } from '../api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Plus, Filter, X, Activity, Settings, Archive } from 'lucide-react'
-import { formatActivityAction, formatActivityActor, formatActivityValue } from '../utils/activity'
+import { ArrowLeft, Plus, Filter, Activity, Settings } from 'lucide-react'
 import { positionBetween, toPosition } from '../utils/kanban'
 import TaskCard from '../components/TaskCard'
+import DroppableColumn from '../components/board/DroppableColumn'
+import FiltersPanel from '../components/board/FiltersPanel'
+import CreateTaskDialog from '../components/board/CreateTaskDialog'
+import ProjectSettingsDialog from '../components/board/ProjectSettingsDialog'
+import ProjectActivityDialog from '../components/board/ProjectActivityDialog'
 
 /**
  * Kanban board column definitions
@@ -48,44 +51,6 @@ const COLUMNS = [
   { id: 'in_progress', title: 'In Progress', color: '' },
   { id: 'done', title: 'Done', color: '' },
 ]
-
-/**
- * DroppableColumn Component - A single column in the Kanban board
- * 
- * Wraps task cards in a droppable area that accepts dragged tasks.
- * Displays column title and task count.
- * 
- * @param {Object} props - Component props
- * @param {Object} props.column - Column configuration with id and title
- * @param {JSX.Element} props.children - Task cards to render in column
- * @param {number} props.taskCount - Number of tasks in column
- * @returns {JSX.Element} Rendered droppable column
- * 
- * @example
- * <DroppableColumn column={{ id: 'todo', title: 'To Do' }} taskCount={5}>
- *   {taskCards}
- * </DroppableColumn>
- */
-
-function DroppableColumn({ column, children, taskCount }) {
-  const { setNodeRef } = useDroppable({
-    id: column.id,
-  })
-  
-  return (
-    <div ref={setNodeRef} className="column-bg rounded-xl p-4 h-full min-h-[500px] border border-subtle">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-widest">
-          {column.title}
-        </h3>
-        <span className="badge badge-accent text-[10px]">
-          {taskCount}
-        </span>
-      </div>
-      {children}
-    </div>
-  )
-}
 
 /**
  * ProjectBoard Component - Main Kanban board page for project task management
@@ -147,9 +112,6 @@ export default function ProjectBoard() {
   const [activityPageNumber, setActivityPageNumber] = useState(1)
   const [showEditProject, setShowEditProject] = useState(false)
   const [projectForm, setProjectForm] = useState({ name: '', description: '' })
-  const createTaskDialogRef = useDialogA11y(showCreateTask, () => setShowCreateTask(false))
-  const projectSettingsDialogRef = useDialogA11y(showEditProject, () => setShowEditProject(false))
-  const activityDialogRef = useDialogA11y(showActivityPanel, () => setShowActivityPanel(false))
   const [taskColumns, setTaskColumns] = useState({
     todo: [],
     in_progress: [],
@@ -496,59 +458,12 @@ export default function ProjectBoard() {
       </header>
 
       {showFilters && (
-        <div className="border-b border-subtle bg-[var(--color-bg-secondary)]/30 px-4 py-3">
-          <div className="max-w-7xl mx-auto flex flex-wrap gap-3 items-center">
-            <select
-              id="filter-status"
-              name="filter-status"
-              aria-label="Filter by status"
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="input-field w-auto py-1.5 text-sm"
-            >
-              <option value="">All Status</option>
-              <option value="todo">To Do</option>
-              <option value="in_progress">In Progress</option>
-              <option value="done">Done</option>
-            </select>
-
-            <select
-              id="filter-priority"
-              name="filter-priority"
-              aria-label="Filter by priority"
-              value={filters.priority}
-              onChange={(e) => handleFilterChange('priority', e.target.value)}
-              className="input-field w-auto py-1.5 text-sm"
-            >
-              <option value="">All Priorities</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-
-            <select
-              id="filter-assignee"
-              name="filter-assignee"
-              aria-label="Filter by assignee"
-              value={filters.assigned_to}
-              onChange={(e) => handleFilterChange('assigned_to', e.target.value)}
-              className="input-field w-auto py-1.5 text-sm"
-            >
-              <option value="">All Assignees</option>
-              {teamMembers?.map(m => (
-                <option key={m.user_id} value={m.user_id}>{m.user?.email}</option>
-              ))}
-            </select>
-
-            <button
-              onClick={clearFilters}
-              className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] flex items-center gap-1 transition-colors"
-            >
-              <X className="w-4 h-4" />
-              Clear
-            </button>
-          </div>
-        </div>
+        <FiltersPanel
+          filters={filters}
+          teamMembers={teamMembers}
+          onChange={handleFilterChange}
+          onClear={clearFilters}
+        />
       )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -626,253 +541,43 @@ export default function ProjectBoard() {
       </main>
 
       {showCreateTask && (
-        <div ref={createTaskDialogRef} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Create task">
-          <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Create Task</h3>
-              <button 
-                onClick={() => setShowCreateTask(false)}
-                className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleCreateTask} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="create-task-title" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Title</label>
-                <input
-                  type="text"
-                  id="create-task-title"
-                  name="title"
-                  value={newTask.title}
-                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                  required
-                  className="input-field"
-                  placeholder="Task title"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="create-task-description" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
-                <textarea
-                  id="create-task-description"
-                  name="description"
-                  value={newTask.description}
-                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                  className="input-field min-h-[80px] resize-none"
-                  placeholder="Optional description..."
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="create-task-priority" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Priority</label>
-                  <select
-                    id="create-task-priority"
-                    name="priority"
-                    value={newTask.priority}
-                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                    className="input-field"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="create-task-due-date" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Due Date</label>
-                  <input
-                    type="date"
-                    id="create-task-due-date"
-                    name="due_date"
-                    value={newTask.due_date || ''}
-                    onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value || null })}
-                    className="input-field"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="create-task-assignee" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Assign to</label>
-                <select
-                  id="create-task-assignee"
-                  name="assigned_to"
-                  value={newTask.assigned_to || ''}
-                  onChange={(e) => setNewTask({ ...newTask, assigned_to: e.target.value ? parseInt(e.target.value) : null })}
-                  className="input-field"
-                >
-                  <option value="">Unassigned</option>
-                  {teamMembers?.map(m => (
-                    <option key={m.user_id} value={m.user_id}>{m.user?.email}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateTask(false)}
-                  className="btn-secondary text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createTaskMutation.isPending}
-                  className="btn-primary text-sm"
-                >
-                  {createTaskMutation.isPending ? 'Creating...' : 'Create Task'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-)}
+        <CreateTaskDialog
+          form={newTask}
+          onChange={setNewTask}
+          onSubmit={handleCreateTask}
+          teamMembers={teamMembers}
+          isPending={createTaskMutation.isPending}
+          onClose={() => setShowCreateTask(false)}
+        />
+      )}
 
       {showEditProject && (
-        <div ref={projectSettingsDialogRef} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Project settings">
-          <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Project Settings</h3>
-              <button 
-                onClick={() => setShowEditProject(false)}
-                className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form 
-              onSubmit={(e) => { e.preventDefault(); updateProjectMutation.mutate(projectForm); }}
-              className="space-y-4"
-            >
-              <div className="space-y-2">
-                <label htmlFor="edit-project-name" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Project Name</label>
-                <input
-                  type="text"
-                  id="edit-project-name"
-                  name="name"
-                  value={projectForm.name}
-                  onChange={(e) => setProjectForm({ ...projectForm, name: e.target.value })}
-                  required
-                  className="input-field"
-                  placeholder="Project name"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="edit-project-description" className="block text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">Description</label>
-                <textarea
-                  id="edit-project-description"
-                  name="description"
-                  value={projectForm.description}
-                  onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
-                  className="input-field min-h-[80px] resize-none"
-                  placeholder="Optional description..."
-                />
-              </div>
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowEditProject(false)}
-                  className="btn-secondary text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={updateProjectMutation.isPending}
-                  className="btn-primary text-sm"
-                >
-                  {updateProjectMutation.isPending ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-            
-            <div className="mt-6 pt-4">
-              <button
-                onClick={() => { if (confirm('Are you sure you want to archive this project?')) { archiveProjectMutation.mutate(); }}}
-                disabled={archiveProjectMutation.isPending}
-                className="flex items-center gap-2 px-4 py-2 bg-[var(--color-priority-high)]/10 text-[var(--color-priority-high)] rounded-lg hover:bg-[var(--color-priority-high)]/20 transition-colors text-sm w-full justify-center"
-              >
-                <Archive className="w-4 h-4" />
-                {archiveProjectMutation.isPending ? 'Archiving...' : 'Archive Project'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ProjectSettingsDialog
+          form={projectForm}
+          onChange={setProjectForm}
+          onSubmit={(event) => {
+            event.preventDefault()
+            updateProjectMutation.mutate(projectForm)
+          }}
+          onArchive={() => {
+            if (confirm('Are you sure you want to archive this project?')) {
+              archiveProjectMutation.mutate()
+            }
+          }}
+          isSaving={updateProjectMutation.isPending}
+          isArchiving={archiveProjectMutation.isPending}
+          onClose={() => setShowEditProject(false)}
+        />
       )}
 
       {showActivityPanel && (
-        <div ref={activityDialogRef} className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-label="Project activity">
-          <div className="bg-[var(--color-bg-secondary)] rounded-xl shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-subtle">
-              <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Project Activity</h2>
-              <button
-                onClick={() => setShowActivityPanel(false)}
-                className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-4 overflow-y-auto max-h-[60vh]">
-              {projectActivity?.items?.length > 0 ? (
-                <div className="space-y-3">
-                  {projectActivity.items.map(log => {
-                    const oldValue = formatActivityValue(log.old_value)
-                    const newValue = formatActivityValue(log.new_value)
-                    return (
-                      <div key={log.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded-lg text-sm">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <span className="font-medium text-[var(--color-accent)]">
-                            {formatActivityAction(log.action)}
-                          </span>
-                          <span className="text-xs text-[var(--color-text-muted)]">
-                            {new Date(log.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <div className="text-xs text-[var(--color-text-muted)]">
-                          by {formatActivityActor(log)}
-                        </div>
-                        {oldValue && newValue && (
-                          <div className="text-[var(--color-text-secondary)] mt-1">
-                            <span className="line-through text-[var(--color-text-muted)] mr-1">{oldValue}</span>
-                            <span className="text-[var(--color-text-primary)]">→ {newValue}</span>
-                          </div>
-                        )}
-                        {!oldValue && newValue && log.action !== 'created' && (
-                          <div className="text-[var(--color-text-secondary)] mt-1">
-                            Set to: <span className="text-[var(--color-text-primary)]">{newValue}</span>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                  {projectActivity.pages > 1 && (
-                    <div className="flex items-center justify-between pt-2">
-                      <button
-                        onClick={() => setActivityPageNumber(page => Math.max(1, page - 1))}
-                        disabled={activityPageNumber <= 1}
-                        className="text-xs text-[var(--color-accent)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed"
-                      >
-                        Previous
-                      </button>
-                      <span className="text-xs text-[var(--color-text-muted)]">
-                        Page {projectActivity.page} of {projectActivity.pages}
-                      </span>
-                      <button
-                        onClick={() => setActivityPageNumber(page => Math.min(projectActivity.pages, page + 1))}
-                        disabled={!projectActivity.has_next}
-                        className="text-xs text-[var(--color-accent)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-[var(--color-text-muted)]">
-                  <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>No activity yet</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <ProjectActivityDialog
+          activity={projectActivity}
+          page={activityPageNumber}
+          onPrevious={() => setActivityPageNumber((page) => Math.max(1, page - 1))}
+          onNext={() => setActivityPageNumber((page) => Math.min(projectActivity.pages, page + 1))}
+          onClose={() => setShowActivityPanel(false)}
+        />
       )}
     </div>
   )

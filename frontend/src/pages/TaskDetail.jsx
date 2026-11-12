@@ -22,9 +22,10 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api'
+import TaskActivityPanel from '../components/tasks/TaskActivityPanel'
+import AttachmentRow from '../components/tasks/AttachmentRow'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Send, MessageSquare, User, Calendar, Edit2, X, Check, Paperclip, Download, Trash2, File, Pencil, Trash, Activity } from 'lucide-react'
-import { formatActivityAction, formatActivityActor, formatActivityValue } from '../utils/activity'
+import { ArrowLeft, Send, MessageSquare, User, Calendar, Edit2, X, Check, Paperclip, Pencil, Trash } from 'lucide-react'
 import { useAuth } from '../context/auth-context'
 import QueryError from '../components/QueryError'
 
@@ -435,34 +436,13 @@ export default function TaskDetail() {
           </div>
 
           <div className="space-y-2">
-            {attachments?.map(attachment => (
-              <div key={attachment.id} className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-xl">
-                <div className="flex items-center gap-3">
-                  <File className="w-5 h-5 text-[var(--color-text-muted)]" />
-                  <div>
-                    <p className="text-sm text-[var(--color-text-primary)]">{attachment.filename}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">
-                      {(attachment.file_size / 1024).toFixed(1)} KB
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleDownload(attachment)}
-                    aria-label={`Download ${attachment.filename}`}
-                    className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => deleteAttachmentMutation.mutate(attachment.id)}
-                    aria-label={`Delete ${attachment.filename}`}
-                    className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-priority-high)] transition-all"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+            {attachments?.map((attachment) => (
+              <AttachmentRow
+                key={attachment.id}
+                attachment={attachment}
+                onDownload={handleDownload}
+                onDelete={(attachmentId) => deleteAttachmentMutation.mutate(attachmentId)}
+              />
             ))}
             {(!attachments || attachments.length === 0) && (
               <p className="text-sm text-[var(--color-text-muted)]">No attachments</p>
@@ -470,70 +450,13 @@ export default function TaskDetail() {
           </div>
         </div>
 
-        {activityPage?.total > 0 && (
-          <div className="mt-8">
-            <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Activity className="w-4 h-4" />
-              Activity ({activityPage.total})
-            </h3>
-            <div className="space-y-2">
-              {activity.map(log => {
-                const oldValue = formatActivityValue(log.old_value)
-                const newValue = formatActivityValue(log.new_value)
-                return (
-                  <div key={log.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded-lg text-xs">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="font-medium text-[var(--color-accent)]">
-                        {formatActivityAction(log.action)}
-                      </span>
-                      <span className="text-[var(--color-text-muted)]">
-                        {new Date(log.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                    <div className="text-[var(--color-text-muted)]">by {formatActivityActor(log)}</div>
-                    {oldValue && newValue && (
-                      <div className="text-[var(--color-text-secondary)] mt-1">
-                        <span className="line-through text-[var(--color-text-muted)] mr-1">{oldValue}</span>
-                        <span className="text-[var(--color-text-primary)]">→ {newValue}</span>
-                      </div>
-                    )}
-                    {oldValue && !newValue && (
-                      <div className="text-[var(--color-text-secondary)] mt-1">
-                        Removed: <span className="text-[var(--color-text-muted)]">{oldValue}</span>
-                      </div>
-                    )}
-                    {!oldValue && newValue && log.action !== 'created' && (
-                      <div className="text-[var(--color-text-secondary)] mt-1">
-                        Set to: <span className="text-[var(--color-text-primary)]">{newValue}</span>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-              {activityPage.pages > 1 && (
-                <div className="flex items-center justify-between pt-2">
-                  <button
-                    onClick={() => setActivityPageNumber(page => Math.max(1, page - 1))}
-                    disabled={activityPageNumber <= 1}
-                    className="text-xs text-[var(--color-accent)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-xs text-[var(--color-text-muted)]">
-                    Page {activityPage.page} of {activityPage.pages}
-                  </span>
-                  <button
-                    onClick={() => setActivityPageNumber(page => Math.min(activityPage.pages, page + 1))}
-                    disabled={!activityPage.has_next}
-                    className="text-xs text-[var(--color-accent)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <TaskActivityPanel
+          activity={activity}
+          activityPage={activityPage}
+          page={activityPageNumber}
+          onPrevious={() => setActivityPageNumber((page) => Math.max(1, page - 1))}
+          onNext={() => setActivityPageNumber((page) => Math.min(activityPage.pages, page + 1))}
+        />
 
         <div className="mt-8">
           <h3 className="text-sm font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-5 flex items-center gap-2">

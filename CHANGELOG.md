@@ -55,6 +55,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Cambiado
 
+- Las páginas grandes del frontend se dividieron en componentes: `board/` (columnas, filtros y modales del Kanban), `teams/` (modales de miembro y proyecto) y `tasks/` (actividad y adjuntos). Las tres páginas quedan por debajo de 600 líneas (T-127, CA-2-02).
 - `app/crud.py` y `app/schemas.py` se dividieron por dominio en `app/crud/` y `app/schemas/` con re-export; `from app import crud, schemas` sigue funcionando y el mayor módulo backend baja de 1687 a 368 líneas (T-126, CA-2-02).
 - La subida de adjuntos se movió a `app/services/attachments.py` (validación, streaming, escaneo, storage y registro); el router conserva solo la resolución de la tarea, la idempotencia y la respuesta (T-125, CA-2-03).
 - `POST /teams/` genera el slug desde el nombre cuando se omite (con sufijo `-2`, `-3`… ante colisión) y responde `409` si un slug explícito ya existe, como exige FR-TEAM-01 (T-124).
