@@ -126,7 +126,12 @@ def get_session_local():
                 stacklevel=2,
             )
             return None
-        _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=get_engine())
+        _SessionLocal = sessionmaker(
+            autocommit=False,
+            autoflush=False,
+            expire_on_commit=False,
+            bind=get_engine(),
+        )
     return _SessionLocal
 
 

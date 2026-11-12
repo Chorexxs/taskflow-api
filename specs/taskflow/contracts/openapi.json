@@ -2317,7 +2317,7 @@
     },
     "/api/v1/teams/{team_id_or_slug}": {
       "get": {
-        "description": "Get team details.\n\nReturns detailed information about a specific team.\nThe user must be a member of the team to access this endpoint.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    TeamOut: Team details including name, slug, description, and metadata.\n\nRaises:\n    HTTPException 403: If user is not a member of the team.\n    HTTPException 404: If team not found.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/my-team \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "description": "Get team details.\n\nReturns detailed information about a specific team.\nThe user must be a member of the team to access this endpoint.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    member (TeamMember): Membership check (injected via dependency).\n\nReturns:\n    TeamOut: Team details including name, slug, description, and metadata.\n\nRaises:\n    HTTPException 403: If user is not a member of the team.\n    HTTPException 404: If team not found.\n\nExample:\n    >>> curl -X GET https://api.taskflow.com/api/v1/teams/my-team \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
         "operationId": "get_team_api_v1_teams__team_id_or_slug__get",
         "parameters": [
           {
@@ -2421,7 +2421,7 @@
     },
     "/api/v1/teams/{team_id_or_slug}/members": {
       "get": {
-        "description": "List all members of a team.\n\nReturns all members with their roles and user information.\nThe user must be a member of the team to access this endpoint.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    db (Session): Database session (injected by FastAPI).\n    current_user (User): The authenticated user.\n\nReturns:\n    PaginatedTeamMemberResponse: Page of members with user details.\n\nExample:\n    >>> curl -X GET \"https://api.taskflow.com/api/v1/teams/1/members?page=1&page_size=20\" \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
+        "description": "List all members of a team.\n\nReturns all members with their roles and user information.\nThe user must be a member of the team to access this endpoint.\n\nArgs:\n    team_id_or_slug (str): The team identifier (ID or slug).\n    page (int): Page number (1-indexed).\n    page_size (int): Items per page (max 100).\n    db (Session): Database session (injected by FastAPI).\n    member (TeamMember): Membership check (injected via dependency).\n\nReturns:\n    PaginatedTeamMemberResponse: Page of members with user details.\n\nExample:\n    >>> curl -X GET \"https://api.taskflow.com/api/v1/teams/1/members?page=1&page_size=20\" \\\n    ...   -H \"Authorization: Bearer eyJhbGc...\"",
         "operationId": "list_members_api_v1_teams__team_id_or_slug__members_get",
         "parameters": [
           {

@@ -169,12 +169,10 @@ def create_task(
         ...   -H "Content-Type: application/json" \\
         ...   -d '{"title":"Fix login bug","priority":"high","assigned_to":2}'
     """
-    from app.dependencies import get_team_from_id_or_slug
-
     if (replay := guard.replay(task)) is not None:
         return replay
 
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
 
     # An assignee must belong to the team, even at creation time.
@@ -241,9 +239,7 @@ def list_tasks(
         >>> curl "https://api.taskflow.com/api/v1/teams/1/projects/1/tasks/?status=todo&priority=high" \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
-    from app.dependencies import get_team_from_id_or_slug
-
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     if page_size > 100:
         page_size = 100
@@ -292,9 +288,7 @@ def get_task(
     Returns:
         TaskOut: Task details with assignee information.
     """
-    from app.dependencies import get_team_from_id_or_slug
-
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     return get_task_from_id_or_title(db, task_id_or_title, project.id)
 
@@ -331,9 +325,7 @@ def update_task(
     Raises:
         HTTPException 403: If user is not creator or admin.
     """
-    from app.dependencies import get_team_from_id_or_slug
-
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
 
@@ -398,15 +390,13 @@ def update_task_status(
     Returns:
         TaskOut: Updated task.
     """
-    from app.dependencies import get_team_from_id_or_slug
-
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
 
-    return crud.update_task_status(
+    return crud.apply_task_status(
         db,
-        task.id,
+        task,
         status_update.status,
         current_user.id,
         position=status_update.position,
@@ -442,9 +432,7 @@ def delete_task(
     Raises:
         HTTPException 403: If user is not creator or admin.
     """
-    from app.dependencies import get_team_from_id_or_slug
-
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
 
@@ -502,9 +490,7 @@ def assign_task(
         HTTPException 400: If assignee is not a team member.
         HTTPException 403: If the caller is neither the creator nor an admin.
     """
-    from app.dependencies import get_team_from_id_or_slug
-
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
 
@@ -576,11 +562,9 @@ def get_task_activity(
     Returns:
         PaginatedActivityResponse: Page of activity logs plus metadata.
     """
-    from app.dependencies import get_team_from_id_or_slug
-
     page = max(page, 1)
     page_size = min(max(page_size, 1), 100)
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
     return crud.get_activity_by_task(db, task.id, page, page_size)

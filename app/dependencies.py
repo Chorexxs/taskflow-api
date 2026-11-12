@@ -67,12 +67,9 @@ def get_current_team_member(
     """
     Dependency to ensure the current user is a member of the specified team.
 
-    This dependency:
-    1. Resolves the team from the ID or slug
-    2. Checks if the current user is a member of that team
-    3. Returns the TeamMember object with role information
-
-    Use this dependency for routes that should be accessible to any team member.
+    Resolves the team and the membership in a single query and returns the
+    TeamMember with ``member.team`` already loaded, so handlers do not need to
+    look the team up again.
 
     Args:
         team_id_or_slug (str): The team identifier from the URL path.
@@ -95,64 +92,32 @@ def get_current_team_member(
             # member.role contains "admin" or "member"
             ...
     """
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
-    member = crud.get_team_member(db, team.id, current_user.id)
-    if not member:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this team",
-        )
-    return member
+    member = crud.get_membership_with_team(db, team_id_or_slug, current_user.id)
+    if member is not None:
+        return member
+
+    # Distinguish "team does not exist" (404) from "not a member" (403). The
+    # extra lookup only happens on the error path.
+    get_team_from_id_or_slug(db, team_id_or_slug)
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Not a member of this team",
+    )
 
 
 def get_current_team_admin(
-    team_id_or_slug: str,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    member: models.TeamMember = Depends(get_current_team_member),
 ):
     """
     Dependency to ensure the current user is an admin of the specified team.
 
-    This dependency:
-    1. Resolves the team from the ID or slug
-    2. Checks if the current user is an admin of that team
-
-    Use this dependency for routes that should only be accessible to team admins,
-    such as:
-    - Adding/removing members
-    - Changing member roles
-    - Archiving projects
-    - Deleting team resources
-
-    Args:
-        team_id_or_slug (str): The team identifier from the URL path.
-        db (Session): SQLAlchemy database session (injected).
-        current_user (User): The authenticated user (injected via get_current_user).
-
-    Returns:
-        TeamMember: The TeamMember object containing the user's admin role.
+    Reuses ``get_current_team_member`` (cached by FastAPI for the request), so
+    the team and membership are only queried once.
 
     Raises:
         HTTPException 403: If the user is not a member or not an admin.
         HTTPException 404: If the team doesn't exist.
-
-    Example:
-        @router.post("/{team_id_or_slug}/members")
-        def add_member(
-            team_id_or_slug: str,
-            member: TeamMember = Depends(get_current_team_admin),
-            data: TeamMemberAdd,
-        ):
-            # Only team admins can add members
-            ...
     """
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
-    member = crud.get_team_member(db, team.id, current_user.id)
-    if not member:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this team",
-        )
     if member.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

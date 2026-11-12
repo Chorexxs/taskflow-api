@@ -42,7 +42,7 @@ logger = get_logger(__name__)
 
 
 def get_task_from_params(
-    db: Session, team_id_or_slug: str, project_id_or_name: str, task_id_or_title: str
+    db: Session, team: models.Team, project_id_or_name: str, task_id_or_title: str
 ):
     """
     Resolve task from URL parameters.
@@ -51,17 +51,15 @@ def get_task_from_params(
 
     Args:
         db (Session): SQLAlchemy database session.
-        team_id_or_slug (str): The team identifier.
+        team (Team): Team already resolved by the membership dependency.
         project_id_or_name (str): The project identifier.
         task_id_or_title (str): The task identifier.
 
     Returns:
         Task: The resolved Task object.
     """
-    from app.dependencies import get_team_from_id_or_slug
     from app.routers.tasks import get_project_from_id_or_name, get_task_from_id_or_title
 
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
     return task
@@ -107,7 +105,7 @@ async def upload_attachment(
         ...   -H "Authorization: Bearer eyJhbGc..." \\
         ...   -F "file=@document.pdf"
     """
-    task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
+    task = get_task_from_params(db, member.team, project_id_or_name, task_id_or_title)
     upload = await attachments_service.read_upload(file, current_user.id)
 
     # The file hash is part of the fingerprint: retrying the same upload returns
@@ -148,7 +146,7 @@ def list_attachments(
     Returns:
         PaginatedAttachmentResponse: Page of attachments for the task.
     """
-    task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
+    task = get_task_from_params(db, member.team, project_id_or_name, task_id_or_title)
     items, total, pages = crud.get_attachments_by_task_paginated(db, task.id, page, page_size)
     return {
         "items": items,
@@ -191,7 +189,7 @@ def delete_attachment(
         HTTPException 404: If attachment not found or doesn't belong to task.
         HTTPException 403: If user is not uploader or admin.
     """
-    task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
+    task = get_task_from_params(db, member.team, project_id_or_name, task_id_or_title)
     attachment = crud.get_attachment_by_id(db, attachment_id)
 
     if not attachment:
@@ -258,7 +256,7 @@ def download_attachment(
     Raises:
         HTTPException 404: If attachment not found or file doesn't exist.
     """
-    task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
+    task = get_task_from_params(db, member.team, project_id_or_name, task_id_or_title)
     attachment = crud.get_attachment_by_id(db, attachment_id)
 
     if not attachment or attachment.task_id != task.id:

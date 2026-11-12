@@ -22,7 +22,6 @@ from app.database import get_db
 from app.dependencies import (
     get_current_team_admin,
     get_current_team_member,
-    get_team_from_id_or_slug,
 )
 from app.idempotency import IdempotencyGuard, get_idempotency_guard
 from app.logging_config import get_logger
@@ -117,12 +116,10 @@ def create_project(
         ...   -H "Content-Type: application/json" \\
         ...   -d '{"name":"Website Redesign","description":"Redesign company website"}'
     """
-    from app.dependencies import get_team_from_id_or_slug
-
     if (replay := guard.replay(project)) is not None:
         return replay
 
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     try:
         new_project = crud.create_project(db, project, team.id, current_user.id)
     except ValueError as exc:
@@ -163,9 +160,7 @@ def list_projects(
         >>> curl -X GET "https://api.taskflow.com/api/v1/teams/1/projects/?page=1&page_size=20" \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
-    from app.dependencies import get_team_from_id_or_slug
-
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     items, total, pages = crud.get_projects_by_team_paginated(
         db, team.id, page, page_size, include_archived=include_archived
     )
@@ -206,9 +201,7 @@ def get_project(
         >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/projects/1 \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
-    from app.dependencies import get_team_from_id_or_slug
-
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     return get_project_from_id_or_slug(db, project_id_or_slug, team.id)
 
 
@@ -244,9 +237,7 @@ def update_project(
         ...   -H "Content-Type: application/json" \\
         ...   -d '{"name":"New Name","status":"archived"}'
     """
-    from app.dependencies import get_team_from_id_or_slug
-
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = admin.team
     project = get_project_from_id_or_slug(db, project_id_or_slug, team.id)
     return crud.update_project(db, project.id, project_update)
 
@@ -280,9 +271,7 @@ def archive_project(
         >>> curl -X DELETE https://api.taskflow.com/api/v1/teams/1/projects/1 \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
-    from app.dependencies import get_team_from_id_or_slug
-
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = admin.team
     project = get_project_from_id_or_slug(db, project_id_or_slug, team.id)
     old_status = project.status
     crud.archive_project(db, project.id)
@@ -300,7 +289,7 @@ def archive_project_endpoint(
     admin: models.TeamMember = Depends(get_current_team_admin),
 ):
     """Explicitly archive a project. Only team admins may do this."""
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = admin.team
     project = get_project_from_id_or_slug(db, project_id_or_slug, team.id)
     old_status = project.status
     if old_status != "archived":
@@ -320,7 +309,7 @@ def restore_project_endpoint(
     admin: models.TeamMember = Depends(get_current_team_admin),
 ):
     """Restore an archived project to active status. Only team admins may do this."""
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = admin.team
     project = get_project_from_id_or_slug(db, project_id_or_slug, team.id)
     old_status = project.status
     if old_status != "active":
@@ -361,10 +350,8 @@ def get_project_activity(
         >>> curl -X GET https://api.taskflow.com/api/v1/teams/1/projects/1/activity \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
-    from app.dependencies import get_team_from_id_or_slug
-
     page = max(page, 1)
     page_size = min(max(page_size, 1), 100)
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     project = get_project_from_id_or_slug(db, project_id_or_slug, team.id)
     return crud.get_activity_by_project(db, project.id, page, page_size)

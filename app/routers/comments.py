@@ -20,10 +20,7 @@ from sqlalchemy.orm import Session
 from app import crud, models, schemas
 from app.auth import get_current_user
 from app.database import get_db
-from app.dependencies import (
-    get_current_team_member,
-    get_team_from_id_or_slug,
-)
+from app.dependencies import get_current_team_member
 from app.idempotency import IdempotencyGuard, get_idempotency_guard
 from app.rate_limit import rate_limit
 
@@ -33,7 +30,7 @@ router = APIRouter()
 
 
 def get_task_from_params(
-    db: Session, team_id_or_slug: str, project_id_or_name: str, task_id_or_title: str
+    db: Session, team: models.Team, project_id_or_name: str, task_id_or_title: str
 ):
     """
     Resolve task from URL parameters.
@@ -42,7 +39,7 @@ def get_task_from_params(
 
     Args:
         db (Session): SQLAlchemy database session.
-        team_id_or_slug (str): The team identifier.
+        team (Team): Team already resolved by the membership dependency.
         project_id_or_name (str): The project identifier.
         task_id_or_title (str): The task identifier.
 
@@ -52,10 +49,8 @@ def get_task_from_params(
     Raises:
         HTTPException 404: If any entity is not found.
     """
-    from app.dependencies import get_team_from_id_or_slug
     from app.routers.tasks import get_project_from_id_or_name, get_task_from_id_or_title
 
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
     project = get_project_from_id_or_name(db, project_id_or_name, team.id)
     task = get_task_from_id_or_title(db, task_id_or_title, project.id)
     return task
@@ -102,7 +97,7 @@ def create_comment(
     if (replay := guard.replay(comment)) is not None:
         return replay
 
-    task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
+    task = get_task_from_params(db, member.team, project_id_or_name, task_id_or_title)
     new_comment = crud.create_comment(db, comment, task.id, current_user.id)
 
     notified_user_ids: set[int] = set()
@@ -121,7 +116,7 @@ def create_comment(
         notified_user_ids.add(task.assigned_to)
 
     # Notify mentioned team members. Mentions outside the team are ignored.
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     for email in set(_MENTION_PATTERN.findall(comment.content)):
         mentioned_user = crud.get_user_by_email(db, email)
         if not mentioned_user or mentioned_user.id == current_user.id:
@@ -186,7 +181,7 @@ def list_comments(
     page_size = min(max(page_size, 1), 100)
     if order not in {"asc", "desc"}:
         raise HTTPException(status_code=422, detail="order must be 'asc' or 'desc'")
-    task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
+    task = get_task_from_params(db, member.team, project_id_or_name, task_id_or_title)
     return crud.get_comments_by_task(db, task.id, page, page_size, order)
 
 
@@ -231,7 +226,7 @@ def update_comment(
 
     # Verify the comment belongs to the task in the URL and that the caller
     # is still a member of the team.
-    task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
+    task = get_task_from_params(db, member.team, project_id_or_name, task_id_or_title)
     if comment.task_id != task.id:
         raise HTTPException(status_code=404, detail="Comment not found")
 
@@ -282,7 +277,7 @@ def delete_comment(
         raise HTTPException(status_code=404, detail="Comment not found")
 
     # Verify comment belongs to the task
-    task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
+    task = get_task_from_params(db, member.team, project_id_or_name, task_id_or_title)
     if comment.task_id != task.id:
         raise HTTPException(status_code=404, detail="Comment not found")
 

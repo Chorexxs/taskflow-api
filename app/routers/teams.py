@@ -28,31 +28,6 @@ from app.rate_limit import rate_limit
 router = APIRouter()
 
 
-def get_team_from_id_or_slug(db: Session, team_id_or_slug: str) -> models.Team:
-    """
-    Resolve a team identifier to a Team object.
-
-    Accepts either a numeric team ID or a URL-friendly slug.
-
-    Args:
-        db (Session): SQLAlchemy database session.
-        team_id_or_slug (str): The team identifier (ID or slug).
-
-    Returns:
-        Team: The Team object if found.
-
-    Raises:
-        HTTPException 404: If team not found.
-    """
-    if team_id_or_slug.isdigit():
-        team = crud.get_team_by_id(db, int(team_id_or_slug))
-    else:
-        team = crud.get_team_by_slug(db, team_id_or_slug)
-    if not team:
-        raise HTTPException(status_code=404, detail="Team not found")
-    return team
-
-
 @router.post("/", response_model=schemas.TeamOut, status_code=status.HTTP_201_CREATED)
 @rate_limit("10/minute")
 def create_team(
@@ -183,15 +158,14 @@ def search_in_team(
 
     page = max(page, 1)
     page_size = min(max(page_size, 1), 100)
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = member.team
     return crud.search_in_team(db, team.id, q, page, page_size)
 
 
 @router.get("/{team_id_or_slug}", response_model=schemas.TeamOut)
 def get_team(
     team_id_or_slug: str,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    member: models.TeamMember = Depends(get_current_team_member),
 ):
     """
     Get team details.
@@ -201,8 +175,7 @@ def get_team(
     
     Args:
         team_id_or_slug (str): The team identifier (ID or slug).
-        db (Session): Database session (injected by FastAPI).
-        current_user (User): The authenticated user.
+        member (TeamMember): Membership check (injected via dependency).
     
     Returns:
         TeamOut: Team details including name, slug, description, and metadata.
@@ -215,10 +188,7 @@ def get_team(
         >>> curl -X GET https://api.taskflow.com/api/v1/teams/my-team \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
-    # Verify membership
-    get_current_team_member(team_id_or_slug, db, current_user)
-    return team
+    return member.team
 
 
 @router.patch("/{team_id_or_slug}", response_model=schemas.TeamOut)
@@ -233,7 +203,7 @@ def update_team(
     if team_update.name is not None and not team_update.name.strip():
         raise HTTPException(status_code=400, detail="Team name cannot be empty")
 
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = admin.team
     old_name = team.name
     updated = crud.update_team(db, team.id, team_update)
     crud.log_activity(
@@ -286,7 +256,7 @@ def invite_member(
         ...   -H "Content-Type: application/json" \\
         ...   -d '{"email":"newuser@example.com","role":"member"}'
     """
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = admin.team
 
     # Find the user by email
     user = crud.get_user_by_email(db, member_data.email)
@@ -310,7 +280,7 @@ def list_members(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    member: models.TeamMember = Depends(get_current_team_member),
 ):
     """
     List all members of a team.
@@ -320,8 +290,10 @@ def list_members(
     
     Args:
         team_id_or_slug (str): The team identifier (ID or slug).
+        page (int): Page number (1-indexed).
+        page_size (int): Items per page (max 100).
         db (Session): Database session (injected by FastAPI).
-        current_user (User): The authenticated user.
+        member (TeamMember): Membership check (injected via dependency).
     
     Returns:
         PaginatedTeamMemberResponse: Page of members with user details.
@@ -330,8 +302,7 @@ def list_members(
         >>> curl -X GET "https://api.taskflow.com/api/v1/teams/1/members?page=1&page_size=20" \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
-    get_current_team_member(team_id_or_slug, db, current_user)
+    team = member.team
     items, total, pages = crud.get_team_members_paginated(db, team.id, page, page_size)
     return {
         "items": items,
@@ -348,6 +319,7 @@ def remove_member(
     user_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
+    caller: models.TeamMember = Depends(get_current_team_member),
 ):
     """
     Remove a member from a team.
@@ -373,7 +345,7 @@ def remove_member(
         >>> curl -X DELETE https://api.taskflow.com/api/v1/teams/1/members/2 \\
         ...   -H "Authorization: Bearer eyJhbGc..."
     """
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = caller.team
 
     # Hold the team row until commit so two concurrent expulsions cannot both
     # see enough admins and leave the team without one.
@@ -383,14 +355,10 @@ def remove_member(
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
 
-    current_member = crud.get_team_member(db, team.id, current_user.id)
-    if not current_member:
-        raise HTTPException(status_code=403, detail="Not a member of this team")
-
     is_self = member.user_id == current_user.id
 
     # A member may leave, but only an admin may remove someone else.
-    if not is_self and current_member.role != "admin":
+    if not is_self and caller.role != "admin":
         raise HTTPException(
             status_code=403,
             detail="Only team admins can remove other members",
@@ -443,7 +411,7 @@ def update_member_role(
         ...   -H "Content-Type: application/json" \\
         ...   -d '{"role":"admin"}'
     """
-    team = get_team_from_id_or_slug(db, team_id_or_slug)
+    team = admin.team
 
     # Serialize role changes so a demotion cannot race another demotion or an
     # expulsion and leave the team with zero admins.

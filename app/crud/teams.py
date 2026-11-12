@@ -17,6 +17,7 @@ __all__ = [
     "remove_member",
     "get_team_members_paginated",
     "get_team_member",
+    "get_membership_with_team",
     "lock_team_for_membership_change",
     "count_team_admins",
     "update_member_role",
@@ -299,6 +300,27 @@ def get_team_member(db: Session, team_id: int, user_id: int):
         )
         .first()
     )
+
+
+def get_membership_with_team(db: Session, team_id_or_slug: str, user_id: int):
+    """Return the caller's membership with the team eager-loaded.
+
+    Every team-scoped request needs both the team and the membership. Resolving
+    them in one round trip halves the fixed database cost of an authenticated
+    call, which dominates latency when the API and the database are in
+    different regions.
+    """
+    query = (
+        db.query(models.TeamMember)
+        .options(joinedload(models.TeamMember.team))
+        .join(models.Team, models.Team.id == models.TeamMember.team_id)
+        .filter(models.TeamMember.user_id == user_id)
+    )
+    if team_id_or_slug.isdigit():
+        query = query.filter(models.Team.id == int(team_id_or_slug))
+    else:
+        query = query.filter(models.Team.slug == team_id_or_slug)
+    return query.first()
 
 
 def lock_team_for_membership_change(db: Session, team_id: int) -> None:

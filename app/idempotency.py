@@ -195,7 +195,6 @@ class IdempotencyGuard:
                     detail="Idempotency-Key conflict; retry the request",
                 ) from None
             return self._handle_existing(existing)
-        self.db.refresh(record)
         self.record = record
         return None
 

@@ -407,7 +407,7 @@ async def get_current_user(
         ... async def protected_route(current_user: User = Depends(get_current_user)):
         ...     return {"email": current_user.email}
     """
-    from app.crud import get_user_by_email
+    from app.crud import get_user_with_revocation
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -423,20 +423,23 @@ async def get_current_user(
                 detail="Invalid token type",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        if is_token_revoked(db, token):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token has been revoked",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
         email = payload.get("sub")
         if not isinstance(email, str) or not email:
             raise credentials_exception
     except PyJWTError:
         raise credentials_exception from None
 
-    user = get_user_by_email(db, email=email)
-    if user is None or not user.is_active:
+    row = get_user_with_revocation(db, email=email, token=token)
+    if row is None:
+        raise credentials_exception
+    user, token_revoked = row
+    if token_revoked:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not user.is_active:
         raise credentials_exception
 
     # A password change increments token_version, invalidating every old token.

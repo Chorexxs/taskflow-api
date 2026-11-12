@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 
+from sqlalchemy import exists
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -10,6 +11,7 @@ from app.auth import get_password_hash, verify_password
 __all__ = [
     "get_user_by_email",
     "get_user_by_id",
+    "get_user_with_revocation",
     "create_user",
     "update_user",
     "authenticate_user",
@@ -37,6 +39,20 @@ def get_user_by_email(db: Session, email: str):
         ...     print(f"Found: {user.email}")
     """
     return db.query(models.User).filter(models.User.email == email).first()
+
+
+def get_user_with_revocation(db: Session, email: str, token: str):
+    """Fetch a user and the revocation status of a token in one round trip.
+
+    ``get_current_user`` needs both pieces on every authenticated request.
+    Combining them halves the fixed database cost of the auth check.
+    """
+    token_revoked = exists().where(models.RevokedToken.token == token)
+    return (
+        db.query(models.User, token_revoked.label("token_revoked"))
+        .filter(models.User.email == email)
+        .first()
+    )
 
 
 def get_user_by_id(db: Session, user_id: int):

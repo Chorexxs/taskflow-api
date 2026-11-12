@@ -60,7 +60,6 @@ def log_activity(
     )
     db.add(db_activity)
     db.commit()
-    db.refresh(db_activity)
     return db_activity
 
 

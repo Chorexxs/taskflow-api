@@ -1,6 +1,6 @@
 """Task queries and Kanban ordering."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -17,6 +17,7 @@ __all__ = [
     "get_tasks_by_project",
     "update_task",
     "update_task_status",
+    "apply_task_status",
     "assign_task",
     "delete_task",
 ]
@@ -75,7 +76,6 @@ def create_task(db: Session, task: schemas.TaskCreate, project_id: int, user_id:
     )
     db.add(db_task)
     db.commit()
-    db.refresh(db_task)
     return db_task
 
 
@@ -243,8 +243,8 @@ def update_task(db: Session, task_id: int, task_update: schemas.TaskUpdate):
         db_task.priority = task_update.priority.value
     if task_update.due_date is not None:
         db_task.due_date = task_update.due_date
+    db_task.updated_at = datetime.now(timezone.utc)
     db.commit()
-    db.refresh(db_task)
     return db_task
 
 
@@ -257,23 +257,34 @@ def update_task_status(
 ):
     """Change a task's Kanban status and position in one transaction.
 
-    When ``position`` is omitted and the column changes, the task is appended to
-    the end of the destination column. When the status does not change the call
-    only reorders the task.
+    Kept for callers that only have the task id; the router uses
+    :func:`apply_task_status` with the task it already loaded.
+    """
+    db_task = get_task_by_id(db, task_id)
+    if not db_task:
+        return None
+    return apply_task_status(db, db_task, new_status, changed_by, position)
+
+
+def apply_task_status(
+    db: Session,
+    db_task,
+    new_status: schemas.TaskStatus,
+    changed_by: int,
+    position: float | None = None,
+):
+    """Apply a Kanban status/position change to an already loaded task.
 
     Args:
         db (Session): SQLAlchemy database session.
-        task_id (int): ID of the task to move.
+        db_task (Task): Task loaded by the caller (with its assignee).
         new_status (TaskStatus): Destination column.
         changed_by (int): User performing the move.
         position (float | None): Explicit fractional position inside the column.
 
     Returns:
-        Task | None: Updated task, or ``None`` if it does not exist.
+        Task: The updated task.
     """
-    db_task = get_task_by_id(db, task_id)
-    if not db_task:
-        return None
     old_status = db_task.status
     target_status = new_status.value
 
@@ -295,8 +306,10 @@ def update_task_status(
                 new_value=target_status,
             )
         )
+    # Set the timestamp in Python so the response does not need a refresh
+    # round trip after the commit (updated_at is part of TaskOut).
+    db_task.updated_at = datetime.now(timezone.utc)
     db.commit()
-    db.refresh(db_task)
     return db_task
 
 
