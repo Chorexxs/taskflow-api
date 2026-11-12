@@ -2,6 +2,8 @@ from fastapi.testclient import TestClient
 
 from app import models
 from app.config import settings
+from app.routers import attachments as attachments_router
+from app.storage import StorageError
 
 
 class FakeObjectStorage:
@@ -233,3 +235,78 @@ def test_member_cannot_delete_others_attachment(client: TestClient):
             headers={"Authorization": f"Bearer {member_token}"},
         )
         assert response.status_code == 403
+
+
+def test_delete_unknown_attachment_returns_404(client: TestClient):
+    owner_token = setup_full_hierarchy_with_task(client, "delete404@example.com")
+
+    response = client.delete(
+        "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/attachments/999999",
+        headers={"Authorization": f"Bearer {owner_token}"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Attachment not found"
+
+
+def test_delete_attachment_from_another_task_returns_404(client: TestClient):
+    owner_token = setup_full_hierarchy_with_task(client, "deleteother@example.com")
+    headers = {"Authorization": f"Bearer {owner_token}"}
+    attachment_url = "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/attachments/"
+
+    upload = client.post(
+        attachment_url,
+        files={"file": ("keep.txt", b"content", "text/plain")},
+        headers=headers,
+    )
+    assert upload.status_code == 201, upload.text
+    attachment_id = upload.json()["id"]
+
+    client.post(
+        "/api/v1/teams/test-team/projects/Test Project/tasks/",
+        json={"title": "Other Task"},
+        headers=headers,
+    )
+
+    response = client.delete(
+        "/api/v1/teams/test-team/projects/Test Project/tasks/Other Task"
+        f"/attachments/{attachment_id}",
+        headers=headers,
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Attachment does not belong to this task"
+
+
+def test_delete_attachment_survives_object_storage_failure(
+    client: TestClient, db_session, monkeypatch
+):
+    owner_token = setup_full_hierarchy_with_task(client, "deletestorage@example.com")
+    headers = {"Authorization": f"Bearer {owner_token}"}
+    url = "/api/v1/teams/test-team/projects/Test Project/tasks/Test Task/attachments/"
+
+    upload = client.post(
+        url,
+        files={"file": ("stored.txt", b"content", "text/plain")},
+        headers=headers,
+    )
+    assert upload.status_code == 201, upload.text
+    attachment_id = upload.json()["id"]
+
+    stored = db_session.query(models.Attachment).filter(models.Attachment.id == attachment_id).one()
+    stored.storage_key = "attachments/1/stored.txt"
+    db_session.commit()
+
+    class BrokenStorage:
+        def delete(self, key):
+            raise StorageError("storage is down")
+
+    monkeypatch.setattr(attachments_router, "get_storage", lambda: BrokenStorage())
+
+    response = client.delete(f"{url}{attachment_id}", headers=headers)
+
+    assert response.status_code == 204
+    assert (
+        db_session.query(models.Attachment).filter(models.Attachment.id == attachment_id).count()
+        == 0
+    )

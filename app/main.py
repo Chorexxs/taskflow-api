@@ -15,7 +15,6 @@ The application uses:
 - Sentry for error tracking (optional)
 """
 
-import os
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -150,7 +149,7 @@ async def lifespan(app: FastAPI):
     #
     # Housekeeping is best-effort and must never prevent startup. Tests use
     # their own in-memory database and skip this production cleanup.
-    if not os.environ.get("TESTING"):
+    if not settings.TESTING:
         try:
             from app.auth import clean_expired_tokens
             from app.database import get_db_context
@@ -448,9 +447,10 @@ def health_check():
         health_status["database"] = "unavailable"
         health_status["status"] = "degraded"
 
-    # Check Redis connection (optional). Only when a URL is configured, and
-    # with a short timeout so an unreachable Redis cannot delay /health.
-    redis_url = os.environ.get("REDIS_URL")
+    # Check Redis connection (optional). Only when the rate limiter is actually
+    # backed by Redis, and with a short timeout so an unreachable Redis cannot
+    # delay /health.
+    redis_url = settings.health_redis_url
     if redis_url:
         try:
             import redis
@@ -512,17 +512,16 @@ def health_ready():
 
 
 # Entry point for running the application directly
-# Reads PORT from environment variable (default: 8000)
+# Reads PORT and FORWARDED_ALLOW_IPS from settings (defaults: 8000 and "*").
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
     # Render terminates TLS and forwards the real client IP in
     # X-Forwarded-For. The API port is not publicly reachable, so trusting the
-    # proxy header is required for per-client rate limiting. Override with
-    # FORWARDED_ALLOW_IPS if the proxy addresses are known.
+    # proxy header is required for per-client rate limiting. Scope the trusted
+    # proxies with FORWARDED_ALLOW_IPS when their addresses are known.
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=port,
+        port=settings.PORT,
         proxy_headers=True,
-        forwarded_allow_ips=os.environ.get("FORWARDED_ALLOW_IPS", "*"),
+        forwarded_allow_ips=settings.FORWARDED_ALLOW_IPS,
     )

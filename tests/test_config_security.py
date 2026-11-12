@@ -1,6 +1,7 @@
 """Security hardening for runtime configuration (SEC-2.3)."""
 
 import pytest
+from pydantic import ValidationError
 
 from app.config import Settings
 
@@ -77,3 +78,15 @@ def test_valid_smtp_configuration_for_verification_passes():
         SMTP_HOST="smtp.example.com",
         SMTP_FROM="no-reply@example.com",
     ).validate_runtime()
+
+
+def test_health_redis_url_only_when_redis_backs_rate_limiting():
+    assert Settings(RATE_LIMIT_STORAGE_URI="memory://").health_redis_url == ""
+
+    redis_settings = Settings(RATE_LIMIT_STORAGE_URI="redis://cache:6379/0")
+    assert redis_settings.health_redis_url == "redis://cache:6379/0"
+
+
+def test_port_must_be_within_range():
+    with pytest.raises(ValidationError):
+        Settings(PORT=70000)

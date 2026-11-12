@@ -54,6 +54,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Cambiado
 
+- `PORT`, `FORWARDED_ALLOW_IPS` y `TESTING` se leen de `settings`; `/health` solo consulta Redis cuando el rate limiting está respaldado por Redis (`health_redis_url`), en lugar de leer `os.environ` (T-121).
 - B-02 resuelto: `taskflow-api-tau.vercel.app` sirve el build actual contra la API de Render; el deploy por CLI y la integración con Git están verificados.
 - `POST /auth/refresh` acepta `{"refresh_token": "..."}` en el body y rota el token.
 - `POST /auth/logout` revoca access y refresh, y es idempotente.
@@ -114,6 +115,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Corregido
 
+- Tests añadidos para los 404 de borrado de adjuntos (inexistente y de otra tarea), el fallo de object storage al borrar y la liberación del slot SSE al cerrar el stream (T-121, CA-3-03).
 - Los modales no cerraban con `Escape` ni atrapaban el foco, incumpliendo la constitución art. 8.2; ahora comparten `useDialogA11y` con foco inicial, `Tab`/`Shift+Tab` atrapados y restauración al disparador (T-120, A11Y-01).
 - La búsqueda de equipo hacía una SELECT por asignado al serializar (`CA-2-05`); ahora usa `joinedload` y la paginación se comparte con el resto de listas (T-119).
 - El listado de miembros disparaba una SELECT por miembro al serializar (`CA-1-01`); ahora la query paginada usa `joinedload` y un test cuenta las sentencias (T-117).

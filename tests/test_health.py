@@ -60,7 +60,7 @@ def test_health_does_not_block_on_unreachable_redis(client: TestClient, monkeypa
         captured.update(kwargs)
         raise ConnectionError("redis unreachable")
 
-    monkeypatch.setenv("REDIS_URL", "redis://127.0.0.1:6379/0")
+    monkeypatch.setattr("app.config.settings.RATE_LIMIT_STORAGE_URI", "redis://127.0.0.1:6379/0")
     monkeypatch.setattr("redis.from_url", fake_from_url)
 
     response = client.get("/health")
@@ -72,8 +72,8 @@ def test_health_does_not_block_on_unreachable_redis(client: TestClient, monkeypa
 
 
 def test_health_skips_redis_without_url(client: TestClient, monkeypatch):
-    """Without REDIS_URL the probe reports not_configured and does not block."""
-    monkeypatch.delenv("REDIS_URL", raising=False)
+    """With the in-memory rate-limit backend the probe reports not_configured."""
+    monkeypatch.setattr("app.config.settings.RATE_LIMIT_STORAGE_URI", "")
 
     response = client.get("/health")
 

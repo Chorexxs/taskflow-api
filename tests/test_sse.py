@@ -11,7 +11,7 @@ from app import models
 from app.config import settings
 from app.events import NotificationEventBus, SSEConnectionLimiter
 from app.routers import notifications as notifications_router
-from app.routers.notifications import iter_notification_events
+from app.routers.notifications import guarded_notification_events, iter_notification_events
 
 
 def _headers(token: str) -> dict:
@@ -144,6 +144,31 @@ def test_sse_connection_limit_returns_503(client: TestClient, db_session, monkey
     assert response.status_code == 503
     assert response.headers["Retry-After"] == "5"
     assert "Too many" in response.json()["detail"]
+
+
+def test_stream_releases_the_limiter_slot_when_it_closes(monkeypatch):
+    """The generator's finally must free the slot on disconnect (T-121)."""
+
+    async def fake_events(*args, **kwargs):
+        yield "data: hello\n\n"
+
+    monkeypatch.setattr(notifications_router, "iter_notification_events", fake_events)
+    limiter = SSEConnectionLimiter(max_total=1, max_per_user=1)
+    assert limiter.acquire(7) is True
+
+    async def scenario():
+        generator = guarded_notification_events(
+            FakeRequest(),
+            7,
+            0,
+            session_factory=None,
+            limiter=limiter,
+        )
+        assert await generator.__anext__() == "data: hello\n\n"
+        await generator.aclose()
+        return limiter.snapshot()
+
+    assert asyncio.run(scenario()) == (0, {})
 
 
 def test_connection_limiter_tracks_total_and_per_user():

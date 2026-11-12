@@ -13,7 +13,8 @@ receive comments on tasks they're working on.
 import asyncio
 import json
 import time
-from typing import Optional
+from collections.abc import AsyncIterator, Callable
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import StreamingResponse
@@ -23,7 +24,12 @@ from app import crud, models, schemas
 from app.auth import get_current_user, get_stream_user_id
 from app.config import settings
 from app.database import get_db, get_session_local
-from app.events import NotificationEventBus, notification_bus, sse_limiter
+from app.events import (
+    NotificationEventBus,
+    SSEConnectionLimiter,
+    notification_bus,
+    sse_limiter,
+)
 from app.logging_config import get_logger
 from app.rate_limit import rate_limit
 
@@ -192,6 +198,30 @@ async def iter_notification_events(
                 last_heartbeat = now
 
 
+async def guarded_notification_events(
+    request: Request,
+    user_id: int,
+    start_after: int,
+    session_factory: Callable[[], Any] | None,
+    limiter: SSEConnectionLimiter,
+) -> AsyncIterator[str]:
+    """Relay notification frames and always release the connection slot.
+
+    ``StreamingResponse`` closes the generator on disconnect, so the ``finally``
+    is the only place that frees the slot acquired by the endpoint (T-121).
+    """
+    try:
+        async for frame in iter_notification_events(
+            request,
+            user_id,
+            start_after,
+            session_factory=session_factory,
+        ):
+            yield frame
+    finally:
+        limiter.release(user_id)
+
+
 @router.get("/stream")
 @rate_limit("10/minute")
 async def stream_notifications(
@@ -226,20 +256,14 @@ async def stream_notifications(
             headers={"Retry-After": "5"},
         )
 
-    async def guarded_events():
-        try:
-            async for frame in iter_notification_events(
-                request,
-                user_id,
-                start_after,
-                session_factory=session_factory,
-            ):
-                yield frame
-        finally:
-            sse_limiter.release(user_id)
-
     return StreamingResponse(
-        guarded_events(),
+        guarded_notification_events(
+            request,
+            user_id,
+            start_after,
+            session_factory,
+            sse_limiter,
+        ),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

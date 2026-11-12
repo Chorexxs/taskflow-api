@@ -7,8 +7,8 @@ The module fails fast in production when a critical value is missing and
 uses safe development defaults everywhere else.
 """
 
-import os
 import warnings
+from typing import Any
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -27,6 +27,19 @@ DEFAULT_DEV_ORIGINS = (
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 )
+
+
+def _parse_port(value: Any, field: str) -> int:
+    """Validate a TCP port coming from the environment or ``.env``."""
+    if isinstance(value, str) and not value.strip():
+        raise ValueError(f"{field} must be a valid port")
+    try:
+        port = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field} must be a valid port") from exc
+    if not 1 <= port <= 65535:
+        raise ValueError(f"{field} must be between 1 and 65535")
+    return port
 
 
 class Settings(BaseSettings):
@@ -71,6 +84,14 @@ class Settings(BaseSettings):
 
     # HTTP
     CORS_ORIGINS: str = ""
+
+    # Runtime. The API listens on PORT and trusts the proxy headers coming from
+    # FORWARDED_ALLOW_IPS (Render forwards the real client IP this way).
+    PORT: int = 8000
+    FORWARDED_ALLOW_IPS: str = "*"
+    # Set by the test suite before the app is imported; skips housekeeping so
+    # tests never touch the developer database.
+    TESTING: bool = False
 
     # Rate limiting (ADR-010). Empty storage URI means "use REDIS_URL";
     # tests always use an in-memory backend.
@@ -124,25 +145,10 @@ class Settings(BaseSettings):
     SMTP_USE_TLS: bool = True
     SMTP_USE_SSL: bool = False
 
-    @field_validator("CLAMAV_PORT", mode="before")
+    @field_validator("PORT", "CLAMAV_PORT", "SMTP_PORT", mode="before")
     @classmethod
-    def _valid_clamav_port(cls, value):
-        if isinstance(value, str) and not value.strip():
-            raise ValueError("CLAMAV_PORT must be a valid port")
-        port = int(value)
-        if not 1 <= port <= 65535:
-            raise ValueError("CLAMAV_PORT must be between 1 and 65535")
-        return port
-
-    @field_validator("SMTP_PORT", mode="before")
-    @classmethod
-    def _valid_smtp_port(cls, value):
-        if isinstance(value, str) and not value.strip():
-            raise ValueError("SMTP_PORT must be a valid port")
-        port = int(value)
-        if not 1 <= port <= 65535:
-            raise ValueError("SMTP_PORT must be between 1 and 65535")
-        return port
+    def _valid_port(cls, value, info):
+        return _parse_port(value, info.field_name)
 
     @field_validator("EMAIL_VERIFICATION_TTL_HOURS", mode="before")
     @classmethod
@@ -247,9 +253,20 @@ class Settings(BaseSettings):
         explicit = self.RATE_LIMIT_STORAGE_URI.strip()
         if explicit:
             return explicit
-        if os.environ.get("TESTING"):
+        if self.TESTING:
             return "memory://"
         return self.REDIS_URL.strip() or "memory://"
+
+    @property
+    def health_redis_url(self) -> str:
+        """Return the Redis URL that ``/health`` should probe.
+
+        Only when the app is actually using Redis (rate-limit backend), so a
+        deployment running with the in-memory fallback reports
+        ``not_configured`` instead of probing a Redis it does not depend on.
+        """
+        uri = self.rate_limit_storage_uri
+        return uri if uri.startswith(("redis://", "rediss://")) else ""
 
     @property
     def storage_backend(self) -> str:
