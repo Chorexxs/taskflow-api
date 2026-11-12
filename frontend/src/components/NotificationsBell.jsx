@@ -17,6 +17,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, nextSseBackoff } from '../api';
+import { useAuth } from '../context/auth-context';
 import toast from 'react-hot-toast';
 import { Bell, CheckCheck, X } from 'lucide-react';
 
@@ -32,7 +33,7 @@ import { Bell, CheckCheck, X } from 'lucide-react';
 export default function NotificationsBell() {
   const [showPanel, setShowPanel] = useState(false);
   const [liveConnected, setLiveConnected] = useState(false);
-  const token = localStorage.getItem('access_token');
+  const { accessToken: token } = useAuth();
   const queryClient = useQueryClient();
 
   /**

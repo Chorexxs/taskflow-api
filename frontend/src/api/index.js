@@ -10,6 +10,8 @@
  * Set `VITE_API_URL` to point at the backend. It defaults to localhost.
  */
 
+import { clearStoredTokens, getRefreshToken, storeTokens } from './tokenStorage';
+
 const API_URL =
   globalThis.__TASKFLOW_API_URL__ ||
   import.meta.env.VITE_API_URL ||
@@ -63,13 +65,6 @@ export function newIdempotencyKey() {
   return `tf-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function clearStoredSession() {
-  if (typeof localStorage === 'undefined') return;
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
-  localStorage.removeItem('user_id');
-}
-
 let refreshPromise = null;
 
 /**
@@ -79,12 +74,9 @@ let refreshPromise = null;
 async function refreshSession() {
   if (refreshPromise) return refreshPromise;
 
-  const refreshToken =
-    typeof localStorage !== 'undefined'
-      ? localStorage.getItem('refresh_token')
-      : null;
+  const refreshToken = getRefreshToken();
   if (!refreshToken) {
-    clearStoredSession();
+    clearStoredTokens();
     emitSessionEvent('taskflow:logout');
     throw new ApiError('Session expired', { status: 401, code: 'UNAUTHORIZED' });
   }
@@ -106,8 +98,7 @@ async function refreshSession() {
       });
     }
 
-    localStorage.setItem('access_token', data.access_token);
-    localStorage.setItem('refresh_token', data.refresh_token);
+    storeTokens(data);
     emitSessionEvent('taskflow:session', data);
     return data.access_token;
   })().finally(() => {
@@ -117,7 +108,7 @@ async function refreshSession() {
   try {
     return await refreshPromise;
   } catch (error) {
-    clearStoredSession();
+    clearStoredTokens();
     emitSessionEvent('taskflow:logout');
     throw error;
   }

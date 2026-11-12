@@ -17,6 +17,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useDialogA11y } from '../hooks/useDialogA11y';
 import { api } from '../api';
+import { useAuth } from '../context/auth-context';
 import toast from 'react-hot-toast';
 import { Plus, Users, ChevronRight } from 'lucide-react';
 import QueryError from '../components/QueryError';
@@ -32,6 +33,7 @@ import QueryError from '../components/QueryError';
  */
 export default function Dashboard() {
   const queryClient = useQueryClient();
+  const { accessToken } = useAuth();
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [newTeam, setNewTeam] = useState({ name: '', slug: '', description: '' });
   const createTeamDialogRef = useDialogA11y(showCreateTeam, () => setShowCreateTeam(false));
@@ -41,14 +43,14 @@ export default function Dashboard() {
    */
   const { data: teams, isLoading, isError, refetch } = useQuery({
     queryKey: ['teams'],
-    queryFn: () => api.teams.list(localStorage.getItem('access_token')),
+    queryFn: () => api.teams.list(accessToken),
   });
 
   /**
    * Create team mutation.
    */
   const createTeamMutation = useMutation({
-    mutationFn: (data) => api.teams.create(localStorage.getItem('access_token'), data),
+    mutationFn: (data) => api.teams.create(accessToken, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] });
       setShowCreateTeam(false);

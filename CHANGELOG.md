@@ -54,6 +54,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Cambiado
 
+- Los tokens del frontend viven en `tokenStorage`: el cliente API y `AuthContext` comparten claves y operaciones, y las páginas leen el token del contexto en lugar de `localStorage` (T-122, CA-3-04).
 - `PORT`, `FORWARDED_ALLOW_IPS` y `TESTING` se leen de `settings`; `/health` solo consulta Redis cuando el rate limiting está respaldado por Redis (`health_redis_url`), en lugar de leer `os.environ` (T-121).
 - B-02 resuelto: `taskflow-api-tau.vercel.app` sirve el build actual contra la API de Render; el deploy por CLI y la integración con Git están verificados.
 - `POST /auth/refresh` acepta `{"refresh_token": "..."}` en el body y rota el token.

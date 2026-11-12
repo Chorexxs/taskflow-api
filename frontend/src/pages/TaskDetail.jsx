@@ -53,8 +53,8 @@ export default function TaskDetail() {
   const { teamId, projectId, taskId } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const token = localStorage.getItem('access_token')
-  const { user } = useAuth()
+  const { user, accessToken } = useAuth()
+  const token = accessToken
   const currentUserId = user?.id ?? 0
   const [newComment, setNewComment] = useState('')
   const [isEditing, setIsEditing] = useState(false)

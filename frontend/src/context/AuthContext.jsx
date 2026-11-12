@@ -33,6 +33,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
+import {
+  clearStoredTokens,
+  getAccessToken,
+  getRefreshToken,
+  storeAccessToken,
+  storeRefreshToken,
+  TOKEN_STORAGE_KEYS,
+} from '../api/tokenStorage';
 import { AuthContext, getJwtExpiry } from './auth-context';
 
 /**
@@ -52,11 +60,11 @@ export function AuthProvider({ children }) {
   // Current authenticated user
   const [user, setUser] = useState(null);
   
-  // JWT access token (persisted in localStorage)
-  const [accessToken, setAccessToken] = useState(() => localStorage.getItem('access_token'));
-  
-  // JWT refresh token (persisted in localStorage)
-  const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem('refresh_token'));
+  // JWT access token (persisted through the shared token storage)
+  const [accessToken, setAccessToken] = useState(() => getAccessToken());
+
+  // JWT refresh token (persisted through the shared token storage)
+  const [refreshToken, setRefreshToken] = useState(() => getRefreshToken());
   
   // Loading state during initial auth check
   const [loading, setLoading] = useState(true);
@@ -71,7 +79,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     setAccessToken(null);
     setRefreshToken(null);
-    localStorage.removeItem('user_id');
+    clearStoredTokens();
     // Do not keep another user's teams/tasks visible in the same tab.
     queryClient.clear();
   }, [queryClient]);
@@ -98,27 +106,17 @@ export function AuthProvider({ children }) {
   }, [accessToken, clearSession]);
 
   /**
-   * Effect: Persist accessToken to localStorage
-   * Runs whenever accessToken changes
+   * Effect: Persist the access token through the shared token storage.
    */
   useEffect(() => {
-    if (accessToken) {
-      localStorage.setItem('access_token', accessToken);
-    } else {
-      localStorage.removeItem('access_token');
-    }
+    storeAccessToken(accessToken);
   }, [accessToken]);
 
   /**
-   * Effect: Persist refreshToken to localStorage
-   * Runs whenever refreshToken changes
+   * Effect: Persist the refresh token through the shared token storage.
    */
   useEffect(() => {
-    if (refreshToken) {
-      localStorage.setItem('refresh_token', refreshToken);
-    } else {
-      localStorage.removeItem('refresh_token');
-    }
+    storeRefreshToken(refreshToken);
   }, [refreshToken]);
 
   /**
@@ -129,11 +127,11 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const syncSession = (event) => {
       if (event.storageArea && event.storageArea !== localStorage) return;
-      if (event.key === 'access_token') {
+      if (event.key === TOKEN_STORAGE_KEYS.access) {
         setAccessToken(event.newValue);
         if (!event.newValue) setUser(null);
       }
-      if (event.key === 'refresh_token') setRefreshToken(event.newValue);
+      if (event.key === TOKEN_STORAGE_KEYS.refresh) setRefreshToken(event.newValue);
     };
 
     window.addEventListener('storage', syncSession);
@@ -153,7 +151,7 @@ export function AuthProvider({ children }) {
       setUser(null);
       setAccessToken(null);
       setRefreshToken(null);
-      localStorage.removeItem('user_id');
+      clearStoredTokens();
       queryClient.clear();
     };
 
@@ -254,8 +252,8 @@ export function AuthProvider({ children }) {
     const timer = setTimeout(async () => {
       const performRefresh = async () => {
         // Another tab may have refreshed while this one waited for the lock.
-        const currentAccess = localStorage.getItem('access_token');
-        const currentRefresh = localStorage.getItem('refresh_token');
+        const currentAccess = getAccessToken();
+        const currentRefresh = getRefreshToken();
 
         if (currentAccess && currentAccess !== accessToken && currentRefresh) {
           setAccessToken(currentAccess);

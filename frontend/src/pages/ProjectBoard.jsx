@@ -133,8 +133,8 @@ export default function ProjectBoard() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const token = localStorage.getItem('access_token')
-  const { user } = useAuth()
+  const { user, accessToken } = useAuth()
+  const token = accessToken
   const currentUserId = user?.id ?? 0
   const [showCreateTask, setShowCreateTask] = useState(false)
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium', assigned_to: null, due_date: null })

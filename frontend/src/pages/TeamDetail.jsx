@@ -41,7 +41,7 @@ import { ArrowLeft, Plus, Crown, X, FolderOpen, ChevronRight, Edit2, Save, Trash
  * @state {string} inviteRole - Role selection for invited member (member/admin)
  * @state {boolean} showCreateProject - Controls visibility of create project modal
  * @state {Object} newProject - Form state for new project name and description
- * @state {string} token - Authentication token from localStorage
+ * @state {string} token - Authentication token from the auth context
  * 
  * @queries
  * - team: Fetches team details by teamId
@@ -74,8 +74,8 @@ export default function TeamDetail() {
   const createProjectDialogRef = useDialogA11y(showCreateProject, () => setShowCreateProject(false))
   const editProjectDialogRef = useDialogA11y(showEditProject, () => setShowEditProject(false))
 
-  const token = localStorage.getItem('access_token')
-  const { user } = useAuth()
+  const { user, accessToken } = useAuth()
+  const token = accessToken
   const currentUserId = user?.id ?? 0
 
   const { data: team, isLoading: teamLoading, isError: teamError, refetch: refetchTeam } = useQuery({

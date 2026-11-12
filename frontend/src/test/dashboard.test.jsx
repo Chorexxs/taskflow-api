@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+import { AuthProvider } from '../context/AuthContext'
 import Dashboard from '../pages/Dashboard'
 
 const mockApi = vi.hoisted(() => ({
@@ -22,10 +23,12 @@ function renderDashboard() {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/']}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/teams/:teamId" element={<div>team page</div>} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/teams/:teamId" element={<div>team page</div>} />
+          </Routes>
+        </AuthProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   )
