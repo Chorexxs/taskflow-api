@@ -94,10 +94,13 @@ export function AuthProvider({ children }) {
    */
   useEffect(() => {
     if (accessToken) {
-      // `login` already fetched this user; avoid a duplicate /users/me request.
+      // `login` or a token rotation already resolved this session; avoid a
+      // duplicate /users/me request.
       if (userFetchedForToken.current === accessToken) {
         userFetchedForToken.current = null;
-        setLoading(false);
+        // On a refresh before the first /users/me resolved, the in-flight
+        // request sets the user and clears the loading flag. Do not drop it
+        // here or the app would redirect to /login while still authenticating.
         return;
       }
       api.users.me(accessToken)
