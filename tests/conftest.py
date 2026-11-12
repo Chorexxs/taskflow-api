@@ -13,6 +13,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tests.ssl_support import resolve_sslmode
+
 os.environ["TESTING"] = "1"
 os.environ["REDIS_URL"] = "redis://localhost:6379/0"
 
@@ -46,6 +48,12 @@ SKIP_MIGRATIONS = os.environ.get("TEST_SKIP_MIGRATIONS") == "1"
 # development/production database.
 if not IS_SQLITE:
     os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+
+    # T-114: a developer .env targeting production sets DB_SSLMODE=require, and
+    # pydantic-settings would apply it to the local test container, which does
+    # not support TLS. Environment variables win over .env, so pin the value
+    # from TEST_DATABASE_URL/TEST_DB_SSLMODE before importing the app.
+    os.environ["DB_SSLMODE"] = resolve_sslmode(TEST_DATABASE_URL, os.environ.get("TEST_DB_SSLMODE"))
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

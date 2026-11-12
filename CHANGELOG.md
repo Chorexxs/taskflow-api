@@ -113,6 +113,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Corregido
 
+- La suite heredaba `DB_SSLMODE=require` del `.env` de producción y cinco tests fallaban por TLS contra el PostgreSQL local; ahora `tests/conftest.py` fija el valor desde `TEST_DATABASE_URL` o `TEST_DB_SSLMODE` (T-114).
 - Producción desincronizada: InsForge estaba en `d4e5f6a7b8c9` y el código esperaba `c9d0e1f2a3b4`; se aplicó `alembic upgrade head` tras un backup y se verificó registro/login (T-095, B-05 resuelto).
 - Rate limiting: las respuestas 2xx de endpoints limitados ya no devuelven 500; slowapi recibe `response` e inyecta `X-RateLimit-*` (T-093).
 - `/health`: solo consulta Redis si `REDIS_URL` existe y con timeout de 200 ms; sin Redis responde `not_configured` sin bloquear (T-094).

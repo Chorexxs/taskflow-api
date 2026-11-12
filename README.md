@@ -2,8 +2,8 @@
 
 API REST para gestión de tareas en equipo con autenticación JWT, equipos, proyectos, tablero Kanban, comentarios, adjuntos, notificaciones y registro de actividad.
 
-[![Tests](https://img.shields.io/badge/backend%20tests-180%20passed-brightgreen)](./tests)
-[![Frontend](https://img.shields.io/badge/frontend%20tests-42%20passed-brightgreen)](./frontend/src/test)
+[![Tests](https://img.shields.io/badge/backend%20tests-263%20passed-brightgreen)](./tests)
+[![Frontend](https://img.shields.io/badge/frontend%20tests-74%20passed-brightgreen)](./frontend/src/test)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.135-blue)](https://fastapi.tiangolo.com/)
 
@@ -56,7 +56,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Frontend** | React 18, Vite 8, React Router 7 |
 | **Datos front** | TanStack React Query 5, `fetch` |
 | **UI** | Tailwind CSS 4, Lucide React, React Hot Toast, `@dnd-kit` |
-| **Tests** | pytest + pytest-cov (180, 87 %), Vitest + Testing Library (43, 71,6 %) |
+| **Tests** | pytest + pytest-cov (263, 88,5 %), Vitest + Testing Library (74, 72,6 %) |
 | **CI/CD** | GitHub Actions, Render, Vercel, InsForge |
 | **Contenedores** | Docker, docker-compose (PostgreSQL + Redis + API) |
 
@@ -278,12 +278,12 @@ docker compose exec postgres createdb -U taskflow taskflow_test
 
 # 2. Backend (PowerShell: $env:TEST_DATABASE_URL="...")
 export TEST_DATABASE_URL=postgresql://taskflow:taskflow@localhost:5432/taskflow_test
-pytest -v
-pytest --cov=app --cov-report=html
+python -m pytest -v
+python -m pytest --cov=app --cov-report=html
 
 # Un archivo / test
-pytest tests/test_auth.py
-pytest tests/test_auth.py::test_register_user
+python -m pytest tests/test_auth.py
+python -m pytest tests/test_auth.py::test_register_user
 
 # Frontend
 cd frontend
@@ -297,8 +297,12 @@ npm run build
 Postgres; no vale para validar un release. `TEST_SKIP_MIGRATIONS=1` reutiliza un
 esquema ya migrado.
 
-Estado actual: **180 tests backend** (87 % de cobertura, verdes sobre PostgreSQL)
-y **43 tests frontend** (71,6 % de líneas). El CI falla por debajo de **80 %** en
+La suite fija `DB_SSLMODE` a partir de `TEST_DATABASE_URL` (o de
+`TEST_DB_SSLMODE` si la defines) para que un `.env` de producción con
+`DB_SSLMODE=require` no intente TLS contra el contenedor local (T-114).
+
+Estado actual: **263 tests backend** (88,5 % de cobertura, verdes sobre PostgreSQL)
+y **74 tests frontend** (72,6 % de líneas). El CI falla por debajo de **80 %** en
 backend y **70 %** en frontend.
 
 Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y otro contra la **API de producción en Render** (15/15): health, registro, login, equipo, proyecto, tarea, comentario, adjunto (object storage), descarga, búsqueda, notificaciones, perfil y error envelope. También se verificó CORS para las dos URLs de frontend y el rechazo de un origen no permitido.

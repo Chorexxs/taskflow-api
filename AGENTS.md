@@ -66,16 +66,16 @@ python -m uvicorn app.main:app --reload
 python -m app.main
 
 # Tests
-pytest
-pytest tests/test_auth.py
-pytest tests/test_auth.py::test_register_user
-pytest -v
-pytest --cov=app --cov-report=html
+python -m pytest
+python -m pytest tests/test_auth.py
+python -m pytest tests/test_auth.py::test_register_user
+python -m pytest -v
+python -m pytest --cov=app --cov-report=html
 
 # Lint / tipos
-ruff check app tests
-ruff format --check app tests
-mypy app
+python -m ruff check app tests
+python -m ruff format --check app tests
+python -m mypy app
 pre-commit run --all-files
 
 # Migraciones
@@ -290,6 +290,7 @@ Reglas:
 - No usar servicios externos reales.
 - Frontend: Vitest + Testing Library + jsdom; mockear `../api` y `react-hot-toast`.
 - Los tests de integración usan PostgreSQL vía `TEST_DATABASE_URL`, con el esquema creado por Alembic y tablas truncadas entre tests (ADR-008). `TEST_USE_SQLITE=1` es solo un atajo para runs unitarios.
+- La suite fija `DB_SSLMODE` a partir de `TEST_DATABASE_URL` (o `TEST_DB_SSLMODE`) para que un `.env` de producción con `DB_SSLMODE=require` no rompa el PostgreSQL local (T-114).
 - Cobertura obligatoria en CI: **80 % backend** (`--cov-fail-under`) y **70 % frontend** en líneas/sentencias (`vitest` thresholds), con **55 % de ramas** porque el proveedor v8 de Vitest 5 mide todos los archivos fuente. No bajar los umbrales sin justificarlo en el PR.
 
 ---

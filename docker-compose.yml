@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Local development only. Do not reuse these credentials or expose these
 # ports on a shared host.
 services:
