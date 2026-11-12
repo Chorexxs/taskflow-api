@@ -77,4 +77,18 @@ describe('Dashboard', () => {
       }),
     )
   })
+
+  it('closes the create team modal with Escape', async () => {
+    mockApi.teams.list.mockResolvedValue([])
+
+    renderDashboard()
+    await screen.findByText('No teams yet')
+
+    await userEvent.click(screen.getByRole('button', { name: /new team/i }))
+    expect(screen.getByRole('dialog', { name: 'Create team' })).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
 })

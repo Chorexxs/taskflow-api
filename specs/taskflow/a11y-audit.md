@@ -23,6 +23,9 @@ notificaciones.
 - `:focus-visible` global con anillo de acento y `prefers-reduced-motion`.
 - Todos los modales tienen `role="dialog"`, `aria-modal="true"` y nombre
   accesible (`aria-label`).
+- Los modales comparten `useDialogA11y`: el foco entra en el primer control,
+  `Tab`/`Shift+Tab` quedan atrapados, `Escape` cierra y el foco vuelve al
+  disparador (T-120).
 - Botones solo-icono con `aria-label` (filtros, actividad, ajustes, campana,
   perfil, logout, cerrar).
 - Buscadores con `aria-label` además del placeholder.
@@ -34,9 +37,8 @@ notificaciones.
 
 ## Comprobaciones manuales
 
-1. Navegación completa con `Tab`/`Shift+Tab` sin trampas de foco.
-2. `Escape` cierra los modales mediante el botón de cierre (no hay captura de
-   foco automática; mejora planificada).
+1. Navegación completa con `Tab`/`Shift+Tab`; en modales el foco queda atrapado.
+2. `Escape` cierra los modales y devuelve el foco al disparador (T-120).
 3. Zoom al 200 % sin pérdida de contenido en 360 px.
 4. `prefers-reduced-motion` desactiva animaciones no esenciales.
 5. Contraste de texto principal/secundario sobre fondo oscuro verificado con
@@ -56,8 +58,8 @@ dashboard, equipo, tablero, tarea y perfil):
 
 | ID | Elemento | Prioridad | Destino |
 |---|---|---|---|
-| A11Y-01 | Focus trap + cierre con Escape en modales | Media | P6/T-076 |
-| A11Y-02 | Auditoría automatizada con axe en CI | Media | T-076 |
-| A11Y-03 | Revisión con lector de pantalla (NVDA/VoiceOver) | Baja | Release T-080 |
+| A11Y-01 | Focus trap + cierre con Escape en modales | Media | ✅ Resuelto en T-120 (`useDialogA11y` + tests) |
+| A11Y-02 | Auditoría automatizada con axe en CI | Media | Backlog |
+| A11Y-03 | Revisión con lector de pantalla (NVDA/VoiceOver) | Baja | Backlog |
 
 No quedan bloqueantes de accesibilidad en los flujos críticos.

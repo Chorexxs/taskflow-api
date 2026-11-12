@@ -114,6 +114,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Corregido
 
+- Los modales no cerraban con `Escape` ni atrapaban el foco, incumpliendo la constitución art. 8.2; ahora comparten `useDialogA11y` con foco inicial, `Tab`/`Shift+Tab` atrapados y restauración al disparador (T-120, A11Y-01).
 - La búsqueda de equipo hacía una SELECT por asignado al serializar (`CA-2-05`); ahora usa `joinedload` y la paginación se comparte con el resto de listas (T-119).
 - El listado de miembros disparaba una SELECT por miembro al serializar (`CA-1-01`); ahora la query paginada usa `joinedload` y un test cuenta las sentencias (T-117).
 - La suite heredaba `DB_SSLMODE=require` del `.env` de producción y cinco tests fallaban por TLS contra el PostgreSQL local; ahora `tests/conftest.py` fija el valor desde `TEST_DATABASE_URL` o `TEST_DB_SSLMODE` (T-114).

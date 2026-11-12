@@ -3,7 +3,7 @@
 API REST para gestión de tareas en equipo con autenticación JWT, equipos, proyectos, tablero Kanban, comentarios, adjuntos, notificaciones y registro de actividad.
 
 [![Tests](https://img.shields.io/badge/backend%20tests-267%20passed-brightgreen)](./tests)
-[![Frontend](https://img.shields.io/badge/frontend%20tests-74%20passed-brightgreen)](./frontend/src/test)
+[![Frontend](https://img.shields.io/badge/frontend%20tests-78%20passed-brightgreen)](./frontend/src/test)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.135-blue)](https://fastapi.tiangolo.com/)
 
@@ -56,7 +56,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Frontend** | React 18, Vite 8, React Router 7 |
 | **Datos front** | TanStack React Query 5, `fetch` |
 | **UI** | Tailwind CSS 4, Lucide React, React Hot Toast, `@dnd-kit` |
-| **Tests** | pytest + pytest-cov (267, 90,6 %), Vitest + Testing Library (74, 72,6 %) |
+| **Tests** | pytest + pytest-cov (267, 90,6 %), Vitest + Testing Library (78, 73,6 %) |
 | **CI/CD** | GitHub Actions, Render, Vercel, InsForge |
 | **Contenedores** | Docker, docker-compose (PostgreSQL + Redis + API) |
 
@@ -302,7 +302,7 @@ La suite fija `DB_SSLMODE` a partir de `TEST_DATABASE_URL` (o de
 `DB_SSLMODE=require` no intente TLS contra el contenedor local (T-114).
 
 Estado actual: **267 tests backend** (90,6 % de cobertura, verdes sobre PostgreSQL)
-y **74 tests frontend** (72,6 % de líneas). El CI falla por debajo de **80 %** en
+y **78 tests frontend** (73,6 % de líneas). El CI falla por debajo de **80 %** en
 backend y **70 %** en frontend.
 
 Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y otro contra la **API de producción en Render** (15/15): health, registro, login, equipo, proyecto, tarea, comentario, adjunto (object storage), descarga, búsqueda, notificaciones, perfil y error envelope. También se verificó CORS para las dos URLs de frontend y el rechazo de un origen no permitido.

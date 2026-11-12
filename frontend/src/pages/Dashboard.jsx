@@ -14,6 +14,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { useDialogA11y } from '../hooks/useDialogA11y';
 import { api } from '../api';
 import toast from 'react-hot-toast';
 import { Plus, Users, ChevronRight } from 'lucide-react';
@@ -32,6 +34,7 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [newTeam, setNewTeam] = useState({ name: '', slug: '', description: '' });
+  const createTeamDialogRef = useDialogA11y(showCreateTeam, () => setShowCreateTeam(false));
 
   /**
    * Fetch user's teams from API.
@@ -141,7 +144,7 @@ export default function Dashboard() {
 
       {/* Create team modal */}
       {showCreateTeam && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Create team">
+        <div ref={createTeamDialogRef} className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Create team">
           <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-medium text-[var(--color-text-primary)] mb-4">Create Team</h3>
             <form onSubmit={handleCreateTeam} className="space-y-4">

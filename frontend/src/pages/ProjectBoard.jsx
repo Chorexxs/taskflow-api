@@ -26,6 +26,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { DndContext, closestCorners, DragOverlay, useDroppable, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useAuth } from '../context/auth-context'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import { api } from '../api'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Plus, Filter, X, Activity, Settings, Archive } from 'lucide-react'
@@ -146,6 +147,9 @@ export default function ProjectBoard() {
   const [activityPageNumber, setActivityPageNumber] = useState(1)
   const [showEditProject, setShowEditProject] = useState(false)
   const [projectForm, setProjectForm] = useState({ name: '', description: '' })
+  const createTaskDialogRef = useDialogA11y(showCreateTask, () => setShowCreateTask(false))
+  const projectSettingsDialogRef = useDialogA11y(showEditProject, () => setShowEditProject(false))
+  const activityDialogRef = useDialogA11y(showActivityPanel, () => setShowActivityPanel(false))
   const [taskColumns, setTaskColumns] = useState({
     todo: [],
     in_progress: [],
@@ -622,7 +626,7 @@ export default function ProjectBoard() {
       </main>
 
       {showCreateTask && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Create task">
+        <div ref={createTaskDialogRef} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Create task">
           <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Create Task</h3>
@@ -722,7 +726,7 @@ export default function ProjectBoard() {
 )}
 
       {showEditProject && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Project settings">
+        <div ref={projectSettingsDialogRef} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Project settings">
           <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Project Settings</h3>
@@ -794,7 +798,7 @@ export default function ProjectBoard() {
       )}
 
       {showActivityPanel && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-label="Project activity">
+        <div ref={activityDialogRef} className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-label="Project activity">
           <div className="bg-[var(--color-bg-secondary)] rounded-xl shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-subtle">
               <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Project Activity</h2>

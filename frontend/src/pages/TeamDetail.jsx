@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/auth-context'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import QueryError from '../components/QueryError'
 import { api } from '../api'
 import toast from 'react-hot-toast'
@@ -69,6 +70,9 @@ export default function TeamDetail() {
   const [showEditTeam, setShowEditTeam] = useState(false)
   const [teamForm, setTeamForm] = useState({ name: '', description: '' })
   const [showArchived, setShowArchived] = useState(false)
+  const inviteDialogRef = useDialogA11y(showInvite, () => setShowInvite(false))
+  const createProjectDialogRef = useDialogA11y(showCreateProject, () => setShowCreateProject(false))
+  const editProjectDialogRef = useDialogA11y(showEditProject, () => setShowEditProject(false))
 
   const token = localStorage.getItem('access_token')
   const { user } = useAuth()
@@ -534,7 +538,7 @@ export default function TeamDetail() {
       </main>
 
       {showInvite && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Add team member">
+        <div ref={inviteDialogRef} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Add team member">
           <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Invite Member</h3>
@@ -594,7 +598,7 @@ export default function TeamDetail() {
       )}
 
       {showCreateProject && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Create project">
+        <div ref={createProjectDialogRef} className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-label="Create project">
           <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Create Project</h3>
@@ -652,7 +656,7 @@ export default function TeamDetail() {
       )}
 
       {showEditProject && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-label="Edit project">
+        <div ref={editProjectDialogRef} className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-label="Edit project">
           <div className="bg-[var(--color-bg-secondary)] rounded-xl shadow-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b border-subtle">
               <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Edit Project</h2>
