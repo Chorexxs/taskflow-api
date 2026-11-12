@@ -215,7 +215,7 @@ def test_create_notification_publishes_to_bus(client: TestClient, db_session, mo
     _, notification = _setup(client, db_session)
     published: list[tuple[int, dict]] = []
     monkeypatch.setattr(
-        "app.crud.notification_bus.publish",
+        "app.crud.notifications.notification_bus.publish",
         lambda user_id, payload: published.append((user_id, payload)),
     )
 

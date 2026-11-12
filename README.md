@@ -56,7 +56,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Frontend** | React 18, Vite 8, React Router 7 |
 | **Datos front** | TanStack React Query 5, `fetch` |
 | **UI** | Tailwind CSS 4, Lucide React, React Hot Toast, `@dnd-kit` |
-| **Tests** | pytest + pytest-cov (276, 91,0 %), Vitest + Testing Library (81, 74,0 %) |
+| **Tests** | pytest + pytest-cov (276, 91,3 %), Vitest + Testing Library (81, 74,0 %) |
 | **CI/CD** | GitHub Actions, Render, Vercel, InsForge |
 | **Contenedores** | Docker, docker-compose (PostgreSQL + Redis + API) |
 
@@ -301,7 +301,7 @@ La suite fija `DB_SSLMODE` a partir de `TEST_DATABASE_URL` (o de
 `TEST_DB_SSLMODE` si la defines) para que un `.env` de producción con
 `DB_SSLMODE=require` no intente TLS contra el contenedor local (T-114).
 
-Estado actual: **276 tests backend** (91,0 % de cobertura, verdes sobre PostgreSQL)
+Estado actual: **276 tests backend** (91,3 % de cobertura, verdes sobre PostgreSQL)
 y **81 tests frontend** (74,0 % de líneas). El CI falla por debajo de **80 %** en
 backend y **70 %** en frontend.
 
@@ -380,8 +380,8 @@ app/
 ├── auth.py              # JWT, bcrypt, lockout, revocación
 ├── database.py          # Engine, sesión, dependencia get_db
 ├── models.py            # Modelos SQLAlchemy
-├── schemas.py           # Schemas Pydantic
-├── crud.py              # Acceso a datos
+├── schemas/             # Schemas Pydantic por dominio
+├── crud/                # Acceso a datos por dominio
 ├── dependencies.py      # Resolución de equipo y permisos
 ├── exceptions.py        # Excepciones de dominio
 ├── logging_config.py    # structlog

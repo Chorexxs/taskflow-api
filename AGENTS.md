@@ -148,8 +148,8 @@ app/
 ├── auth.py              # JWT, bcrypt, lockout, revocación
 ├── database.py          # Engine, sesión, get_db
 ├── models.py            # Modelos SQLAlchemy
-├── schemas.py           # Schemas Pydantic
-├── crud.py              # Acceso a datos
+├── schemas/             # Schemas Pydantic por dominio
+├── crud/                # Acceso a datos por dominio
 ├── dependencies.py      # Resolución de equipo y permisos
 ├── exceptions.py        # Excepciones de dominio
 ├── logging_config.py    # structlog
