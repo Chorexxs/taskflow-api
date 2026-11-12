@@ -222,7 +222,7 @@ def create_team(db: Session, team: schemas.TeamCreate, user_id: int):
     """
     db_team = models.Team(
         name=team.name,
-        slug=team.slug,
+        slug=(team.slug or "").strip() or _unique_team_slug(db, team.name),
         description=team.description,
         created_by=user_id,
     )
@@ -530,11 +530,22 @@ def update_member_role(db: Session, team_id: int, user_id: int, role: str, commi
     return member
 
 
-def slugify(value: str) -> str:
+def slugify(value: str, fallback: str = "project") -> str:
     """Convert a display name into a URL-friendly slug."""
     normalized = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
     slug = re.sub(r"[^a-z0-9]+", "-", normalized.lower()).strip("-")
-    return slug[:240].strip("-") or "project"
+    return slug[:240].strip("-") or fallback
+
+
+def _unique_team_slug(db: Session, base_slug: str) -> str:
+    """Return a team slug that is not used by any other team (FR-TEAM-01)."""
+    base = slugify(base_slug, fallback="team")
+    candidate = base
+    suffix = 2
+    while db.query(models.Team).filter(models.Team.slug == candidate).first() is not None:
+        candidate = f"{base}-{suffix}"
+        suffix += 1
+    return candidate
 
 
 def _unique_project_slug(

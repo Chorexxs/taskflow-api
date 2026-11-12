@@ -360,7 +360,7 @@ Leyenda de permisos: **Público**, **Auth** (cualquier autenticado), **Member**,
 
 | Método | Ruta | Permiso | Request | Response | Status |
 |---|---|---|---|---|---|
-| POST | `/teams/` | Auth | `{name, slug, description?}` | `TeamOut` | 201, 409, 422 |
+| POST | `/teams/` | Auth | `{name, slug?, description?}` | `TeamOut` | 201, 409, 422 |
 | GET | `/teams/` | Auth | `page,page_size` | `Paginated<TeamSummaryOut>` | 200 |
 | GET | `/teams/{team}` | Member | — | `TeamOut` | 200, 403, 404 |
 | PATCH | `/teams/{team}` | Admin | `{name?,description?}` | `TeamOut` | 200, 400, 403, 404 |

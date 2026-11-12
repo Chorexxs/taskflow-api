@@ -90,10 +90,11 @@ def create_team(
     if (replay := guard.replay(team)) is not None:
         return replay
 
-    # Check if slug already exists
-    existing_team = crud.get_team_by_slug(db, team.slug)
-    if existing_team:
-        raise HTTPException(status_code=400, detail="Team slug already exists")
+    # An explicit slug must be unique; otherwise it is generated from the name
+    # with a numeric suffix when needed (FR-TEAM-01).
+    explicit_slug = (team.slug or "").strip()
+    if explicit_slug and crud.get_team_by_slug(db, explicit_slug) is not None:
+        raise HTTPException(status_code=409, detail="Team slug already exists")
 
     created = crud.create_team(db, team, current_user.id)
     guard.store(status.HTTP_201_CREATED, schemas.TeamOut.model_validate(created))

@@ -1291,13 +1291,19 @@
             "type": "string"
           },
           "slug": {
-            "title": "Slug",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
           }
         },
         "required": [
-          "name",
-          "slug"
+          "name"
         ],
         "title": "TeamCreate",
         "type": "object"

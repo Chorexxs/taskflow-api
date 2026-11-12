@@ -171,16 +171,15 @@ export default function Dashboard() {
                 />
               </div>
               <div>
-                <label htmlFor="create-team-slug" className="block text-sm text-[var(--color-text-secondary)] mb-1">URL Slug</label>
+                <label htmlFor="create-team-slug" className="block text-sm text-[var(--color-text-secondary)] mb-1">URL Slug (optional)</label>
                 <input
                   type="text"
                   id="create-team-slug"
                   name="slug"
                   value={newTeam.slug}
                   onChange={(e) => setNewTeam({ ...newTeam, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                  required
                   className="input-field"
-                  placeholder="my-team"
+                  placeholder="Generated from the name"
                 />
               </div>
               <div>

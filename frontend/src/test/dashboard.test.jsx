@@ -69,7 +69,7 @@ describe('Dashboard', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /new team/i }))
     await userEvent.type(screen.getByPlaceholderText('My Team'), 'Beta')
-    await userEvent.type(screen.getByPlaceholderText('my-team'), 'beta')
+    await userEvent.type(screen.getByLabelText(/url slug/i), 'beta')
     await userEvent.click(screen.getByRole('button', { name: /^create$/i }))
 
     await waitFor(() =>

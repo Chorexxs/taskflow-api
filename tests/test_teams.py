@@ -43,8 +43,46 @@ def test_create_team_duplicate_slug(client: TestClient):
         json={"name": "Team Two", "slug": "duplicate-slug"},
         headers={"Authorization": f"Bearer {token}"},
     )
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert "already exists" in response.json()["detail"]
+
+
+def test_create_team_generates_the_slug_from_the_name(client: TestClient):
+    client.post(
+        "/api/v1/auth/register", json={"email": "sluggen@example.com", "password": "password123"}
+    )
+    token = client.post(
+        "/api/v1/auth/login",
+        data={"username": "sluggen@example.com", "password": "password123"},
+    ).json()["access_token"]
+
+    response = client.post(
+        "/api/v1/teams/",
+        json={"name": "Equipo Ventas"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201, response.text
+    assert response.json()["slug"] == "equipo-ventas"
+
+
+def test_generated_slug_gets_a_suffix_when_it_collides(client: TestClient):
+    client.post(
+        "/api/v1/auth/register", json={"email": "slugdup@example.com", "password": "password123"}
+    )
+    token = client.post(
+        "/api/v1/auth/login",
+        data={"username": "slugdup@example.com", "password": "password123"},
+    ).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    first = client.post("/api/v1/teams/", json={"name": "Product"}, headers=headers)
+    second = client.post("/api/v1/teams/", json={"name": "Product"}, headers=headers)
+
+    assert first.status_code == 201, first.text
+    assert second.status_code == 201, second.text
+    assert first.json()["slug"] == "product"
+    assert second.json()["slug"] == "product-2"
 
 
 def test_invite_member_as_admin(client: TestClient):

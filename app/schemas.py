@@ -325,7 +325,7 @@ class TeamCreate(BaseModel):
     """
 
     name: str
-    slug: str
+    slug: str | None = None
     description: str | None = None
 
     @field_validator("name", "slug", "description", mode="before")
