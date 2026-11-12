@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 
 from app import models, schemas
-from app.idempotency import request_fingerprint
+from app.idempotency import IdempotencyGuard, request_fingerprint
 
 
 def _headers(token: str, key: str | None = None) -> dict:
@@ -306,3 +306,36 @@ def test_invalid_key_is_rejected(client: TestClient):
     )
 
     assert response.status_code == 400
+
+
+def test_release_discards_uncommitted_business_changes(db_session):
+    """A failed idempotent request must not persist half-written rows."""
+    user = models.User(
+        email="idem-release@example.com",
+        hashed_password="not-used",
+        is_active=True,
+        email_verified=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    guard = IdempotencyGuard(
+        db=db_session,
+        user_id=user.id,
+        key="release-key",
+        method="POST",
+        path="/api/v1/teams/",
+    )
+    guard.replay({})
+    assert guard.record is not None
+
+    # Business work flushed but not committed yet, like create_task(commit=False).
+    db_session.add(models.Team(name="Half written", slug="half-written", created_by=user.id))
+    db_session.flush()
+
+    guard.release()
+
+    assert db_session.query(models.Team).filter_by(slug="half-written").first() is None
+    assert (
+        db_session.query(models.IdempotencyKey).filter_by(key="release-key").first() is None
+    )

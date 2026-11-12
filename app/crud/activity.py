@@ -19,6 +19,8 @@ def log_activity(
     user_id: int,
     old_value: str | None = None,
     new_value: str | None = None,
+    *,
+    commit: bool = True,
 ):
     """
     Create an activity log entry for audit purposes.
@@ -59,7 +61,8 @@ def log_activity(
         new_value=new_value,
     )
     db.add(db_activity)
-    db.commit()
+    if commit:
+        db.commit()
     return db_activity
 
 

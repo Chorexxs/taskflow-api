@@ -38,7 +38,14 @@ def _next_task_position(db: Session, project_id: int, status: str) -> Decimal:
     return Decimal(str(current_max)) + POSITION_GAP
 
 
-def create_task(db: Session, task: schemas.TaskCreate, project_id: int, user_id: int):
+def create_task(
+    db: Session,
+    task: schemas.TaskCreate,
+    project_id: int,
+    user_id: int,
+    *,
+    commit: bool = True,
+):
     """
     Create a new task within a project.
 
@@ -51,6 +58,8 @@ def create_task(db: Session, task: schemas.TaskCreate, project_id: int, user_id:
         task (TaskCreate): Schema with task details.
         project_id (int): ID of the project to create the task in.
         user_id (int): ID of the user creating the task.
+        commit (bool): Commit immediately, or leave the transaction open so the
+            caller can group the insert with the activity/idempotency writes.
 
     Returns:
         Task: The newly created task object.
@@ -75,7 +84,10 @@ def create_task(db: Session, task: schemas.TaskCreate, project_id: int, user_id:
         assigned_to=task.assigned_to,
     )
     db.add(db_task)
-    db.commit()
+    if commit:
+        db.commit()
+    else:
+        db.flush()
     return db_task
 
 

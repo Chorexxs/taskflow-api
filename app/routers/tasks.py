@@ -182,9 +182,24 @@ def create_task(
             detail="Assignee is not a member of this team",
         )
 
-    new_task = crud.create_task(db, task, project.id, current_user.id)
-    crud.log_activity(db, "task", new_task.id, "created", current_user.id, None, new_task.title)
+    new_task = crud.create_task(
+        db, task, project.id, current_user.id, commit=False
+    )
+    crud.log_activity(
+        db,
+        "task",
+        new_task.id,
+        "created",
+        current_user.id,
+        None,
+        new_task.title,
+        commit=False,
+    )
+    # The idempotency store (or the final commit) closes a single transaction
+    # with the task, the activity entry and the stored response.
     guard.store(status.HTTP_201_CREATED, schemas.TaskOut.model_validate(new_task))
+    if db.in_transaction():
+        db.commit()
     return new_task
 
 

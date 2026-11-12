@@ -118,6 +118,10 @@ class IdempotencyGuard:
         if self.record is None:
             return
         try:
+            # Discard partially flushed business changes first: the handler may
+            # have shared this transaction with the reservation. The
+            # reservation row itself was committed by ``_reserve``.
+            self.db.rollback()
             self.db.delete(self.record)
             self.db.commit()
         except Exception:  # pragma: no cover - defensive cleanup
