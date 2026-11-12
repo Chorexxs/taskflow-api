@@ -303,7 +303,11 @@ def check_user_locked(db: Session, user) -> bool:
         ...     raise HTTPException(status_code=423, detail="Account locked")
     """
     if user.is_blocked:
-        if user.locked_until and user.locked_until > datetime.now(timezone.utc):
+        locked_until = user.locked_until
+        if locked_until is not None and locked_until.tzinfo is None:
+            # SQLite (documented escape hatch) stores naïve datetimes; assume UTC.
+            locked_until = locked_until.replace(tzinfo=timezone.utc)
+        if locked_until and locked_until > datetime.now(timezone.utc):
             return True
         else:
             # Lockout expired, auto-unlock
@@ -320,7 +324,8 @@ def record_failed_login(db: Session, user) -> None:
 
     Increments the failed login counter and locks the account if the maximum
     number of attempts is reached. The lockout duration is configured via
-    settings.LOCKOUT_DURATION_MINUTES.
+    settings.LOCKOUT_DURATION_MINUTES. On the transition to locked, every
+    existing session is revoked by incrementing ``token_version`` (T-116).
 
     Args:
         db (Session): SQLAlchemy database session.
@@ -335,6 +340,11 @@ def record_failed_login(db: Session, user) -> None:
     """
     user.failed_login_attempts += 1
     if user.failed_login_attempts >= settings.MAX_LOGIN_ATTEMPTS:
+        if not user.is_blocked:
+            # T-116 / SEC-ASVS-10: a locked account must not keep usable
+            # sessions. Bumping token_version invalidates every access and
+            # refresh token issued so far (T-028 uses the same mechanism).
+            user.token_version = (user.token_version or 0) + 1
         user.is_blocked = True
         user.locked_until = datetime.now(timezone.utc) + timedelta(
             minutes=settings.LOCKOUT_DURATION_MINUTES

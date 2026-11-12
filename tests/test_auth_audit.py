@@ -55,10 +55,6 @@ def test_auth_events_include_user_id_without_pii(client, audit_log):
     assert login_response.status_code == 200
     tokens = login_response.json()
 
-    # Five bad passwords lock the account and emit both failure and lockout.
-    for _ in range(5):
-        assert _login(client, email, "wrong-password").status_code == 401
-
     refresh_response = client.post(
         "/api/v1/auth/refresh", json={"refresh_token": tokens["refresh_token"]}
     )
@@ -71,6 +67,11 @@ def test_auth_events_include_user_id_without_pii(client, audit_log):
         json={"refresh_token": rotated["refresh_token"]},
     )
     assert logout_response.status_code == 204
+
+    # Five bad passwords lock the account and emit both failure and lockout.
+    # The lockout revokes live sessions (T-116), so no token is used afterwards.
+    for _ in range(5):
+        assert _login(client, email, "wrong-password").status_code == 401
 
     events = audit_log.events()
     assert "auth_register_succeeded" in events

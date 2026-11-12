@@ -94,10 +94,10 @@ Cada fila referencia la mitigación principal y su evidencia.
 
 | ID | Categoría | Amenaza | Mitigación | Residual |
 |---|---|---|---|---|
-| TM-01 | **S**poofing | Robo de contraseña por fuerza bruta o credential stuffing | bcrypt, política 8–128, rate limit 10/min en login, bloqueo tras 5 fallos durante 15 min, auditoría sin PII | B |
+| TM-01 | **S**poofing | Robo de contraseña por fuerza bruta o credential stuffing | bcrypt, política 8–128, rate limit 10/min en login, bloqueo tras 5 fallos durante 15 min con revocación de sesiones (`token_version`), auditoría sin PII | B |
 | TM-02 | **S**poofing | Falsificación de JWT | HS256 con `SECRET_KEY` obligatoria fuera de dev; firma verificada en cada request; `alg` fijado en servidor | B |
 | TM-03 | **S**poofing | Reutilización de refresh robado | Refresh rotativo, detección de reutilización y revocación global (`test_refresh_reuse.py`) | B |
-| TM-04 | **S**poofing | Sesión válida tras logout o cambio de contraseña | Logout revoca access + refresh; cambio de contraseña exige la actual e incrementa `token_version` | B |
+| TM-04 | **S**poofing | Sesión válida tras logout, cambio de contraseña o bloqueo | Logout revoca access + refresh; cambio de contraseña exige la actual e incrementa `token_version`; el bloqueo también incrementa `token_version` (T-116) | B |
 | TM-05 | **S**poofing | Rotación de clave que invalida sesiones o deja tokens antiguos eternos | Clave dual: `SECRET_KEY` firma, `SECRET_KEY_PREVIOUS` solo verifica durante la ventana (ADR-012, `test_secret_rotation.py`) | B |
 | TM-06 | **T**ampering | Manipulación de claims del JWT | Firma criptográfica; claims `sub`, `type` y `exp` validados; la autorización no confía en claims de rol | B |
 | TM-07 | **R**epudiation | Negación de acciones de auth | Eventos de registro/login/logout/refresh/bloqueo con `user_id` y `request_id` (`test_auth_audit.py`) | B |
@@ -230,9 +230,12 @@ Auditoría de seguridad completa sobre `307d345`; sin SEC-0. Corregidos en T-108
 - **SEC-2.4:** `/health` filtraba errores de DB → mensaje genérico (TM-14).
 - **SEC-2.5:** logout no limpiaba React Query → caché limpiada (TM-09).
 
-Residuales aceptados: bloqueo sin revocación de sesiones (SEC-ASVS-10). La
-enumeración de cuentas se mitiga con verificación por email y respuestas
-genéricas cuando `EMAIL_VERIFICATION_REQUIRED=true` (T-113); el 423 de bloqueo
-sigue siendo un oráculo menor. El rate limit detrás del proxy se corrigió y
-verificó en T-109 (SEC-ASVS-08); magic bytes y escaneo ClamAV opcional en
-T-109/T-110 (SEC-ASVS-09).
+Residuales aceptados: la enumeración de cuentas se mitiga con verificación por
+email y respuestas genéricas cuando `EMAIL_VERIFICATION_REQUIRED=true` (T-113);
+el 423 de bloqueo sigue siendo un oráculo menor. El bloqueo sin revocación de
+sesiones (SEC-ASVS-10) se corrigió en T-116: el paso a bloqueado incrementa
+`token_version` y los tokens previos dejan de validar. Coste aceptado: un
+atacante que fuerce el bloqueo puede cerrar las sesiones del usuario, lo que se
+prefiere a mantener vivos tokens potencialmente robados. El rate limit detrás del
+proxy se corrigió y verificó en T-109 (SEC-ASVS-08); magic bytes y escaneo
+ClamAV opcional en T-109/T-110 (SEC-ASVS-09).

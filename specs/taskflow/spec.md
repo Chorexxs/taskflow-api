@@ -114,7 +114,7 @@ Ver [`baseline.md`](./baseline.md). Resumen: 38 endpoints, 10 tablas, 54 tests b
 1. El usuario inicia sesión y recibe access + refresh.
 2. Al expirar el access, el cliente lo renueva sin interrumpir al usuario.
 3. Al cerrar sesión, ambos tokens se invalidan en el servidor.
-4. Si la cuenta se bloquea por intentos fallidos, recibe un mensaje claro y un tiempo de espera.
+4. Si la cuenta se bloquea por intentos fallidos, recibe un mensaje claro, un tiempo de espera y sus sesiones activas quedan revocadas.
 
 ---
 
@@ -131,7 +131,7 @@ Prioridad MoSCoW: **M** must, **S** should, **C** could.
 | FR-AUTH-03 | Refresh con rotación | M | `POST /auth/refresh` acepta `{"refresh_token": "..."}` en body; valida tipo `refresh`, expiración, revocación y usuario activo; revoca el anterior y emite par nuevo; reutilización → 401 y revocación de la familia (S); token en query string → 422 |
 | FR-AUTH-04 | Logout real | M | `POST /auth/logout` con access en header y refresh en body; revoca ambos; 204; idempotente |
 | FR-AUTH-05 | Sesión automática en el cliente | M | Si el access expira o una request devuelve 401, el cliente refresca una sola vez y reintenta; si falla, limpia sesión y redirige a login |
-| FR-AUTH-06 | Bloqueo y rate limiting | M | 5 fallos consecutivos → bloqueo 15 min; contador se resetea al login exitoso; límites respaldados por Redis y consistentes entre instancias |
+| FR-AUTH-06 | Bloqueo y rate limiting | M | 5 fallos consecutivos → bloqueo 15 min; contador se resetea al login exitoso; el bloqueo revoca las sesiones existentes (`token_version`); límites respaldados por Redis y consistentes entre instancias |
 | FR-AUTH-07 | Cambio de contraseña seguro | M | Requiere contraseña actual; valida política; revoca todas las sesiones; responde 200/204 |
 | FR-AUTH-08 | Perfil | M | `GET /users/me` devuelve id, email, is_active, email_verified y created_at; actualización de email requiere contraseña actual y email único; nunca devuelve hash |
 | FR-AUTH-09 | Limpieza de tokens | S | Job programado elimina tokens/sesiones expirados; métrica de filas eliminadas |
@@ -447,6 +447,17 @@ Dada una base de datos en la última migración
 Cuando se ejecuta alembic downgrade -1 y luego upgrade head
 Entonces el esquema vuelve al estado esperado
 Y los tests de integración pasan
+```
+
+### AC-09 — Bloqueo de cuenta
+
+```gherkin
+Dado un usuario con una sesión activa
+Cuando acumula 5 intentos fallidos de login
+Entonces el access token emitido antes del bloqueo responde 401
+Y el refresh token emitido antes del bloqueo responde 401
+Y la contraseña correcta responde 423 mientras dura el bloqueo
+Y al expirar el bloqueo puede iniciar sesión y recibe tokens válidos
 ```
 
 ---

@@ -62,6 +62,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `AuthContext` expone `refreshToken` y limpia la sesión si el refresh falla.
 - Política de contraseñas de 8–128 caracteres y `token_version` para revocar todas las sesiones al cambiar credenciales.
 - El cambio de contraseña exige la contraseña actual y obliga a iniciar sesión de nuevo.
+- El bloqueo de cuenta por intentos fallidos incrementa `token_version`: los access y refresh emitidos antes dejan de validar (T-116, SEC-ASVS-10).
 - Notificaciones paginadas (`items/total/page/pages/has_next`) y endpoint `/notifications/unread-count`.
 - Edición de equipos (nombre/descripción) para admins.
 - Endpoints explícitos de archivar/restaurar proyecto y filtro `include_archived`.

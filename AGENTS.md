@@ -237,7 +237,7 @@ uploads/                 # adjuntos locales (dev; producción requiere storage)
 - Refresh token: 7 días por defecto; tipo `refresh`; rotación en cada refresh.
 - Refresh viaja en el **body** JSON, nunca en query string.
 - Logout revoca access y refresh; es idempotente.
-- Cambiar contraseña debe revocar sesiones (P2).
+- Cambiar contraseña o bloquear la cuenta debe revocar las sesiones activas (T-028, T-116).
 - `SECRET_KEY` nunca tiene fallback en producción. La rotación usa `SECRET_KEY_PREVIOUS` solo para verificar (ADR-012).
 
 ### Permisos (resumen)
