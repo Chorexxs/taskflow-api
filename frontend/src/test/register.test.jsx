@@ -64,6 +64,9 @@ describe('Register', () => {
       email: 'new@example.com',
       password: 'password123',
     })
+    // T-129: `login` already loads the user, so the token effect must not
+    // request /users/me a second time.
+    expect(mockApi.users.me).toHaveBeenCalledTimes(1)
   })
 
   it('rejects mismatched passwords without calling the API', async () => {

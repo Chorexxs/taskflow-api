@@ -30,7 +30,7 @@
  * }
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
 import {
@@ -70,6 +70,10 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
 
+  // Token whose user was already fetched by `login`, so the validation effect
+  // below does not request `/users/me` a second time.
+  const userFetchedForToken = useRef(null);
+
   /**
    * Clear the local session without a network round-trip. Used when the
    * session is already invalid (expired/revoked token), so there is nothing to
@@ -90,6 +94,12 @@ export function AuthProvider({ children }) {
    */
   useEffect(() => {
     if (accessToken) {
+      // `login` already fetched this user; avoid a duplicate /users/me request.
+      if (userFetchedForToken.current === accessToken) {
+        userFetchedForToken.current = null;
+        setLoading(false);
+        return;
+      }
       api.users.me(accessToken)
         .then(data => {
           if (data.id) {
@@ -183,10 +193,21 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const data = await api.auth.login({ email, password });
     if (data.access_token) {
+      // The token effect below skips its own fetch for this token because the
+      // user is loaded right here.
+      userFetchedForToken.current = data.access_token;
       setAccessToken(data.access_token);
       setRefreshToken(data.refresh_token);
-      const user = await api.users.me(data.access_token);
+      let user;
+      try {
+        user = await api.users.me(data.access_token);
+      } catch (error) {
+        // The token was stored but the session cannot be validated.
+        clearSession();
+        throw error;
+      }
       setUser(user);
+      setLoading(false);
       return user;
     }
     throw new Error(data?.detail || 'Login failed');
