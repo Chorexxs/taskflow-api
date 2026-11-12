@@ -386,6 +386,7 @@ app/
 ├── exceptions.py        # Excepciones de dominio
 ├── logging_config.py    # structlog
 ├── middleware.py        # Request ID y logging
+├── services/            # Casos de uso (subida de adjuntos)
 └── routers/
     ├── auth.py
     ├── users.py

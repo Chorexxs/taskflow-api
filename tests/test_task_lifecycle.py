@@ -46,9 +46,8 @@ def test_deleting_task_removes_attachment_files(
     client: TestClient, db_session, tmp_path, monkeypatch
 ):
     from app.config import settings
-    from app.routers import attachments as attachments_module
 
-    monkeypatch.setattr(attachments_module, "UPLOAD_DIR", str(tmp_path))
+    monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
     monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
     token = _setup_task(client)
 

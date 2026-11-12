@@ -34,9 +34,8 @@ def _register_and_login(client: TestClient, email: str) -> dict:
 @pytest.fixture
 def world(client: TestClient, tmp_path, monkeypatch):
     from app.config import settings
-    from app.routers import attachments as attachments_module
 
-    monkeypatch.setattr(attachments_module, "UPLOAD_DIR", str(tmp_path))
+    monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
     monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
 
     admin = _register_and_login(client, "matrix-admin@example.com")

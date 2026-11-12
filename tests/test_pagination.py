@@ -124,9 +124,8 @@ def test_projects_are_paginated(client: TestClient):
 
 def test_attachments_are_paginated(client: TestClient, tmp_path, monkeypatch):
     from app.config import settings
-    from app.routers import attachments as attachments_module
 
-    monkeypatch.setattr(attachments_module, "UPLOAD_DIR", str(tmp_path))
+    monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
     monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
     owner = _setup(client)
     url = "/api/v1/teams/pager-0/projects/Pager Project 0/tasks/Pager Task/attachments/"

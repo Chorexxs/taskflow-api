@@ -154,6 +154,7 @@ app/
 ├── exceptions.py        # Excepciones de dominio
 ├── logging_config.py    # structlog
 ├── middleware.py        # Request ID + logging
+├── services/            # Casos de uso (subida de adjuntos)
 └── routers/             # auth, users, teams, projects, tasks,
                          # comments, attachments, notifications
 

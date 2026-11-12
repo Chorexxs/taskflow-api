@@ -108,7 +108,7 @@ def test_upload_rejects_content_that_does_not_match_the_extension(client: TestCl
 
 def test_upload_rejects_malware(client: TestClient, db_session, monkeypatch):
     from app.malware import MalwareDetected, ScannerUnavailable
-    from app.routers import attachments as attachments_router
+    from app.services import attachments as attachments_service
 
     owner_token = setup_full_hierarchy_with_task(client, "malware@example.com")
     headers = {"Authorization": f"Bearer {owner_token}"}
@@ -117,7 +117,7 @@ def test_upload_rejects_malware(client: TestClient, db_session, monkeypatch):
     def infected(_data):
         raise MalwareDetected("stream: Eicar FOUND")
 
-    monkeypatch.setattr(attachments_router, "scan_upload", infected)
+    monkeypatch.setattr(attachments_service, "scan_upload", infected)
     rejected = client.post(
         url,
         files={"file": ("note.txt", b"hello", "text/plain")},
@@ -129,7 +129,7 @@ def test_upload_rejects_malware(client: TestClient, db_session, monkeypatch):
     def unavailable(_data):
         raise ScannerUnavailable("scanner down")
 
-    monkeypatch.setattr(attachments_router, "scan_upload", unavailable)
+    monkeypatch.setattr(attachments_service, "scan_upload", unavailable)
     unavailable_response = client.post(
         url,
         files={"file": ("note.txt", b"hello", "text/plain")},

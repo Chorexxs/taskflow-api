@@ -11,12 +11,7 @@ File uploads are limited to 10MB. Files are stored on disk with
 metadata in the database.
 """
 
-import asyncio
-import hashlib
-import mimetypes
 import os
-import re
-import uuid
 
 from fastapi import (
     APIRouter,
@@ -34,81 +29,16 @@ from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.auth import get_current_user
-from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_team_member
 from app.idempotency import IdempotencyGuard, get_idempotency_guard
 from app.logging_config import get_logger
-from app.malware import MalwareDetected, ScannerUnavailable, scan_upload
 from app.rate_limit import rate_limit
+from app.services import attachments as attachments_service
 from app.storage import StorageError, get_storage
-from app.uploads import validate_file_signature
 
 router = APIRouter()
 logger = get_logger(__name__)
-
-# Upload limits and storage location come from central configuration.
-MAX_FILE_SIZE = settings.MAX_UPLOAD_SIZE
-UPLOAD_DIR = settings.UPLOAD_DIR
-CHUNK_SIZE = 1024 * 1024
-HTTP_413_TOO_LARGE = getattr(status, "HTTP_413_CONTENT_TOO_LARGE", 413)
-
-# Only allow a conservative, explicit set of characters in filenames.
-_UNSAFE_FILENAME_CHARS = re.compile(r"[^A-Za-z0-9._-]+")
-
-
-def sanitize_filename(filename: str | None) -> str:
-    """Return a safe, human-readable filename.
-
-    The client-supplied filename is never trusted: path separators are
-    stripped, control characters removed and everything outside a small
-    allowlist collapsed to underscores.
-    """
-    candidate = (filename or "").replace("\\", "/")
-    candidate = os.path.basename(candidate).replace("\x00", "").strip()
-    if candidate in {"", ".", ".."}:
-        raise HTTPException(status_code=400, detail="Invalid filename")
-
-    candidate = _UNSAFE_FILENAME_CHARS.sub("_", candidate)
-    candidate = re.sub(r"_+", "_", candidate).strip("._")
-    if not candidate:
-        raise HTTPException(status_code=400, detail="Invalid filename")
-
-    if len(candidate) > 255:
-        stem, extension = os.path.splitext(candidate)
-        candidate = f"{stem[: 255 - len(extension)]}{extension}"
-
-    return candidate
-
-
-def validate_upload_type(filename: str, content_type: str | None) -> tuple[str, str]:
-    """Validate the extension and return ``(extension, mime_type)``.
-
-    The extension allowlist is the primary control; the MIME type is derived
-    from the extension when possible and only falls back to the client value
-    for generic/unknown types.
-    """
-    extension = os.path.splitext(filename)[1].lower()
-    normalized_extension = extension.lstrip(".")
-    if normalized_extension not in settings.allowed_upload_extensions:
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail=f"File type '{extension or 'unknown'}' is not allowed",
-        )
-
-    guessed_type, _ = mimetypes.guess_type(filename)
-    mime_type = guessed_type or content_type or "application/octet-stream"
-    return extension, mime_type[:100]
-
-
-def _task_upload_dir(task_id: int) -> str:
-    """Resolve and create a task upload directory inside the base directory."""
-    base_dir = os.path.realpath(UPLOAD_DIR)
-    task_dir = os.path.realpath(os.path.join(base_dir, str(task_id)))
-    if os.path.commonpath([base_dir, task_dir]) != base_dir:
-        raise HTTPException(status_code=400, detail="Invalid upload path")
-    os.makedirs(task_dir, exist_ok=True)
-    return task_dir
 
 
 def get_task_from_params(
@@ -177,137 +107,17 @@ async def upload_attachment(
         ...   -H "Authorization: Bearer eyJhbGc..." \\
         ...   -F "file=@document.pdf"
     """
-    original_filename = sanitize_filename(file.filename)
-    extension, mime_type = validate_upload_type(original_filename, file.content_type)
-
-    # An early check avoids obvious oversized uploads, but the streaming loop
-    # below is the authoritative limit because file.size can be missing or lie.
-    if file.size and file.size > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=HTTP_413_TOO_LARGE,
-            detail="File too large. Maximum size is 10MB.",
-        )
-
     task = get_task_from_params(db, team_id_or_slug, project_id_or_name, task_id_or_title)
-
-    # Read in bounded chunks. The limit is authoritative even when the client
-    # omits file.size or sends an incorrect Content-Length.
-    contents = bytearray()
-    try:
-        while True:
-            chunk = await file.read(CHUNK_SIZE)
-            if not chunk:
-                break
-            contents.extend(chunk)
-            if len(contents) > MAX_FILE_SIZE:
-                raise HTTPException(
-                    status_code=HTTP_413_TOO_LARGE,
-                    detail="File too large. Maximum size is 10MB.",
-                )
-    finally:
-        await file.close()
-
-    if not contents:
-        raise HTTPException(status_code=400, detail="Empty files are not allowed")
-
-    checksum = hashlib.sha256(contents).hexdigest()
-    try:
-        validate_file_signature(bytes(contents), extension)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail=str(exc),
-        ) from exc
-
-    try:
-        await asyncio.to_thread(scan_upload, bytes(contents))
-    except MalwareDetected as exc:
-        logger.warning(
-            "attachment_malware_rejected",
-            user_id=current_user.id,
-            filename=original_filename,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="File was rejected by the malware scanner",
-        ) from exc
-    except ScannerUnavailable as exc:
-        logger.warning("attachment_scan_unavailable", error=str(exc))
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Malware scanning is temporarily unavailable",
-        ) from exc
+    upload = await attachments_service.read_upload(file, current_user.id)
 
     # The file hash is part of the fingerprint: retrying the same upload returns
     # the original attachment instead of storing the bytes again.
-    if (replay := guard.replay({"filename": original_filename, "checksum": checksum})) is not None:
+    if (
+        replay := guard.replay({"filename": upload.filename, "checksum": upload.checksum})
+    ) is not None:
         return replay
 
-    file_path = None
-    content = None
-    storage_key = None
-
-    if settings.storage_backend == "insforge":
-        storage = get_storage()
-        if storage is None:  # pragma: no cover - config validation
-            raise HTTPException(status_code=503, detail="Object storage is not configured")
-        storage_key = storage.build_key(task.id, extension)
-        try:
-            await asyncio.to_thread(
-                storage.put,
-                storage_key,
-                bytes(contents),
-                mime_type,
-                original_filename,
-            )
-        except StorageError as exc:
-            logger.warning("attachment_storage_failed", error=str(exc))
-            raise HTTPException(status_code=503, detail="Object storage is unavailable") from exc
-    elif settings.storage_backend == "database":
-        # Persistent backend: the bytes live in PostgreSQL and survive
-        # ephemeral filesystems such as Render's.
-        content = bytes(contents)
-    else:
-        task_dir = _task_upload_dir(task.id)
-        storage_name = f"{uuid.uuid4().hex}{extension}"
-        file_path = os.path.join(task_dir, storage_name)
-        with open(file_path, "wb") as destination:
-            destination.write(contents)
-
-    try:
-        attachment = crud.create_attachment(
-            db,
-            task.id,
-            current_user.id,
-            original_filename,
-            file_path,
-            len(contents),
-            mime_type,
-            content=content,
-            checksum=checksum,
-            storage_key=storage_key,
-        )
-    except Exception:
-        if file_path and os.path.exists(file_path):
-            os.remove(file_path)
-        if storage_key:
-            storage = get_storage()
-            if storage is not None:
-                try:
-                    storage.delete(storage_key)
-                except StorageError:
-                    pass
-        raise
-
-    crud.log_activity(
-        db,
-        "attachment",
-        attachment.id,
-        "uploaded",
-        current_user.id,
-        None,
-        original_filename,
-    )
+    attachment = await attachments_service.store_upload(db, task, current_user.id, upload)
 
     guard.store(status.HTTP_201_CREATED, schemas.AttachmentOut.model_validate(attachment))
     return attachment

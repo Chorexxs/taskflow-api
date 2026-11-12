@@ -300,9 +300,8 @@ def test_task_creation_rejects_non_member_assignee(client: TestClient):
 @pytest.fixture()
 def upload_dir(tmp_path, monkeypatch):
     from app.config import settings
-    from app.routers import attachments as attachments_module
 
-    monkeypatch.setattr(attachments_module, "UPLOAD_DIR", str(tmp_path))
+    monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
     monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
     return tmp_path
 
@@ -352,9 +351,9 @@ def test_upload_rejects_disallowed_extension(client: TestClient, upload_dir):
 
 
 def test_upload_enforces_streaming_size_limit(client: TestClient, upload_dir, monkeypatch):
-    from app.routers import attachments as attachments_module
+    from app.config import settings
 
-    monkeypatch.setattr(attachments_module, "MAX_FILE_SIZE", 10)
+    monkeypatch.setattr(settings, "MAX_UPLOAD_SIZE", 10)
     owner, _, _, _, _ = _create_hierarchy(
         client,
         owner_email="toolarge@example.com",
@@ -375,10 +374,9 @@ def test_database_storage_roundtrip_and_delete(
 ):
     from app import models
     from app.config import settings
-    from app.routers import attachments as attachments_module
 
     monkeypatch.setattr(settings, "STORAGE_BACKEND", "database")
-    monkeypatch.setattr(attachments_module, "UPLOAD_DIR", str(tmp_path))
+    monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
     owner, _, _, _, _ = _create_hierarchy(client, owner_email="dbstorage@example.com")
 
     upload = client.post(

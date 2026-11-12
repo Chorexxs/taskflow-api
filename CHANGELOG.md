@@ -55,6 +55,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Cambiado
 
+- La subida de adjuntos se movió a `app/services/attachments.py` (validación, streaming, escaneo, storage y registro); el router conserva solo la resolución de la tarea, la idempotencia y la respuesta (T-125, CA-2-03).
 - `POST /teams/` genera el slug desde el nombre cuando se omite (con sufijo `-2`, `-3`… ante colisión) y responde `409` si un slug explícito ya existe, como exige FR-TEAM-01 (T-124).
 - Los tokens del frontend viven en `tokenStorage`: el cliente API y `AuthContext` comparten claves y operaciones, y las páginas leen el token del contexto en lugar de `localStorage` (T-122, CA-3-04).
 - `PORT`, `FORWARDED_ALLOW_IPS` y `TESTING` se leen de `settings`; `/health` solo consulta Redis cuando el rate limiting está respaldado por Redis (`health_redis_url`), en lugar de leer `os.environ` (T-121).
