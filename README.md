@@ -1,13 +1,42 @@
 # TaskFlow API
 
-API REST para gestión de tareas en equipo con autenticación JWT, equipos, proyectos, tablero Kanban, comentarios, adjuntos, notificaciones y registro de actividad.
+API REST para gestión de tareas en equipo con autenticación JWT, equipos, proyectos, tablero Kanban, comentarios, adjuntos, notificaciones en tiempo real y registro de actividad.
 
-[![Tests](https://img.shields.io/badge/backend%20tests-276%20passed-brightgreen)](./tests)
-[![Frontend](https://img.shields.io/badge/frontend%20tests-81%20passed-brightgreen)](./frontend/src/test)
+[![Tests](https://img.shields.io/badge/backend%20tests-279%20passed-brightgreen)](./tests)
+[![Frontend](https://img.shields.io/badge/frontend%20tests-82%20passed-brightgreen)](./frontend/src/test)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.135-blue)](https://fastapi.tiangolo.com/)
+[![Node](https://img.shields.io/badge/Node-%E2%89%A522.12-339933)](https://nodejs.org/)
 
-> **Documentación de producto y arquitectura:** [`specs/taskflow/`](./specs/taskflow/). La spec es la fuente de verdad; el código se implementa contra ella.
+> **Documentación de producto y arquitectura:** [`specs/taskflow/`](./specs/taskflow/). La spec es la fuente de verdad; el código se implementa contra ella siguiendo el flujo SDD.
+
+---
+
+## Estado actual
+
+**Actualizado:** 2026-11-12 · **Rama:** `main` · **Backlog `T-001…T-129` ejecutado**, sin tareas funcionales pendientes; solo queda deuda aceptada y decisiones de infraestructura.
+
+| Comprobación | Resultado |
+|---|---|
+| Tests backend (PostgreSQL 16) | **279 passed**, 0 fallos, **91 %** de cobertura |
+| Tests frontend (Vitest 5 + Testing Library) | **82 passed**, 74,8 % líneas / 61,5 % ramas |
+| Lint y tipos | `ruff`, `ruff format`, `mypy`, eslint: limpios |
+| Build frontend | `npm run build` correcto |
+| Migraciones | `upgrade` / `downgrade -1` / `upgrade` reversibles |
+| OpenAPI | snapshot versionado y verificado en CI |
+| Producción | API Render **live**, frontend Vercel **live**, InsForge en `c1d2e3f4a5b6 (head)` |
+| Smoke de release | **15/15** contra producción (incluye subida/descarga de adjunto) |
+
+**Trabajo reciente de rendimiento (T-128 / T-129):** se redujeron los round trips SQL por acción (auth + membresía en una sola consulta, sin lookups duplicados, `expire_on_commit=False`, una única transacción al crear tareas) y se eliminó el `/users/me` duplicado del frontend. Medición WAN desde España:
+
+| Acción | Antes | Ahora |
+|---|---:|---:|
+| Abrir tablero | 1.796 ms | **1.231 ms** |
+| Mover tarea | 2.376 ms | **1.392 ms** |
+| Crear tarea (con `Idempotency-Key`) | 3.400 ms | **2.394 ms** |
+| Login | 2.900 ms | ~2.600 ms (bcrypt + CPU del plan) |
+
+> El coste restante es de infraestructura: Render y la base de datos están en regiones distintas (~140 ms por statement) y el plan free limita la CPU de bcrypt. El código ya no añade trabajo evitable.
 
 ---
 
@@ -15,15 +44,13 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 
 | Servicio | URL | Descripción |
 |---|---|---|
-| **Frontend** | https://taskflow-api-tau.vercel.app | Interfaz React |
-| **Preview InsForge** | https://<insforge-project-id>.insforge.site | Último build desplegado vía InsForge/Vercel |
-| **API** | https://taskflow-api-gkgl.onrender.com/api/v1 | Backend REST |
-| **Swagger** | https://taskflow-api-gkgl.onrender.com/docs | Documentación interactiva |
-| **Health** | https://taskflow-api-gkgl.onrender.com/health | Estado del servidor |
+| **Frontend** | https://taskflow-api-tau.vercel.app | Interfaz React (Vercel) |
+| **API** | https://taskflow-api-gkgl.onrender.com/api/v1 | Backend REST (Render) |
+| **Health** | https://taskflow-api-gkgl.onrender.com/health | Estado de DB/Redis/disco |
 | **Liveness** | https://taskflow-api-gkgl.onrender.com/health/live | Proceso vivo |
-| **Readiness** | https://taskflow-api-gkgl.onrender.com/health/ready | DB accesible |
+| **Readiness** | https://taskflow-api-gkgl.onrender.com/health/ready | Base de datos accesible |
 
-> **Estado de despliegue:** API de Render **live** contra InsForge (`/health/ready` → 200) y frontend Vercel **live** en `https://taskflow-api-tau.vercel.app`. Producción verificada el 2026-11-10: **register 201**, **login 200**, smoke de release **15/15**, performance p95 < 1000 ms (WAN), SSE 3/3 y **object storage activo** (`taskflow-attachments`). Detalles en [`specs/taskflow/blockers.md`](./specs/taskflow/blockers.md).
+> **Swagger/OpenAPI están deshabilitados en producción** (T-086) para no exponer la superficie de la API. En local están disponibles en `/docs`, `/redoc` y `/openapi.json`.
 
 ---
 
@@ -34,133 +61,138 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 │   Frontend      │ ────────────────────▶ │   TaskFlow API      │ ───▶ │   PostgreSQL    │
 │   (Vercel)      │ ◀──────────────────── │   (Render)          │      │   (InsForge)    │
 │                 │                       │                     │      │                 │
-│  React + Vite   │                       │  FastAPI + JWT      │      │  SQLAlchemy     │
-│  Tailwind CSS   │                       │  Pydantic v2        │      │  Alembic        │
+│  React + Vite   │                       │  FastAPI + JWT      │      │  SQLAlchemy 2   │
+│  Tailwind CSS 4 │                       │  Pydantic v2        │      │  Alembic        │
 └─────────────────┘                       └─────────────────────┘      └─────────────────┘
                                                   │
-                                                  ├── Redis opcional (rate limiting/SSE pub-sub)
-                                                  ├── Sentry opcional (errores)
-                                                  ├── InsForge Storage opcional (adjuntos en object storage)
+                                                  ├── Redis (rate limiting + pub/sub de SSE, opcional)
+                                                  ├── InsForge Storage (adjuntos, opcional)
+                                                  ├── ClamAV (antimalware, opcional)
+                                                  └── Sentry (errores/trazas, opcional)
 ```
+
+Los adjuntos se guardan por defecto en PostgreSQL (`STORAGE_BACKEND=database`) para sobrevivir a los discos efímeros de Render. En producción está activo `STORAGE_BACKEND=insforge` con el bucket privado `taskflow-attachments`; `local` queda para desarrollo. Existe backfill con checksum y rollback documentado (`scripts/backfill_attachments_object_storage.py`).
 
 ### Stack
 
 | Capa | Tecnología |
 |---|---|
-| **Backend** | Python 3.12, FastAPI, Uvicorn |
-| **ORM / DB** | SQLAlchemy 2, PostgreSQL 15, Alembic |
-| **Validación** | Pydantic v2, pydantic-settings |
+| **Backend** | Python 3.12, FastAPI 0.135, Uvicorn 0.42 |
+| **ORM / DB** | SQLAlchemy 2.0, PostgreSQL (15 local / InsForge en producción), Alembic 1.18 |
+| **Validación** | Pydantic 2.12, pydantic-settings |
 | **Auth** | JWT (`PyJWT`), bcrypt, access 15 min + refresh 7 días |
-| **Seguridad** | SlowAPI, headers de seguridad, lockout de cuenta, CORS por allowlist |
-| **Observabilidad** | structlog (JSON + request ID), Sentry opcional |
-| **Frontend** | React 18, Vite 8, React Router 7 |
-| **Datos front** | TanStack React Query 5, `fetch` |
-| **UI** | Tailwind CSS 4, Lucide React, React Hot Toast, `@dnd-kit` |
-| **Tests** | pytest + pytest-cov (276, 91,3 %), Vitest + Testing Library (81, 74,5 %) |
+| **Seguridad** | slowapi, headers, lockout, CORS por allowlist, gitleaks, pip-audit, SBOM |
+| **Observabilidad** | structlog (JSON + `request_id`), Sentry opcional |
+| **Frontend** | React 18.3, Vite 8.3, Vitest 5.1, React Router 7 |
+| **Datos front** | TanStack React Query 5, `fetch` con refresh single-flight |
+| **UI** | Tailwind CSS 4, Lucide, React Hot Toast, `@dnd-kit` |
 | **CI/CD** | GitHub Actions, Render, Vercel, InsForge |
-| **Contenedores** | Docker, docker-compose (PostgreSQL + Redis + API) |
-
-Los adjuntos se guardan por defecto en PostgreSQL (`STORAGE_BACKEND=database`) para sobrevivir a los discos efímeros de Render. `STORAGE_BACKEND=insforge` usa el bucket privado de InsForge Storage (object storage) y `local` queda para desarrollo. Los adjuntos existentes se migran con `scripts/backfill_attachments_object_storage.py`.
+| **Contenedores** | Docker (non-root + HEALTHCHECK), docker-compose (PostgreSQL + Redis + API) |
 
 ---
 
 ## Características
 
-### Autenticación y seguridad
+### Autenticación y sesión
 
-- Registro y login con email/contraseña; hash bcrypt.
-- JWT con access token corto y refresh token rotativo.
-- **Refresh operativo vía JSON body** (`{"refresh_token": "..."}`); la rotación revoca el token anterior.
-- **Logout revoca access y refresh** en el servidor.
-- Bloqueo de cuenta tras 5 intentos fallidos durante 15 minutos.
-- Rate limiting por IP en registro/login (5/min y 10/min).
-- CORS con allowlist (`CORS_ORIGINS`), sin `*` con credenciales.
-- Fail-fast en producción si falta `SECRET_KEY`, `DATABASE_URL` o `CORS_ORIGINS`.
-- Headers de seguridad: CSP, `Referrer-Policy`, `Permissions-Policy`, HSTS, `X-Content-Type-Options`, `X-Frame-Options` y XSS.
-- Contraseñas de 8–128 caracteres; el cambio exige la contraseña actual.
-- **Revocación global de sesiones** al cambiar credenciales mediante `token_version`.
-- **Auto-refresh proactivo** en el frontend 60 s antes de expirar, con sincronización entre pestañas.
-- Logging estructurado con `request_id` y `X-Request-ID`.
-- Errores con envelope `{error: {code, message, details, request_id}}` y `detail` compatible.
-
-> El refresh viaja siempre en el body JSON. El access token dura 15 minutos y el refresh 7 días por defecto.
+- Registro y login con email/contraseña; hash **bcrypt**.
+- **Access token 15 min** y **refresh token 7 días** con rotación en cada refresh.
+- El refresh viaja **solo en el body JSON** (`{"refresh_token": "..."}`); nunca en query string.
+- **Logout** revoca access y refresh en el servidor (idempotente).
+- **Detección de reutilización de refresh**: revoca la familia de sesiones.
+- **Bloqueo de cuenta** tras 5 intentos fallidos durante 15 min; al bloquear se revocan las sesiones previas (`token_version`).
+- **Verificación de email** con token de un solo uso, endpoints `verify-email` / `resend-verification`, backend `log` (desarrollo) o SMTP.
+- **Cambio de contraseña** exige la actual y revoca todas las sesiones.
+- **Auto-refresh proactivo** en el frontend 60 s antes de expirar, single-flight entre peticiones y sincronizado entre pestañas.
+- Rotación de `SECRET_KEY` con clave dual (`SECRET_KEY_PREVIOUS` solo verifica, ADR-012).
+- Política de contraseñas 8–128, sin caracteres de control.
+- Rate limiting por IP (Redis compartido con fallback en memoria) y `429` con `Retry-After`.
+- Envelope de errores `{error: {code, message, details, request_id}}` con `detail` compatible.
+- Headers de seguridad: CSP, HSTS, `Referrer-Policy`, `Permissions-Policy`, `X-Content-Type-Options`, `X-Frame-Options`.
 
 ### Equipos
 
-- Crear/listar equipos y consultarlos por **ID o slug**.
-- Editar nombre/descripción del equipo (solo admin).
+- Crear/listar y consultar por **ID o slug**; el listado incluye `role` y `project_count`.
+- El slug se genera en el servidor desde el nombre (sufijo determinista ante colisión).
 - Miembros con roles `admin` / `member`.
-- Añadir un usuario registrado por email (no es una invitación por correo).
-- Listar miembros, cambiar rol y expulsar.
-- Un miembro puede salir del equipo.
-- **Siempre debe quedar al menos un admin** (guard de último admin).
-- Búsqueda por nombre/título/descripción con escape de comodines y paginación.
+- Añadir un usuario ya registrado por email (no es una invitación por correo).
+- Listar miembros, cambiar rol y expulsar; un miembro puede salir.
+- **Siempre queda al menos un admin**: guard de último admin y `SELECT … FOR UPDATE` al cambiar membresías para evitar carreras.
+- Búsqueda en el equipo (proyectos, tareas, comentarios) con escape de comodines y paginación.
 
 ### Proyectos
 
-- Proyectos dentro de un equipo, con estado `active` / `archived`.
-- Crear (cualquier miembro), editar/archivar/restaurar (solo admin).
-- Endpoints explícitos `POST .../archive` y `POST .../restore`; `DELETE` se mantiene como alias de archivado.
+- Dentro de un equipo, con estado `active` / `archived` y slug único por equipo.
+- Crear (cualquier miembro); editar/archivar/restaurar (solo admin).
+- Endpoints explícitos `POST .../archive` y `POST .../restore`; `DELETE` **archiva**.
 - Listado con `include_archived=true` y badge de estado en la UI.
-- Registro de actividad por proyecto.
+- Actividad paginada por proyecto.
 
-### Tareas
+### Tareas y Kanban
 
 - Título, descripción, estado, prioridad, asignado y fecha límite.
-- Estados: `todo`, `in_progress`, `done`; prioridades: `low`, `medium`, `high`.
+- Estados `todo` / `in_progress` / `done`; prioridades `low` / `medium` / `high`.
 - Crear, listar, ver, editar, eliminar y asignar.
-- **Creador o admin** pueden editar todos los campos.
-- **Cualquier miembro** puede cambiar solo el estado (Kanban).
+- **Creador o admin** editan todos los campos; **cualquier miembro** puede cambiar solo el estado.
+- `PATCH .../status` atómico con `status` + `position` para el orden estable del Kanban.
 - El asignado debe ser miembro del equipo (también al crear).
-- Filtros por estado, prioridad, asignado y rango de fechas.
-- Ordenación y paginación (máx. 100).
-- Referencia por ID o título (el título está deprecado como identificador).
+- Filtros por estado, prioridad, asignado y rango de fechas; ordenación y paginación (máx. 100).
+- Referencia por `id`; el título queda como identificador deprecado.
+- **Idempotencia** opcional en `POST` críticos con `Idempotency-Key`: replay de la respuesta original, `422` si la clave se reutiliza con otro payload, `409` si está en vuelo y purga a 24 h.
 
 ### Colaboración
 
-- **Comentarios**: crear, listar paginado, editar (autor y miembro actual) y borrar (autor o admin).
+- **Comentarios** paginados con orden configurable; edición solo por el autor y pertenencia actual al equipo.
 - **Menciones** `@email` en comentarios, con notificación solo a miembros del equipo.
 - **Adjuntos**: subir, listar, descargar y borrar.
-  - Límite de 10 MB configurable.
-  - Allowlist de extensiones/MIME.
-  - Nombres saneados y claves de almacenamiento únicas (sin path traversal).
-  - Almacenamiento persistente en PostgreSQL por defecto; `local` para desarrollo.
+  - Límite de 10 MB configurable aplicado en streaming.
+  - Allowlist de extensiones/MIME, validación de **magic bytes** y rechazo de ejecutables.
+  - Escaneo **ClamAV** opcional con política fail-closed.
+  - Nombres saneados, claves únicas, checksum SHA-256 y limpieza al borrar tareas.
   - Solo el uploader o un admin puede borrar.
-- **Notificaciones** in-app al asignar, comentar o mencionar.
-- Campana con contador de no leídas consultado a `/notifications/unread-count`.
-- **SSE event-driven** con Redis pub/sub y fallback en proceso; reconciliación cada 30 s, heartbeats, `Last-Event-ID`, reconexión con backoff y polling de respaldo. Límite de 500 conexiones totales y 5 por usuario (503 + `Retry-After`).
+- **Notificaciones** in-app con paginación, contador de no leídas, deduplicación por evento y preferencias por tipo (silenciar).
+- **SSE** autenticado con Redis pub/sub y fallback en proceso: heartbeat, `Last-Event-ID`, reconciliación por polling, backoff, 500 conexiones totales y 5 por usuario (`503` + `Retry-After`).
 - **Activity log** paginado con actor (`actor.email`) de tareas, proyectos, comentarios y adjuntos.
+- **Retención de datos**: purga idempotente de notificaciones > 90 d y actividad > 1 año (al arrancar y con `scripts/purge_retention.py`).
 
 ### Frontend
 
-- **Login / Register**.
-- **Dashboard**: equipos, crear equipo.
-- **TeamDetail**: proyectos, miembros, roles, búsqueda con debounce, crear/editar equipo y proyecto, ver/restaurar archivados.
-- **ProjectBoard**: Kanban con drag & drop, filtros en URL, búsqueda local, crear tarea, actividad paginada, editar/archivar proyecto.
+- **Login**, **Register** y **VerifyEmail**.
+- **Dashboard**: equipos, rol, número de proyectos y creación de equipo.
+- **TeamDetail**: proyectos, miembros, roles, búsqueda con debounce, crear/editar equipo y proyecto, archivados.
+- **ProjectBoard**: Kanban con drag & drop, actualización optimista, filtros en URL, búsqueda local, crear tarea, actividad paginada, ajustes del proyecto.
 - **TaskDetail**: editar tarea, comentarios paginados, adjuntos, actividad.
-- **Profile**: cambio de contraseña con contraseña actual y re-login forzado.
-- **Accesibilidad**: focus visible, `prefers-reduced-motion`, `aria-label` en iconos y modales como diálogos.
-- Toasts, skeletons, estados de carga/vacío y 404.
+- **Profile**: cambio de contraseña y preferencias de notificación.
+- **Accesibilidad**: focus visible, `prefers-reduced-motion`, `aria-label`, modales como diálogos con focus trap y cierre con `Escape`.
+- Toasts, skeletons, estados de carga/vacío/error con reintento y 404.
+- Tema **dark-only** (ADR-006).
 
 ---
 
 ## API
 
-Base: `/api/v1`. Contrato completo en [`specs/taskflow/contracts/api.md`](./specs/taskflow/contracts/api.md).
+Base: `/api/v1`. Contrato completo en [`specs/taskflow/contracts/api.md`](./specs/taskflow/contracts/api.md) y snapshot en [`contracts/openapi.json`](./specs/taskflow/contracts/openapi.json).
 
 | Grupo | Endpoints principales |
 |---|---|
-| **Auth** | `POST /auth/register`, `/login`, `/refresh`, `/logout` |
-| **Users** | `GET /users/me`, `PUT /users/me` |
-| **Teams** | `POST/GET /teams/`, `GET/PATCH /teams/{id}`, `GET /teams/{id}/search`, `POST/GET/PATCH/DELETE /teams/{id}/members` |
-| **Projects** | `POST/GET /teams/{id}/projects/`, `GET/PATCH/DELETE /teams/{id}/projects/{id}`, `POST .../archive`, `POST .../restore`, `GET .../activity` |
-| **Tasks** | `POST/GET .../tasks/`, `GET/PATCH/DELETE .../tasks/{id}`, `PATCH .../assign`, `GET .../activity` |
+| **Auth** | `POST /auth/register`, `/auth/login` (form OAuth2), `/auth/refresh` (JSON body), `/auth/logout`, `/auth/verify-email`, `/auth/resend-verification` |
+| **Users** | `GET/PUT /users/me`, `GET/PUT /users/me/notification-preferences` |
+| **Teams** | `POST/GET /teams/`, `GET/PATCH /teams/{id_o_slug}`, `GET /teams/{id}/search`, `POST/GET /teams/{id}/members`, `PATCH/DELETE /teams/{id}/members/{user_id}` |
+| **Projects** | `POST/GET /teams/{id}/projects/`, `GET/PATCH/DELETE /teams/{id}/projects/{id_o_slug}`, `POST .../archive`, `POST .../restore`, `GET .../activity` |
+| **Tasks** | `POST/GET .../tasks/`, `GET/PATCH/DELETE .../tasks/{id}`, `PATCH .../status`, `PATCH .../assign`, `GET .../activity` |
 | **Comments** | `POST/GET .../comments/`, `PATCH/DELETE .../comments/{id}` |
 | **Attachments** | `POST/GET .../attachments/`, `GET .../{id}/download`, `DELETE .../{id}` |
-| **Notifications** | `GET /notifications/`, `GET /notifications/unread-count`, `PATCH /{id}/read`, `PATCH /read-all` |
+| **Notifications** | `GET /notifications/`, `GET /notifications/unread-count`, `GET /notifications/stream` (SSE), `PATCH /{id}/read`, `PATCH /read-all` |
 | **Health** | `GET /health`, `GET /health/live`, `GET /health/ready` |
 
-Documentación interactiva: `/docs`. OpenAPI: `/openapi.json`.
+Convenciones:
+
+- JSON en `snake_case`; fechas ISO 8601 UTC.
+- `Authorization: Bearer <access_token>`.
+- Paginación `{items, total, page, pages, has_next}` con `page` / `page_size` (máx. 100).
+- Identificadores por `id` y `slug`; nombre/título deprecados.
+- `DELETE /projects/{id}` **archiva**, no borra.
+- `Idempotency-Key` opcional en `POST` críticos.
 
 ### Errores
 
@@ -218,7 +250,7 @@ cp .env.example .env.local   # VITE_API_URL=http://localhost:8000
 npm run dev                  # http://localhost:5173
 ```
 
-### Pre-commit (opcional pero recomendado)
+### Pre-commit (recomendado)
 
 ```bash
 pip install pre-commit
@@ -226,10 +258,7 @@ pre-commit install
 pre-commit run --all-files
 ```
 
-Los hooks ejecutan `ruff check`, `ruff format`, `gitleaks`, eslint y mypy. El
-hook de secretos necesita el binario `gitleaks` en `PATH` (`brew`, `scoop`,
-`winget` o `go install github.com/gitleaks/gitleaks/v8@v8.30.1`); el CI usa la
-acción oficial y no depende de esa instalación local.
+Los hooks ejecutan `ruff check`, `ruff format`, `gitleaks`, eslint y mypy. El hook de secretos necesita el binario `gitleaks` en `PATH` (`brew`, `scoop`, `winget` o `go install github.com/gitleaks/gitleaks/v8`). El CI usa la acción oficial y no depende de esa instalación local.
 
 ### Variables de entorno
 
@@ -239,14 +268,40 @@ Ver [`.env.example`](./.env.example). Las críticas:
 ENVIRONMENT=development
 SECRET_KEY=your-secret-key-at-least-32-characters
 DATABASE_URL=postgresql://user:password@localhost:5432/taskflow
-DB_SSLMODE=prefer
+DB_SSLMODE=prefer          # require en InsForge
 ACCESS_TOKEN_EXPIRE_MINUTES=15
 REFRESH_TOKEN_EXPIRE_DAYS=7
 CORS_ORIGINS=http://localhost:5173
-STORAGE_BACKEND=database
+STORAGE_BACKEND=database   # database | local | insforge
 ```
 
-Opcionales: `REDIS_URL`, `SENTRY_DSN`, `MAX_UPLOAD_SIZE`, `UPLOAD_DIR`, `ALLOWED_UPLOAD_EXTENSIONS`, `SSE_FALLBACK_POLL_SECONDS`, `SSE_HEARTBEAT_SECONDS`, `SSE_MAX_CONNECTIONS`, `SSE_MAX_CONNECTIONS_PER_USER`. En InsForge usar `DB_SSLMODE=require`.
+Opcionales y de operación:
+
+```bash
+# Auth / sesión
+SECRET_KEY_PREVIOUS, ALGORITHM, MAX_LOGIN_ATTEMPTS, LOCKOUT_DURATION_MINUTES
+# Pool
+POOL_SIZE, MAX_OVERFLOW, POOL_PRE_PING
+# Rate limiting y proxy
+REDIS_URL, RATE_LIMIT_ENABLED, RATE_LIMIT_STORAGE_URI, FORWARDED_ALLOW_IPS
+# SSE
+SSE_POLL_SECONDS, SSE_FALLBACK_POLL_SECONDS, SSE_HEARTBEAT_SECONDS,
+SSE_MAX_CONNECTIONS, SSE_MAX_CONNECTIONS_PER_USER
+# Observabilidad
+SENTRY_DSN, SENTRY_TRACES_SAMPLE_RATE, LOG_LEVEL
+# Adjuntos
+MAX_UPLOAD_SIZE, UPLOAD_DIR, ALLOWED_UPLOAD_EXTENSIONS,
+INSFORGE_URL, INSFORGE_API_KEY, INSFORGE_STORAGE_BUCKET,
+CLAMAV_HOST, CLAMAV_PORT, CLAMAV_TIMEOUT_SECONDS, CLAMAV_REQUIRED
+# Email
+FRONTEND_URL, EMAIL_VERIFICATION_REQUIRED, EMAIL_VERIFICATION_TTL_HOURS,
+EMAIL_BACKEND, SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD,
+SMTP_FROM, SMTP_USE_TLS, SMTP_USE_SSL
+# Retención e idempotencia
+NOTIFICATION_RETENTION_DAYS, ACTIVITY_RETENTION_DAYS, IDEMPOTENCY_KEY_TTL_HOURS
+```
+
+**Producción:** `SECRET_KEY`, `DATABASE_URL` y `CORS_ORIGINS` son obligatorias; la app falla al arrancar si faltan, y `DB_SSLMODE` debe exigir TLS.
 
 ---
 
@@ -260,16 +315,17 @@ alembic downgrade -1
 alembic revision --autogenerate -m "descripcion"
 ```
 
-Modelo actual: `users`, `teams`, `team_members`, `projects`, `tasks`, `comments`, `attachments`, `activity_logs`, `notifications`, `revoked_tokens`.
+**Head actual:** `c1d2e3f4a5b6` (verificación de email). Producción verificada en esa revisión.
 
-Migraciones añadidas en este ciclo: `token_version` en `users` y `attachments.content` (LargeBinary) para almacenamiento persistente. El modelo objetivo (slugs, sesiones, índices) está en [`specs/taskflow/data-model.md`](./specs/taskflow/data-model.md).
+Tablas: `users`, `teams`, `team_members`, `projects`, `tasks`, `comments`, `attachments`, `activity_logs`, `notifications`, `revoked_tokens`, `idempotency_keys`, `email_verification_tokens` (+ `alembic_version`).
+
+El detalle de columnas, índices, constraints y migraciones está en [`specs/taskflow/data-model.md`](./specs/taskflow/data-model.md). Backups y drill de restore: `scripts/backup_restore_drill.py`.
 
 ---
 
 ## Tests
 
-Los tests de integración usan **PostgreSQL** (ADR-008), nunca SQLite. El esquema
-se crea con Alembic y cada test arranca con las tablas vacías.
+Los tests de integración usan **PostgreSQL** (ADR-008), nunca SQLite. El esquema se crea con Alembic y cada test arranca con las tablas vacías.
 
 ```bash
 # 1. Base de datos desechable para tests
@@ -288,24 +344,18 @@ python -m pytest tests/test_auth.py::test_register_user
 # Frontend
 cd frontend
 npm run test
-npm run test:coverage   # umbrales: 70 % líneas/sentencias, 55 % ramas, 40 % funciones
+npm run test:coverage
 npm run lint
 npm run build
 ```
 
-`TEST_USE_SQLITE=1` existe solo como atajo para runs unitarios rápidos sin
-Postgres; no vale para validar un release. `TEST_SKIP_MIGRATIONS=1` reutiliza un
-esquema ya migrado.
+`TEST_USE_SQLITE=1` existe solo como atajo para runs unitarios rápidos sin Postgres; no vale para validar un release. `TEST_SKIP_MIGRATIONS=1` reutiliza un esquema ya migrado.
 
-La suite fija `DB_SSLMODE` a partir de `TEST_DATABASE_URL` (o de
-`TEST_DB_SSLMODE` si la defines) para que un `.env` de producción con
-`DB_SSLMODE=require` no intente TLS contra el contenedor local (T-114).
+La suite fija `DB_SSLMODE` a partir de `TEST_DATABASE_URL` (o de `TEST_DB_SSLMODE`) para que un `.env` de producción con `DB_SSLMODE=require` no intente TLS contra el contenedor local (T-114).
 
-Estado actual: **276 tests backend** (91,3 % de cobertura, verdes sobre PostgreSQL)
-y **81 tests frontend** (74,5 % de líneas). El CI falla por debajo de **80 %** en
-backend y **70 %** en frontend.
+**Estado actual:** 279 tests backend (91 % de cobertura) y 82 tests frontend (74,8 % líneas / 61,5 % ramas / 65,3 % funciones). El CI falla por debajo de **80 %** en backend y **70 %** de líneas en frontend.
 
-Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y otro contra la **API de producción en Render** (15/15): health, registro, login, equipo, proyecto, tarea, comentario, adjunto (object storage), descarga, búsqueda, notificaciones, perfil y error envelope. También se verificó CORS para las dos URLs de frontend y el rechazo de un origen no permitido.
+Además: smoke end-to-end contra InsForge (12/12) y contra producción en Render (15/15), smoke de performance de lectura y escritura, prueba de carga SSE (500/500) y drill de backup/restore verificado.
 
 ---
 
@@ -314,60 +364,40 @@ Además se ejecutó un **smoke test end-to-end contra InsForge real** (12/12) y 
 ### Backend — Render
 
 - Build: `pip install -r requirements.txt`
-- Start: `python -m app.main` (o `uvicorn app.main:app`)
-- Variables: `DATABASE_URL`, `DB_SSLMODE=require`, `SECRET_KEY`, `ENVIRONMENT=production`, `CORS_ORIGINS=https://taskflow-api-tau.vercel.app`, `STORAGE_BACKEND=insforge`, `INSFORGE_URL`, `INSFORGE_API_KEY`, `INSFORGE_STORAGE_BUCKET=taskflow-attachments`; opcionales `SECRET_KEY_PREVIOUS` (solo durante la rotación), `REDIS_URL`, `SENTRY_DSN`.
-  - Si usas un dominio propio en Vercel, añádelo separado por comas.
-  - Sin `CORS_ORIGINS`, la app **no arranca en producción** (fail-fast).
-- Ejecutar `alembic upgrade head` antes del despliegue. `alembic/env.py` usa `DATABASE_URL`.
-- Los adjuntos se guardan por defecto en PostgreSQL (`STORAGE_BACKEND=database`). En producción está activo `STORAGE_BACKEND=insforge` con el bucket privado `taskflow-attachments`; los objetos migrados conservan `content` como respaldo de rollback.
-- Estado actual: `/health/ready` → `200`, base de datos en `d0e1f2a3b4c5 (head)`, registro/login y smoke de release **15/15** verificados.
+- Start: `python -m app.main`
+- Variables mínimas: `ENVIRONMENT=production`, `SECRET_KEY`, `DATABASE_URL`, `DB_SSLMODE=require`, `CORS_ORIGINS`, `STORAGE_BACKEND=insforge`, `INSFORGE_URL`, `INSFORGE_API_KEY`, `INSFORGE_STORAGE_BUCKET=taskflow-attachments`.
+- Opcionales: `SECRET_KEY_PREVIOUS` (solo durante rotación), `REDIS_URL`, `SENTRY_DSN`, SMTP.
+- Ejecutar `alembic upgrade head` **antes** de desplegar y comprobar `alembic current == head`.
+- `/docs`, `/redoc` y `/openapi.json` se sirven solo fuera de producción.
+- Healthchecks: `/health/live` (proceso) y `/health/ready` (DB).
 
 ### Frontend — Vercel
 
-- Proyecto: `chorexxs-projects/taskflow-api`.
-- Root Directory: `frontend`; framework Vite; build `npm run build`; output `dist`.
-- Variable: `VITE_API_URL=https://taskflow-api-gkgl.onrender.com` (Production, Preview y Development).
-- Git: `Chorexxs/taskflow-api` conectado; un push a `main` despliega automáticamente.
-- `vercel.json`: rewrite SPA a `/` + headers de seguridad (CSP, HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`).
-- `.vercelignore`: excluye secretos, `.env.local`, backend, tests y specs del upload.
-- Preview alternativo: `https://<insforge-project-id>.insforge.site` (mismo build).
+- Proyecto: `chorexxs-projects/taskflow-api`; Root Directory `frontend`; build `npm run build`; output `dist`.
+- `VITE_API_URL=https://taskflow-api-gkgl.onrender.com` en Production, Preview y Development.
+- Un push a `main` despliega automáticamente.
+- `vercel.json`: rewrite SPA y headers de seguridad.
+- `.vercelignore`: excluye secretos, backend, tests y specs.
 
 ```bash
-# Deploy manual desde la raíz del repositorio
 vercel deploy --prod --yes --project taskflow-api --scope chorexxs-projects
 ```
 
-Estado: **live y verificado** (B-02 resuelto).
-
 ### Base de datos — InsForge
 
-PostgreSQL gestionado. Proyecto nuevo: `c7578dc0-d532-4463-88f1-09c6e54356f7`.
+PostgreSQL gestionado en `eu-central`.
 
 - **URL del proyecto:** `https://<insforge-project-id>.eu-central.insforge.app`
 - **DB host:** `<insforge-project-id>.eu-central.database.insforge.app`
-- **Región:** `eu-central`
-- **Estado:** esquema migrado a `c9d0e1f2a3b4` (head; 11 tablas + columnas de slug, preferencias, checksum y auditoría).
+- **Estado:** `c1d2e3f4a5b6 (head)`; 12 tablas de dominio.
 
 ```bash
-# Project API key (ik_) + URL del proyecto:
 npx @insforge/cli link \
   --api-base-url https://<insforge-project-id>.eu-central.insforge.app \
   --api-key ik_...
-
-# La contraseña real de la DB:
-curl -H "Authorization: Bearer $INSFORGE_API_KEY" \
-  https://<insforge-project-id>.eu-central.insforge.app/api/metadata/database-password
 ```
 
-Con un **user API key** (`uak_`) también se puede usar el flujo de plataforma:
-
-```bash
-npx @insforge/cli login --user-api-key uak_...
-npx @insforge/cli link --project-id c7578dc0-d532-4463-88f1-09c6e54356f7
-npx @insforge/cli db connection-string
-```
-
-Guardar backups y probar restore (ver `specs/taskflow/data-model.md`).
+> **Nota de rendimiento:** API y base de datos están en regiones distintas. Cada round trip SQL cuesta ~140 ms y bcrypt ~2,3 s en el plan free. El código ya minimiza statements y transacciones; mover Render a `eu-central` y subir la CPU es la mejora pendiente de mayor impacto.
 
 ---
 
@@ -376,40 +406,44 @@ Guardar backups y probar restore (ver `specs/taskflow/data-model.md`).
 ```
 app/
 ├── main.py              # App FastAPI, CORS, middleware, health, routers
-├── config.py            # Configuración central validada (fail-fast)
+├── config.py            # Settings centrales y fail-fast
 ├── auth.py              # JWT, bcrypt, lockout, revocación
-├── database.py          # Engine, sesión, dependencia get_db
+├── database.py          # Engine, sesión, get_db
 ├── models.py            # Modelos SQLAlchemy
+├── dependencies.py      # Equipo + membresía + permisos en una consulta
+├── exceptions.py        # Excepciones de dominio
+├── idempotency.py       # Idempotency-Key (reserva, replay, release)
+├── logging_config.py    # structlog
+├── middleware.py        # Request ID, logging y límite de body
+├── storage.py           # StorageService (database/local/InsForge)
+├── uploads.py           # Validación de subidas (tipo, tamaño, magic bytes)
 ├── schemas/             # Schemas Pydantic por dominio
 ├── crud/                # Acceso a datos por dominio
-├── dependencies.py      # Resolución de equipo y permisos
-├── exceptions.py        # Excepciones de dominio
-├── logging_config.py    # structlog
-├── middleware.py        # Request ID y logging
 ├── services/            # Casos de uso (subida de adjuntos)
+├── events.py            # Bus SSE y pub/sub
 └── routers/
-    ├── auth.py
-    ├── users.py
-    ├── teams.py
-    ├── projects.py
-    ├── tasks.py
-    ├── comments.py
-    ├── attachments.py
-    └── notifications.py
+    ├── auth.py, users.py, teams.py, projects.py, tasks.py
+    ├── comments.py, attachments.py, notifications.py
 
 frontend/src/
-├── api/index.js         # Cliente API único (fetch + errores tipados)
-├── components/          # Layout, TaskCard, NotificationsBell, Skeleton
+├── api/                 # Cliente único (fetch, refresh, errores, tokens)
+├── components/
+│   ├── board/           # Diálogos y columnas del Kanban
+│   ├── tasks/           # Adjuntos y panel de actividad
+│   ├── teams/           # Diálogos de proyecto y miembros
+│   └── Layout, TaskCard, NotificationsBell, Skeleton, QueryError
 ├── context/             # AuthContext
-├── pages/               # Login, Register, Dashboard, TeamDetail,
-│                        # ProjectBoard, TaskDetail, Profile, NotFound
+├── pages/               # Login, Register, VerifyEmail, Dashboard,
+│                        # TeamDetail, ProjectBoard, TaskDetail, Profile, NotFound
+├── test/                # Vitest + Testing Library + MSW
 ├── App.jsx
 └── main.jsx
 
 specs/taskflow/          # SDD: constitución, baseline, spec, plan, tasks, datos, API, threat-model
-specs/audit/             # Auditorías bajo demanda: código y ciberseguridad
+specs/audit/             # Auditorías bajo demanda (código y ciberseguridad)
+alembic/                 # Migraciones
+scripts/                 # Smoke, performance, backup/restore, retención, OpenAPI, SSE
 tests/                   # pytest
-alembic/                 # migraciones
 ```
 
 ---
@@ -422,14 +456,15 @@ alembic/                 # migraciones
 | [`baseline.md`](./specs/taskflow/baseline.md) | Auditoría as-is y hallazgos |
 | [`spec.md`](./specs/taskflow/spec.md) | Requisitos funcionales/no funcionales y permisos |
 | [`plan.md`](./specs/taskflow/plan.md) | Arquitectura objetivo, ADRs y fases |
-| [`tasks.md`](./specs/taskflow/tasks.md) | Backlog accionable |
+| [`tasks.md`](./specs/taskflow/tasks.md) | Backlog accionable y estado de ejecución |
 | [`data-model.md`](./specs/taskflow/data-model.md) | Modelo actual/objetivo y migraciones |
 | [`contracts/api.md`](./specs/taskflow/contracts/api.md) | Contrato HTTP |
 | [`contracts/openapi.json`](./specs/taskflow/contracts/openapi.json) | Snapshot OpenAPI verificado en CI |
-| [`blockers.md`](./specs/taskflow/blockers.md) | Bloqueos de despliegue y credenciales |
+| [`security-checklist.md`](./specs/taskflow/security-checklist.md) | Checklist ASVS L2 y deuda aceptada |
+| [`threat-model.md`](./specs/taskflow/threat-model.md) | Modelo STRIDE, mitigaciones y riesgos residuales |
+| [`blockers.md`](./specs/taskflow/blockers.md) | Bloqueos de entorno y credenciales |
 | [`environments.md`](./specs/taskflow/environments.md) | Local, CI, preview, staging y producción |
 | [`release-checklist.md`](./specs/taskflow/release-checklist.md) | Checklist de release y smoke de performance |
-| [`threat-model.md`](./specs/taskflow/threat-model.md) | Modelo STRIDE, mitigaciones y riesgos residuales |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Ramas, PR, release y rollback |
 
 ### Auditorías bajo demanda
@@ -439,36 +474,32 @@ alembic/                 # migraciones
 | [`specs/audit/code-audit.md`](./specs/audit/code-audit.md) | Calidad, arquitectura, escalabilidad, tests y contratos | `audita el código` o `/audit-code` |
 | [`specs/audit/security-audit.md`](./specs/audit/security-audit.md) | Secretos, authn/authz, uploads, dependencias, CI/CD y privacidad | `audita la seguridad` o `/audit-security` |
 
-> Estos specs **no se ejecutan solos**: solo cuando el usuario da la orden.
-> Son de solo lectura y nunca atacan producción.
+> Estos specs **no se ejecutan solos**: solo cuando el usuario da la orden. Son de solo lectura y nunca atacan producción.
 
 ---
 
 ## Limitaciones conocidas y próximos pasos
 
-- **MCP de Vercel:** el servidor `vercel` está configurado en OpenCode pero requiere autenticación OAuth (`/mcps` → `vercel` → sign in). El deploy por CLI y la integración con Git ya funcionan.
-- Transporte de tokens (ADR-001): decisión final en T-097; se mantiene Bearer + auto-refresh porque el frontend y la API son sitios distintos y la cookie de refresh requeriría cookies de terceros. Riesgo residual y disparadores de reapertura en `specs/taskflow/security-checklist.md`.
-- Adjuntos en object storage: `StorageService` con backend InsForge Storage (`STORAGE_BACKEND=insforge`), bucket privado, backfill con checksum y rollback documentado (T-054).
-- SSE implementado con Redis pub/sub, límites de conexión y prueba de 500 conexiones (T-081); el polling queda como respaldo.
-- Orden estable del Kanban con `tasks.position` y migración `f0e1f2a3b4c5` (T-096).
-- Rate limiting con Redis para múltiples instancias implementado (T-030/T-031); fallback en memoria si Redis no responde.
-- Auditoría WCAG completa y tema claro/oscuro (P5); la UI es dark-only.
-- Gates de seguridad en CI: `gitleaks` (pre-commit y CI), `pip-audit` y dependencias al día (P8).
+- **Latencia de producción:** Render y la base de datos están en regiones distintas y el plan free limita la CPU. Las optimizaciones de T-128/T-129 redujeron un 30–40 % las acciones principales; el siguiente salto requiere mover Render a `eu-central` y/o subir de plan.
+- **Carga inicial del tablero:** el frontend lanza varias consultas en paralelo (tareas, miembros, proyecto y notificaciones) que compiten por la instancia; está identificado como siguiente optimización (cargar notificaciones bajo demanda y agrupar rol/proyecto).
+- **Transporte de tokens (ADR-001):** se mantiene Bearer + auto-refresh porque frontend y API son orígenes distintos; las cookies `httpOnly` exigirían un BFF. Riesgo residual y disparadores de reapertura en `security-checklist.md`.
+- **MCP de Vercel:** configurado en OpenCode pero requiere autenticación OAuth (`/mcps` → `vercel` → sign in); el deploy por CLI y Git ya funcionan.
+- **UI dark-only** (ADR-006), sin `ThemeContext`.
+- **Sin invitaciones por email:** se añade un usuario ya registrado por email.
 
-El detalle y el orden están en [`specs/taskflow/tasks.md`](./specs/taskflow/tasks.md).
+El detalle está en [`specs/taskflow/tasks.md`](./specs/taskflow/tasks.md) y [`specs/taskflow/security-checklist.md`](./specs/taskflow/security-checklist.md).
 
 ---
 
 ## Contributing
 
 1. Lee [`specs/taskflow/constitution.md`](./specs/taskflow/constitution.md).
-2. Toma una tarea `T-###` del backlog.
+2. Toma una tarea `T-###` del backlog y sus `FR-###`/`BL-##`.
 3. Crea una rama `feat/T-###-descripcion` (ver [`CONTRIBUTING.md`](./CONTRIBUTING.md)).
 4. Añade tests y actualiza la spec/contrato si cambia el comportamiento.
 5. Abre un PR referenciando `T-###` y los `FR-###`/`BL-##` cubiertos.
 
-La política completa de ramas, PR, release y rollback está en
-[`CONTRIBUTING.md`](./CONTRIBUTING.md).
+Commits en español con Conventional Commits (`feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `chore`, `ci`).
 
 ## Licencia
 
