@@ -120,6 +120,8 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Eliminado
 
+- `app/cache.py` y las llamadas `invalidate_team`/`invalidate_project`: el caché nunca se escribía, así que eran no-ops (T-115, BL-31).
+- Las 11 subclases de `DomainException` que ningún endpoint lanzaba; se mantiene la base que usa el handler global (T-115).
 - `schema.sql` (esquema duplicado y desactualizado).
 - Dependencia de `create_all` en producción.
 - Código muerto de configuración duplicada en `app/auth.py` y `app/database.py`.

@@ -38,7 +38,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 │  Tailwind CSS   │                       │  Pydantic v2        │      │  Alembic        │
 └─────────────────┘                       └─────────────────────┘      └─────────────────┘
                                                   │
-                                                  ├── Redis opcional (rate limiting/cache/SSE pub-sub)
+                                                  ├── Redis opcional (rate limiting/SSE pub-sub)
                                                   ├── Sentry opcional (errores)
                                                   ├── InsForge Storage opcional (adjuntos en object storage)
 ```
@@ -56,7 +56,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | **Frontend** | React 18, Vite 8, React Router 7 |
 | **Datos front** | TanStack React Query 5, `fetch` |
 | **UI** | Tailwind CSS 4, Lucide React, React Hot Toast, `@dnd-kit` |
-| **Tests** | pytest + pytest-cov (263, 88,5 %), Vitest + Testing Library (74, 72,6 %) |
+| **Tests** | pytest + pytest-cov (263, 90,3 %), Vitest + Testing Library (74, 72,6 %) |
 | **CI/CD** | GitHub Actions, Render, Vercel, InsForge |
 | **Contenedores** | Docker, docker-compose (PostgreSQL + Redis + API) |
 
@@ -301,7 +301,7 @@ La suite fija `DB_SSLMODE` a partir de `TEST_DATABASE_URL` (o de
 `TEST_DB_SSLMODE` si la defines) para que un `.env` de producción con
 `DB_SSLMODE=require` no intente TLS contra el contenedor local (T-114).
 
-Estado actual: **263 tests backend** (88,5 % de cobertura, verdes sobre PostgreSQL)
+Estado actual: **263 tests backend** (90,3 % de cobertura, verdes sobre PostgreSQL)
 y **74 tests frontend** (72,6 % de líneas). El CI falla por debajo de **80 %** en
 backend y **70 %** en frontend.
 
@@ -384,7 +384,6 @@ app/
 ├── crud.py              # Acceso a datos
 ├── dependencies.py      # Resolución de equipo y permisos
 ├── exceptions.py        # Excepciones de dominio
-├── cache.py             # Redis opcional
 ├── logging_config.py    # structlog
 ├── middleware.py        # Request ID y logging
 └── routers/

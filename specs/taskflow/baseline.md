@@ -50,7 +50,7 @@ React SPA (Vercel)
 FastAPI /api/v1 (Render)
    │  routers → crud → SQLAlchemy
    ├── PostgreSQL (InsForge)
-   ├── Redis opcional (cache no usado)
+   ├── Redis opcional (rate limiting y SSE)
    ├── uploads/ local (adjuntos)
    └── Sentry opcional (posible bug de import)
 ```
@@ -64,7 +64,6 @@ FastAPI /api/v1 (Render)
 - `app/schemas.py`: Pydantic v2, enums, saneado de caracteres de control.
 - `app/auth.py`: JWT, bcrypt, lockout, revocación.
 - `app/dependencies.py`: resolución de equipo y permisos de miembro/admin.
-- `app/cache.py`: servicio Redis no utilizado.
 - `app/logging_config.py` + `app/middleware.py`: structlog + request ID.
 - `frontend/src`: SPA con Context API, React Query y cliente `fetch` centralizado.
 
@@ -126,7 +125,7 @@ Severidad: **S0** bloqueante de seguridad/pérdida de datos; **S1** alta; **S2**
 | BL-28 | A11y | Modales son `div` fijos sin focus trap/Escape consistente; botones de icono sin `aria-label` | Accesibilidad incompleta |
 | BL-29 | Búsqueda | `ilike` sin escapar `%`/`_`; sin paginación; solo nombre/título | Resultados incorrectos y no escalables |
 | BL-30 | Activity | Sin paginación, sin email del actor, diffs con IDs crudos | Auditoría poco útil |
-| BL-31 | Cache | `CacheService` no se usa en endpoints; health consulta Redis igualmente | Complejidad sin beneficio |
+| BL-31 | Cache | `CacheService` no se usa en endpoints; health consulta Redis igualmente | ✅ Resuelto (T-115): se eliminó `app/cache.py` y las invalidaciones no-op |
 | BL-32 | Auth | Logout revoca solo el access token; el refresh sigue válido en servidor | Sesión no cerrada de verdad |
 | BL-33 | Auth | Cambiar contraseña no revoca tokens/sesiones | Token robado sigue válido |
 | BL-34 | Auth | `clean_expired_tokens` existe pero nunca se programa | Tabla `revoked_tokens` crece indefinidamente |

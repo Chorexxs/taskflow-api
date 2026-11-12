@@ -35,7 +35,7 @@
 
 - **structlog** — logs JSON con `request_id`.
 - **sentry-sdk[fastapi]** — errores (opcional).
-- **Redis** — cache/rate limiting cuando está disponible (degradación controlada).
+- **Redis** — rate limiting y pub/sub de SSE cuando está disponible (degradación controlada).
 
 ### Utilidades
 

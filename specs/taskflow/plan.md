@@ -32,7 +32,7 @@
                         ▼                                    ▼                            ▼
               ┌──────────────────┐                 ┌──────────────────┐        ┌──────────────────┐
               │ PostgreSQL       │                 │ Redis            │        │ Object Storage   │
-              │ InsForge         │                 │ rate limit/cache │        │ S3-compatible    │
+              │ InsForge         │                 │ rate limit/SSE   │        │ S3-compatible    │
               │ Alembic          │                 │ pub/sub (SSE)    │        │ (InsForge)       │
               └──────────────────┘                 └──────────────────┘        └──────────────────┘
                                                              │

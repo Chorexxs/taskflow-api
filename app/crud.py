@@ -19,7 +19,6 @@ Key patterns used:
 - joinedload: Eager loading of relationships to prevent N+1 queries
 - selectinload: Eager loading with separate queries
 - Soft deletes: Using status fields instead of actual deletes where appropriate
-- Cache invalidation: Clearing cached data when entities are modified
 """
 
 import re
@@ -401,8 +400,7 @@ def remove_member(
     Remove a user from a team.
 
     Deletes the TeamMember record and unassigns every task the user had in the
-    team's projects, so a former member never keeps work assigned. Also
-    invalidates cached team data.
+    team's projects, so a former member never keeps work assigned.
 
     Args:
         db (Session): SQLAlchemy database session.
@@ -452,9 +450,6 @@ def remove_member(
         db.delete(member)
         if commit:
             db.commit()
-            from app.cache import cache_service
-
-            cache_service.invalidate_team(team_id)
         else:
             db.flush()
     return member
@@ -748,9 +743,6 @@ def update_project(db: Session, project_id: int, project_update: schemas.Project
         db_project.status = project_update.status.value
     db.commit()
     db.refresh(db_project)
-    from app.cache import cache_service
-
-    cache_service.invalidate_project(project_id)
     return db_project
 
 
@@ -776,9 +768,6 @@ def archive_project(db: Session, project_id: int):
         db_project.status = "archived"
         db.commit()
         db.refresh(db_project)
-        from app.cache import cache_service
-
-        cache_service.invalidate_project(project_id)
     return db_project
 
 
@@ -789,9 +778,6 @@ def restore_project(db: Session, project_id: int):
         db_project.status = "active"
         db.commit()
         db.refresh(db_project)
-        from app.cache import cache_service
-
-        cache_service.invalidate_project(project_id)
     return db_project
 
 

@@ -405,10 +405,6 @@ def remove_member(
     crud.remove_member(db, team.id, user_id, changed_by=current_user.id, commit=False)
     db.commit()
 
-    from app.cache import cache_service
-
-    cache_service.invalidate_team(team.id)
-
 
 @router.patch("/{team_id_or_slug}/members/{user_id}", response_model=schemas.TeamMemberOut)
 def update_member_role(

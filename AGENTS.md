@@ -13,7 +13,7 @@ TaskFlow es una API REST para gestión de tareas en equipo, con frontend React. 
 - Proyectos y tareas con tablero Kanban.
 - Comentarios, adjuntos, notificaciones y activity log.
 - Búsqueda dentro del equipo.
-- Caché Redis opcional y Sentry opcional.
+- Redis para rate limiting y pub/sub de SSE; Sentry opcional.
 
 ### Stack
 
@@ -152,7 +152,6 @@ app/
 ├── crud.py              # Acceso a datos
 ├── dependencies.py      # Resolución de equipo y permisos
 ├── exceptions.py        # Excepciones de dominio
-├── cache.py             # Redis opcional
 ├── logging_config.py    # structlog
 ├── middleware.py        # Request ID + logging
 └── routers/             # auth, users, teams, projects, tasks,
