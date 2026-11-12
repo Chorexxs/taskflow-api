@@ -114,6 +114,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Corregido
 
+- La búsqueda de equipo hacía una SELECT por asignado al serializar (`CA-2-05`); ahora usa `joinedload` y la paginación se comparte con el resto de listas (T-119).
 - El listado de miembros disparaba una SELECT por miembro al serializar (`CA-1-01`); ahora la query paginada usa `joinedload` y un test cuenta las sentencias (T-117).
 - La suite heredaba `DB_SSLMODE=require` del `.env` de producción y cinco tests fallaban por TLS contra el PostgreSQL local; ahora `tests/conftest.py` fija el valor desde `TEST_DATABASE_URL` o `TEST_DB_SSLMODE` (T-114).
 - Producción desincronizada: InsForge estaba en `d4e5f6a7b8c9` y el código esperaba `c9d0e1f2a3b4`; se aplicó `alembic upgrade head` tras un backup y se verificó registro/login (T-095, B-05 resuelto).
@@ -122,6 +123,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Eliminado
 
+- Dependencia de `app/crud.py` con FastAPI (`Depends`) y con `app.auth` (`get_current_user`), y cuatro funciones sin consumidores: `get_current_user_from_token`, `get_profile`, `get_teams_by_user` y `get_team_members` (T-118, CA-2-01/CA-3-01).
 - `app/cache.py` y las llamadas `invalidate_team`/`invalidate_project`: el caché nunca se escribía, así que eran no-ops (T-115, BL-31).
 - Las 11 subclases de `DomainException` que ningún endpoint lanzaba; se mantiene la base que usa el handler global (T-115).
 - `schema.sql` (esquema duplicado y desactualizado).

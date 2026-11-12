@@ -42,7 +42,7 @@
 
 **Completada (P10, seguimiento 2026-11-11):** `T-096` (orden estable del Kanban con `tasks.position`, migración `f0e1f2a3b4c5`, `PATCH /status` atómico con `position` y reordenación en el tablero), `T-097` (decisión final de ADR-001: se mantiene Bearer + auto-refresh; cookies de terceros inviables sin BFF y riesgo residual registrado), `T-098` (purga idempotente de notificaciones >90 d y actividad >1 año, al arrancar y con `scripts/purge_retention.py`), `T-099` (drift documental: contratos, checklist y README sin afirmaciones obsoletas), `T-100` (idempotencia en POST críticos con `Idempotency-Key`: replay, 422/409, purga a 24 h y migración `b2c3d4e5f6a7`), `T-101` (bloqueo `FOR UPDATE` del equipo al expulsar o cambiar roles, con test de concurrencia sobre PostgreSQL), `T-102` (drill de backup/restore con `scripts/backup_restore_drill.py` y verificación de tablas, filas y revisión Alembic), `T-103` (rotación de `SECRET_KEY` con clave dual y ADR-012), `T-104` (modelo STRIDE formal en `threat-model.md` con 32 amenazas, mitigaciones y riesgos residuales), `T-105` (labels e identificadores accesibles en todos los formularios del frontend), `T-106` (el cliente SPA envía `Idempotency-Key` y la conserva en el reintento 401), `T-107` (Vite 8 + Vitest 5 con Node 24 y cobertura restaurada con tests de equipo, tablero y tarea), `T-108` (cierre de los hallazgos de la auditoría de seguridad 2026-11-11: imagen Docker sin secretos, Sentry sin PII, body limits, validación de config, health sin fugas, caché de logout y gates de CI), `T-109` (proxy de Render con IP real verificada y validación de magic bytes/ejecutables en uploads), `T-110` (escaneo ClamAV opcional con política fail-closed y rechazo antes de almacenar), `T-111` (smoke de p95 de escritura: crear tarea y cambiar estado), `T-112` (SBOM CycloneDX en CI y digest de `python:3.12-slim`), `T-113` (verificación de email con backend log/SMTP, token de un solo uso y UI).
 
-**Completada (P10, seguimiento 2026-11-12):** `T-114` (el `sslmode` de la suite se deriva de `TEST_DATABASE_URL`/`TEST_DB_SSLMODE` y ya no hereda el del `.env`), `T-115` (eliminados `app/cache.py`, sus invalidaciones no-op y las 11 excepciones que ningún endpoint lanzaba), `T-116` (el bloqueo de cuenta incrementa `token_version` y revoca access y refresh previos), `T-117` (el listado de miembros usa `joinedload` y un test verifica que serializar una página no dispara SELECT extra).
+**Completada (P10, seguimiento 2026-11-12):** `T-114` (el `sslmode` de la suite se deriva de `TEST_DATABASE_URL`/`TEST_DB_SSLMODE` y ya no hereda el del `.env`), `T-115` (eliminados `app/cache.py`, sus invalidaciones no-op y las 11 excepciones que ningún endpoint lanzaba), `T-116` (el bloqueo de cuenta incrementa `token_version` y revoca access y refresh previos), `T-117` (el listado de miembros usa `joinedload` y un test verifica que serializar una página no dispara SELECT extra), `T-118` (`crud.py` ya no importa FastAPI ni depende de auth; eliminadas cuatro funciones sin consumidores), `T-119` (la búsqueda carga el asignado con `joinedload` y la paginación se unifica en `paginate_query`).
 
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
@@ -51,8 +51,8 @@
 **Pendientes de P0:** ninguno.
 
 Verificación actual (2026-11-12, T-114): suite completa sobre PostgreSQL 16 →
-**266 passed**, 0 fallos, migraciones aplicadas por Alembic y **90,55 % de
-cobertura** (gate 80 %). Con el escape hatch `TEST_USE_SQLITE=1` → 260 passed,
+**267 passed**, 0 fallos, migraciones aplicadas por Alembic y **90,62 % de
+cobertura** (gate 80 %). Con el escape hatch `TEST_USE_SQLITE=1` → 261 passed,
 2 fallos de SSE y 4 skips (lock y sslmode requieren PostgreSQL). `npm run test`
 → **74 passed** (72,6 % líneas / 59,88 % ramas / 62,06 % funciones; Vite 8 y
 Vitest 5 con Node 24); `npm run lint` → limpio; `npm run build` → correcto;
@@ -295,6 +295,8 @@ documental.
 | T-115 | Eliminar el caché no-op y las excepciones de dominio sin uso | S3 | — | XS | BL-31, constitución art. 9.5 | 0 referencias a `app.cache`/`cache_service`; `app/exceptions.py` solo expone `DomainException`; suite verde y docs sin afirmaciones obsoletas |
 | T-116 | Revocar sesiones al bloquear la cuenta | S2 | T-028 | S | FR-AUTH-06, SEC-ASVS-10 | Access y refresh previos al bloqueo → 401; login correcto → 423 durante el bloqueo; al expirar, tokens nuevos válidos; tests de regresión |
 | T-117 | Evitar el N+1 del listado de miembros | S1 | — | XS | FR-TEAM-06, NFR-PERF-01, CA-1-01 | `joinedload` en la query paginada; test que exige 0 SELECT extra al serializar una página |
+| T-118 | Desacoplar `crud` de FastAPI/auth y borrar código muerto | S3 | — | XS | R3, R7, NFR-MAINT-06, CA-2-01, CA-3-01 | `crud.py` sin `Depends` ni `get_current_user`; 0 funciones sin consumidores; suite verde |
+| T-119 | Evitar el N+1 de la búsqueda y unificar la paginación | S2 | — | XS | FR-SRCH-01, NFR-PERF-01, CA-2-05, CA-3-02 | `joinedload` del asignado; 0 SELECT extra al serializar; un solo helper de paginación |
 
 ---
 

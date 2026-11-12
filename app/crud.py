@@ -27,12 +27,11 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 
-from fastapi import Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
-from app.auth import get_current_user, get_password_hash, verify_password
+from app.auth import get_password_hash, verify_password
 from app.events import notification_bus
 
 # Gap between consecutive Kanban positions. Clients insert between neighbours
@@ -51,29 +50,6 @@ def paginate_query(query, page: int, page_size: int):
     items = query.offset((page - 1) * page_size).limit(page_size).all()
     pages = (total + page_size - 1) // page_size
     return items, total, pages
-
-
-def get_current_user_from_token(
-    current_user: models.User = Depends(get_current_user),
-) -> models.User:
-    """
-    FastAPI dependency wrapper for getting current user in routes.
-
-    This is a simple wrapper around get_current_user that can be used
-    as a FastAPI dependency when you need the User object in a route.
-
-    Args:
-        current_user (User): The authenticated user from JWT token (injected by get_current_user).
-
-    Returns:
-        User: The authenticated user object.
-
-    Example:
-        @router.get("/profile")
-        def get_profile(user: User = Depends(get_current_user_from_token)):
-            return user
-    """
-    return current_user
 
 
 def get_user_by_email(db: Session, email: str):
@@ -319,33 +295,6 @@ def get_team_by_slug(db: Session, slug: str):
     return db.query(models.Team).filter(models.Team.slug == slug).first()
 
 
-def get_teams_by_user(db: Session, user_id: int):
-    """
-    Get all teams a user is a member of.
-
-    Performs a JOIN between teams and team_members tables to find
-    all teams where the user has membership.
-
-    Args:
-        db (Session): SQLAlchemy database session.
-        user_id (int): The user's ID.
-
-    Returns:
-        list[Team]: List of teams the user belongs to.
-
-    Example:
-        >>> teams = get_teams_by_user(db, user_id=1)
-        >>> for team in teams:
-        ...     print(team.name)
-    """
-    return (
-        db.query(models.Team)
-        .join(models.TeamMember)
-        .filter(models.TeamMember.user_id == user_id)
-        .all()
-    )
-
-
 def get_teams_by_user_paginated(db: Session, user_id: int, page: int, page_size: int):
     """Return a page of teams for a user, ordered by name."""
     query = (
@@ -453,25 +402,6 @@ def remove_member(
         else:
             db.flush()
     return member
-
-
-def get_team_members(db: Session, team_id: int):
-    """
-    Get all members of a team.
-
-    Args:
-        db (Session): SQLAlchemy database session.
-        team_id (int): ID of the team.
-
-    Returns:
-        list[TeamMember]: List of all team members.
-
-    Example:
-        >>> members = get_team_members(db, team_id=1)
-        >>> for m in members:
-        ...     print(f"{m.user.email}: {m.role}")
-    """
-    return db.query(models.TeamMember).filter(models.TeamMember.team_id == team_id).all()
 
 
 def get_team_members_paginated(db: Session, team_id: int, page: int, page_size: int):
@@ -1344,9 +1274,7 @@ def _like_pattern(query: str) -> str:
 
 
 def _paginate_query(query, page: int, page_size: int):
-    total = query.count()
-    pages = (total + page_size - 1) // page_size if total else 0
-    items = query.offset((page - 1) * page_size).limit(page_size).all()
+    items, total, pages = paginate_query(query, page, page_size)
     return {
         "items": items,
         "total": total,
@@ -1383,6 +1311,7 @@ def search_in_team(
     )
     task_query = (
         db.query(models.Task)
+        .options(joinedload(models.Task.assignee))
         .join(models.Project, models.Task.project_id == models.Project.id)
         .filter(
             models.Project.team_id == team_id,
