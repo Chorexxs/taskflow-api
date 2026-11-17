@@ -14,7 +14,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 
 ## Estado actual
 
-**Actualizado:** 2026-11-12 · **Rama:** `main` · **Backlog `T-001…T-129` ejecutado**, sin tareas funcionales pendientes; solo queda deuda aceptada y decisiones de infraestructura.
+**Actualizado:** 2026-11-17 · **Rama:** `main` · **Backlog `T-001…T-130` ejecutado**, sin tareas funcionales pendientes; solo queda deuda aceptada y decisiones de infraestructura.
 
 | Comprobación | Resultado |
 |---|---|
@@ -370,6 +370,7 @@ Además: smoke end-to-end contra InsForge (12/12) y contra producción en Render
 - Ejecutar `alembic upgrade head` **antes** de desplegar y comprobar `alembic current == head`.
 - `/docs`, `/redoc` y `/openapi.json` se sirven solo fuera de producción.
 - Healthchecks: `/health/live` (proceso) y `/health/ready` (DB).
+- **Operación en plan free:** `.github/workflows/keepalive.yml` llama a `/health/ready` los lunes y jueves 06:17 UTC para evitar el spin-down de Render y la pausa de InsForge (7 días sin peticiones); no despliega nada (T-130).
 
 ### Frontend — Vercel
 

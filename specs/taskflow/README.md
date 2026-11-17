@@ -4,7 +4,7 @@
 **Fecha:** 2026-11-09
 **Proyecto:** TaskFlow API
 **Alcance del ciclo:** documentación + bugs conocidos + modernización completa
-**Estado:** P0–P10 ejecutados; producción verificada con object storage activo. No quedan tareas funcionales pendientes; solo deuda aceptada en `security-checklist.md` y bloqueos de entorno en `blockers.md`.
+**Estado:** P0–P11 ejecutados; producción verificada con object storage activo. No quedan tareas funcionales pendientes; solo deuda aceptada en `security-checklist.md` y bloqueos de entorno en `blockers.md`.
 
 ---
 
@@ -127,6 +127,7 @@ Este paquete vive en `specs/taskflow/` y es la fuente de verdad del ciclo. `READ
 | P8 — Auditoría de seguridad | ✅ Ejecutado | T-083…T-092 |
 | P9 — Smoke de release | ✅ Ejecutado | T-093 (rate limit 500) y T-094 (health bloqueado por Redis) |
 | P10 — Seguimiento post-release | ✅ Ejecutado | T-096 (posición estable del Kanban), T-097 (decisión final de ADR-001), T-098 (retención de datos) y T-099 (drift documental) |
+| P11 — Operación de tiers gratuitos | ✅ Ejecutado | T-130: workflow `keepalive.yml` con `GET /health/ready` lunes y jueves; evita el spin-down de Render y la pausa de InsForge sin desplegar (ver `environments.md` §7) |
 
 ---
 
