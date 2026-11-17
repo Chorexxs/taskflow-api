@@ -182,9 +182,7 @@ def create_task(
             detail="Assignee is not a member of this team",
         )
 
-    new_task = crud.create_task(
-        db, task, project.id, current_user.id, commit=False
-    )
+    new_task = crud.create_task(db, task, project.id, current_user.id, commit=False)
     crud.log_activity(
         db,
         "task",

@@ -336,6 +336,4 @@ def test_release_discards_uncommitted_business_changes(db_session):
     guard.release()
 
     assert db_session.query(models.Team).filter_by(slug="half-written").first() is None
-    assert (
-        db_session.query(models.IdempotencyKey).filter_by(key="release-key").first() is None
-    )
+    assert db_session.query(models.IdempotencyKey).filter_by(key="release-key").first() is None
