@@ -52,6 +52,8 @@ tablero 9 → 6, detalle de tarea 8 → 5, `POST /tasks` con `Idempotency-Key`
 elimina el segundo `/users/me` tras el login. El cambio de región de Render a
 `eu-central` sigue pendiente y es el mayor ahorro restante.
 
+**Completada (P11, 2026-11-17):** `T-130` (workflow `keepalive.yml` con `schedule` lunes/jueves y `GET /health/ready`, que despierta Render y reinicia el contador de 7 días de InsForge sin secretos ni deploys; reglas en `environments.md` §7).
+
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
 **Completada (P0):** `T-007` (pre-commit con `ruff`, `ruff format`, `gitleaks`, eslint y mypy; `pre-commit run --all-files` verde), `T-004` (ADR-001…011 aceptados con responsable y desviaciones documentadas), `T-010` (política de ramas, PR, release y rollback en `CONTRIBUTING.md`), `T-009` (entornos local/CI/preview/staging/producción en `environments.md`), `T-003` (6 labels, 10 milestones y 95 issues importados).
@@ -315,6 +317,14 @@ documental.
 | T-127 | Extraer componentes de las páginas grandes | S3 | — | M | NFR-MAINT-06, CA-2-02 | Modales, filtros y paneles extraídos; `ProjectBoard`/`TeamDetail`/`TaskDetail` por debajo de 600 líneas; tests y build verdes |
 | T-128 | Reducir los round trips SQL por acción | S2 | — | M | NFR-PERF-01, NFR-MAINT-06, FR-TEAM-06, FR-TASK-04 | Auth y membresía en una sola query; `expire_on_commit=False`; sin lookups duplicados de equipo/proyecto/tarea; presupuesto de statements por endpoint con test |
 | T-129 | Evitar el `/users/me` duplicado al iniciar sesión | S3 | — | XS | NFR-PERF-01, FR-UI-01 | `login` carga el usuario una sola vez y la rotación de tokens reutiliza esa carga; el efecto del token no repite la petición; test de regresión |
+
+---
+
+## P11 — Operación de tiers gratuitos (2026-11-17)
+
+| ID | Tarea | Prio | Dep. | Tamaño | Refs | Aceptación |
+|---|---|---|---|---|---|---|
+| T-130 | Keep-alive programado de InsForge y Render | S2 | — | XS | NFR-REL-01 | `keepalive.yml` en verde con `workflow_dispatch` y dos veces por semana; sin secretos; documentado en `environments.md` §7 |
 
 ---
 

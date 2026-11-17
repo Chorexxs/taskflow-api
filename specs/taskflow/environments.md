@@ -121,3 +121,32 @@ local → CI → PR → merge en main → migración → deploy Render/Vercel �
 Ningún cambio salta de local a producción sin CI verde. Un cambio de contrato
 requiere actualizar `specs/taskflow/contracts/api.md` y el snapshot OpenAPI en el
 mismo PR.
+
+---
+
+## 7. Keep-alive de tiers gratuitos
+
+Render e InsForge en plan free no se suspenden por falta de deploys: Render
+duerme el servicio tras 15 min sin tráfico e InsForge pausa el proyecto tras
+7 días sin peticiones. El workflow `.github/workflows/keepalive.yml` mantiene
+ambos activos **sin desplegar** (T-130).
+
+| Aspecto | Valor |
+|---|---|
+| Disparador | `schedule` lunes y jueves 06:17 UTC + `workflow_dispatch` |
+| Acción | `GET https://taskflow-api-gkgl.onrender.com/health/ready` |
+| Efecto | Despierta Render y ejecuta `SELECT 1` contra InsForge |
+| Secretos | Ninguno: el endpoint es público y no expone datos |
+| Coste | 0: repo público, minutos de Actions gratuitos |
+
+Reglas:
+
+1. Un `schedule` solo se ejecuta desde la rama por defecto (`main`).
+2. GitHub puede retrasar el cron 10–30 min; el hueco lunes → jueves queda muy
+   por debajo de los 7 días de InsForge.
+3. En repos públicos GitHub desactiva los workflows programados tras 60 días sin
+   actividad en el repo; se reactivan con `gh workflow enable keepalive.yml`.
+4. Si el job falla, revisar `/health/ready` antes de tocar el workflow: un 503
+   significa base de datos inaccesible, no un cron roto.
+5. Un redeploy programado **no** sustituye a este workflow: no evita la pausa de
+   InsForge y consume minutos de build en Render.
