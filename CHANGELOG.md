@@ -7,7 +7,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Añadido
 
-- Workflow `keepalive.yml`: `GET /health/ready` dos veces por semana evita la pausa de InsForge (7 días sin peticiones) y el spin-down de Render sin desplegar nada (T-130).
+- Workflow `keepalive.yml`: `GET /api/health` de InsForge y `GET /health/ready` de Render **a diario** evitan la pausa de InsForge (7 días sin peticiones) y el spin-down de Render, sin desplegar nada y con reintentos ante arranques en frío (T-130).
 - `GET /teams/` devuelve `role` (admin/member) y `project_count` por equipo, calculado en la misma consulta; el Dashboard muestra ambos (T-123, FR-TEAM-02).
 - `CONTRIBUTING.md` con política de ramas, PR, release y rollback (T-010).
 - `specs/taskflow/environments.md` con local, CI, preview, staging y producción (T-009).

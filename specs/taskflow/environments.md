@@ -133,20 +133,31 @@ ambos activos **sin desplegar** (T-130).
 
 | Aspecto | Valor |
 |---|---|
-| Disparador | `schedule` lunes y jueves 06:17 UTC + `workflow_dispatch` |
-| Acción | `GET https://taskflow-api-gkgl.onrender.com/health/ready` |
-| Efecto | Despierta Render y ejecuta `SELECT 1` contra InsForge |
-| Secretos | Ninguno: el endpoint es público y no expone datos |
+| Disparador | `schedule` **diario** 06:17 UTC + `workflow_dispatch` |
+| Acción 1 | `GET https://wrm6rjkp.eu-central.insforge.app/api/health` → actividad directa en InsForge |
+| Acción 2 | `GET https://taskflow-api-gkgl.onrender.com/health/ready` → despierta Render y ejecuta `SELECT 1` |
+| Reintentos | InsForge 3×10 s; Render 5×15 s (el arranque en frío tarda ~30 s) |
+| Secretos | Ninguno: ambos endpoints son públicos y no exponen datos |
 | Coste | 0: repo público, minutos de Actions gratuitos |
+
+El proyecto de InsForge se llama en el dashboard **`api-workflow`** (id
+`c7578dc0-d532-4463-88f1-09c6e54356f7`, appkey `wrm6rjkp`); `.insforge/project.json`
+conserva el nombre antiguo `taskflow-api`. Es el **mismo** proyecto: si llega un
+correo de "pausa por inactividad" con el nombre `api-workflow`, se refiere a la
+base de datos de TaskFlow.
 
 Reglas:
 
 1. Un `schedule` solo se ejecuta desde la rama por defecto (`main`).
-2. GitHub puede retrasar el cron 10–30 min; el hueco lunes → jueves queda muy
-   por debajo de los 7 días de InsForge.
+2. GitHub puede retrasar el cron 10–30 min e incluso saltarse alguna ejecución;
+   por eso la cadencia es diaria y el margen frente a los 7 días es de 6 días.
 3. En repos públicos GitHub desactiva los workflows programados tras 60 días sin
    actividad en el repo; se reactivan con `gh workflow enable keepalive.yml`.
-4. Si el job falla, revisar `/health/ready` antes de tocar el workflow: un 503
-   significa base de datos inaccesible, no un cron roto.
-5. Un redeploy programado **no** sustituye a este workflow: no evita la pausa de
+   Un aviso de pausa de InsForge es la señal típica de que esto ha pasado.
+4. Si falla la acción 1, el proyecto ya está pausado: hay que reactivarlo desde el
+   dashboard (o con `insforge`) dentro de los 30 días; el workflow no puede
+   despausar por sí solo.
+5. Si falla la acción 2 pero la 1 pasa, el problema es Render o la conexión a
+   PostgreSQL, no el cron.
+6. Un redeploy programado **no** sustituye a este workflow: no evita la pausa de
    InsForge y consume minutos de build en Render.

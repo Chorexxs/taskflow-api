@@ -127,7 +127,7 @@ Este paquete vive en `specs/taskflow/` y es la fuente de verdad del ciclo. `READ
 | P8 — Auditoría de seguridad | ✅ Ejecutado | T-083…T-092 |
 | P9 — Smoke de release | ✅ Ejecutado | T-093 (rate limit 500) y T-094 (health bloqueado por Redis) |
 | P10 — Seguimiento post-release | ✅ Ejecutado | T-096 (posición estable del Kanban), T-097 (decisión final de ADR-001), T-098 (retención de datos) y T-099 (drift documental) |
-| P11 — Operación de tiers gratuitos | ✅ Ejecutado | T-130: workflow `keepalive.yml` con `GET /health/ready` lunes y jueves; evita el spin-down de Render y la pausa de InsForge sin desplegar (ver `environments.md` §7) |
+| P11 — Operación de tiers gratuitos | ✅ Ejecutado | T-130: workflow `keepalive.yml` diario con `GET /api/health` (InsForge) y `GET /health/ready` (Render); evita la pausa por inactividad y el spin-down sin desplegar (ver `environments.md` §7) |
 
 ---
 

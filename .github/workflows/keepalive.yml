@@ -3,22 +3,64 @@ name: Keep-alive
 # Mantiene activos los tiers gratuitos sin desplegar nada:
 # - InsForge pausa los proyectos free tras 7 días sin peticiones.
 # - Render duerme el servicio tras 15 min sin tráfico (no lo suspende).
-# `/health/ready` ejecuta un SELECT 1 contra PostgreSQL, así que cada
-# ejecución despierta Render y genera actividad en InsForge (T-130).
+# Cada ejecución hace dos llamadas independientes (T-130):
+#   1. `GET /api/health` en InsForge: actividad directa en la plataforma,
+#      aunque Render esté dormido o caído.
+#   2. `GET /health/ready` en Render: lo despierta y ejecuta un `SELECT 1`
+#      contra PostgreSQL.
+# Se ejecuta a diario (no dos veces por semana) para que un cron perdido,
+# retrasado o deshabilitado por GitHub no acerque la cuenta a los 7 días.
 
 on:
   schedule:
-    - cron: "17 6 * * 1,4"   # lunes y jueves, 06:17 UTC (evito :00 porque GitHub retrasa)
-  workflow_dispatch:          # botón para probarlo a mano
+    - cron: "17 6 * * *"   # todos los días, 06:17 UTC (evito :00 porque GitHub retrasa)
+  workflow_dispatch:        # botón para probarlo a mano
 
 permissions:
   contents: read
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
 
 jobs:
   keepalive:
     name: Despertar API y DB
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - name: GET /health/ready
-        run: curl -fsS --max-time 120 -o /dev/null https://taskflow-api-gkgl.onrender.com/health/ready
+      - name: InsForge responde (actividad directa)
+        env:
+          INSFORGE_HEALTH_URL: https://wrm6rjkp.eu-central.insforge.app/api/health
+        run: |
+          set -u
+          for attempt in 1 2 3; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 "$INSFORGE_HEALTH_URL" || echo "000")
+            if [ "$code" = "200" ]; then
+              echo "InsForge /api/health -> 200 (intento $attempt)"
+              exit 0
+            fi
+            echo "InsForge /api/health -> '$code' (intento $attempt); reintento en 10 s"
+            sleep 10
+          done
+          echo "::error::InsForge no devolvió 200: el proyecto puede estar pausado (api-workflow)"
+          exit 1
+
+      - name: Render despierto y PostgreSQL accesible
+        if: always()
+        env:
+          READY_URL: https://taskflow-api-gkgl.onrender.com/health/ready
+        run: |
+          set -u
+          # El arranque en frío puede tardar ~30 s; el primer intento suele dar 502/503.
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 120 "$READY_URL" || echo "000")
+            if [ "$code" = "200" ]; then
+              echo "Render /health/ready -> 200 (intento $attempt)"
+              exit 0
+            fi
+            echo "Render /health/ready -> '$code' (intento $attempt); reintento en 15 s"
+            sleep 15
+          done
+          echo "::error::/health/ready no devolvió 200: Render caído o PostgreSQL inaccesible"
+          exit 1

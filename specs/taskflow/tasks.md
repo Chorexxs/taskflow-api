@@ -52,7 +52,7 @@ tablero 9 → 6, detalle de tarea 8 → 5, `POST /tasks` con `Idempotency-Key`
 elimina el segundo `/users/me` tras el login. El cambio de región de Render a
 `eu-central` sigue pendiente y es el mayor ahorro restante.
 
-**Completada (P11, 2026-11-17):** `T-130` (workflow `keepalive.yml` con `schedule` lunes/jueves y `GET /health/ready`, que despierta Render y reinicia el contador de 7 días de InsForge sin secretos ni deploys; reglas en `environments.md` §7).
+**Completada (P11, 2026-11-17):** `T-130` (workflow `keepalive.yml` con `schedule` diario, `GET /api/health` de InsForge y `GET /health/ready` de Render con reintentos; mantiene el proyecto fuera de la pausa de 7 días sin secretos ni deploys; reglas en `environments.md` §7).
 
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
@@ -324,7 +324,7 @@ documental.
 
 | ID | Tarea | Prio | Dep. | Tamaño | Refs | Aceptación |
 |---|---|---|---|---|---|---|
-| T-130 | Keep-alive programado de InsForge y Render | S2 | — | XS | NFR-REL-01 | `keepalive.yml` en verde con `workflow_dispatch` y dos veces por semana; sin secretos; documentado en `environments.md` §7 |
+| T-130 | Keep-alive programado de InsForge y Render | S2 | — | XS | NFR-REL-01 | `keepalive.yml` en verde con `workflow_dispatch` y cadencia diaria; `GET /api/health` + `GET /health/ready` sin secretos; documentado en `environments.md` §7 |
 
 ---
 
