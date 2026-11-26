@@ -214,6 +214,23 @@ uploads/                 # adjuntos locales (dev; producción requiere storage)
 - `joinedload` para relaciones que se serializan y evitan N+1.
 - Alembic es la única fuente de esquema en producción. **No usar `create_all`.**
 
+### UI y accesibilidad
+
+- **Todo control solo-icono lleva `aria-label`.** El texto oculto por responsive
+  (`hidden sm:inline`) no da nombre accesible: el `aria-label` es obligatorio
+  aunque el mismo botón muestre texto en escritorio (T-133).
+- Los nombres accesibles incluyen el recurso: `Edit task: <título>`,
+  `Remove <email>`, `Edit <proyecto>`.
+- **La tarjeta del tablero es un único control interactivo**: el contenido es el
+  botón que abre la tarea (clic y `Enter`); las acciones secundarias (editar) van
+  como botones hermanos. Nunca anidar `button` dentro de `[role="button"]` (T-134).
+- Los estados vacíos se renderizan **después** de `isLoading === false`; mientras
+  carga se muestra skeleton (T-135).
+- Los inputs de email y contraseña declaran `autoComplete` (`email`,
+  `current-password`, `new-password`) (T-136).
+- Los modales usan `useDialogA11y` y llevan un botón de cierre con
+  `aria-label="Close dialog"`.
+
 ---
 
 ## Commits
@@ -292,6 +309,7 @@ Reglas:
 - Los tests de integración usan PostgreSQL vía `TEST_DATABASE_URL`, con el esquema creado por Alembic y tablas truncadas entre tests (ADR-008). `TEST_USE_SQLITE=1` es solo un atajo para runs unitarios.
 - La suite fija `DB_SSLMODE` a partir de `TEST_DATABASE_URL` (o `TEST_DB_SSLMODE`) para que un `.env` de producción con `DB_SSLMODE=require` no rompa el PostgreSQL local (T-114).
 - Cobertura obligatoria en CI: **80 % backend** (`--cov-fail-under`) y **70 % frontend** en líneas/sentencias (`vitest` thresholds), con **55 % de ramas** porque el proveedor v8 de Vitest 5 mide todos los archivos fuente. No bajar los umbrales sin justificarlo en el PR.
+- Verificación manual en producción: reutilizar las dos cuentas de `specs/taskflow/environments.md` §8 (admin y segunda identidad). **No crear ni borrar cuentas de prueba**, y nunca guardar sus contraseñas en el repo.
 
 ---
 
@@ -339,6 +357,10 @@ Reglas:
 8. El `DELETE` de proyectos archiva; usa `/archive` y `/restore` para la semántica explícita.
 9. Los adjuntos usan PostgreSQL por defecto (`STORAGE_BACKEND=database`); `local` solo para desarrollo.
 10. La UI es solo oscura (ADR-006); no hay `ThemeContext`.
+11. Un botón solo-icono cuyo texto se oculta por responsive **no** tiene nombre accesible: hace falta `aria-label` explícito (T-133).
+12. No anidar `button` dentro de la tarjeta del tablero (`[role="button"]`): el clic exterior no abre y se duplican controles (T-134).
+13. Los estados vacíos van después de `isLoading === false`; mientras carga, skeleton (T-135).
+14. Sin `autoComplete` en email/contraseña, Chrome lo reporta y los gestores de contraseñas no se activan (T-136).
 
 ---
 

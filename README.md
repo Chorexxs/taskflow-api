@@ -2,7 +2,7 @@
 
 API REST para gestión de tareas en equipo con autenticación JWT, equipos, proyectos, tablero Kanban, comentarios, adjuntos, notificaciones en tiempo real y registro de actividad.
 
-[![Tests](https://img.shields.io/badge/backend%20tests-279%20passed-brightgreen)](./tests)
+[![Tests](https://img.shields.io/badge/backend%20tests-286%20passed-brightgreen)](./tests)
 [![Frontend](https://img.shields.io/badge/frontend%20tests-82%20passed-brightgreen)](./frontend/src/test)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.135-blue)](https://fastapi.tiangolo.com/)
@@ -14,12 +14,12 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 
 ## Estado actual
 
-**Actualizado:** 2026-11-17 · **Rama:** `main` · **Backlog `T-001…T-130` ejecutado**, sin tareas funcionales pendientes; solo queda deuda aceptada y decisiones de infraestructura.
+**Actualizado:** 2026-11-26 · **Rama:** `main` · **Backlog `T-001…T-136` ejecutado**: base de datos migrada de InsForge a Neon y mejoras de UX/accesibilidad salidas de una revisión con navegador en producción.
 
 | Comprobación | Resultado |
 |---|---|
-| Tests backend (PostgreSQL 16) | **279 passed**, 0 fallos, **91 %** de cobertura |
-| Tests frontend (Vitest 5 + Testing Library) | **82 passed**, 74,8 % líneas / 61,5 % ramas |
+| Tests backend (PostgreSQL 16) | **286 passed**, 0 fallos, gate de cobertura ≥ 80 % |
+| Tests frontend (Vitest 5 + Testing Library) | **93 passed**, gates de 70 % líneas / 55 % ramas |
 | Lint y tipos | `ruff`, `ruff format`, `mypy`, eslint: limpios |
 | Build frontend | `npm run build` correcto |
 | Migraciones | `upgrade` / `downgrade -1` / `upgrade` reversibles |
@@ -37,6 +37,15 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | Login | 2.900 ms | ~2.600 ms (bcrypt + CPU del plan) |
 
 > El coste restante es de infraestructura: Render y la base de datos están en regiones distintas (~140 ms por statement) y el plan free limita la CPU de bcrypt. El código ya no añade trabajo evitable.
+
+**Mejoras recientes (T-131…T-136):**
+
+- **T-131** — InsForge cerró la plataforma; la base de datos se recuperó del backup diario y se migró a Neon sin pérdida de datos (322 filas, revisión `c1d2e3f4a5b6`), con Render repuntado y smoke 15/15.
+- **T-132** — el encabezado del tablero muestra el nombre del proyecto, no su id.
+- **T-133** — todos los botones solo-icono tienen `aria-label`, incluido "New Task" cuando el responsive oculta su texto.
+- **T-134** — la tarjeta del tablero es un único control: clic o `Enter` abre la tarea, sin botones anidados, con edición como acción hermana y drag & drop intacto.
+- **T-135** — el detalle de equipo muestra skeleton de miembros en lugar de un "No members yet" prematuro.
+- **T-136** — `autoComplete` en los campos de email y contraseña (login, registro, perfil e invitación).
 
 ---
 
@@ -163,9 +172,10 @@ Los adjuntos se guardan por defecto en PostgreSQL (`STORAGE_BACKEND=database`) p
 - **ProjectBoard**: Kanban con drag & drop, actualización optimista, filtros en URL, búsqueda local, crear tarea, actividad paginada, ajustes del proyecto.
 - **TaskDetail**: editar tarea, comentarios paginados, adjuntos, actividad.
 - **Profile**: cambio de contraseña y preferencias de notificación.
-- **Accesibilidad**: focus visible, `prefers-reduced-motion`, `aria-label`, modales como diálogos con focus trap y cierre con `Escape`.
+- **Accesibilidad**: focus visible, `prefers-reduced-motion`, `aria-label` en todo control solo-icono (también cuando el ancho oculta su texto), tarjetas del tablero como un único control operable con ratón y teclado, modales como diálogos con focus trap y cierre con `Escape`, y `autoComplete` en credenciales.
 - Toasts, skeletons, estados de carga/vacío/error con reintento y 404.
 - Tema **dark-only** (ADR-006).
+- Las verificaciones manuales en producción reutilizan dos cuentas fijas (`webtest+…` como admin y `webtest2-…` como segundo usuario); ver `specs/taskflow/environments.md` §8.
 
 ---
 
@@ -353,9 +363,9 @@ npm run build
 
 La suite fija `DB_SSLMODE` a partir de `TEST_DATABASE_URL` (o de `TEST_DB_SSLMODE`) para que un `.env` de producción con `DB_SSLMODE=require` no intente TLS contra el contenedor local (T-114).
 
-**Estado actual:** 279 tests backend (91 % de cobertura) y 82 tests frontend (74,8 % líneas / 61,5 % ramas / 65,3 % funciones). El CI falla por debajo de **80 %** en backend y **70 %** de líneas en frontend.
+**Estado actual:** 286 tests backend y 93 tests frontend. El CI falla por debajo de **80 %** de cobertura en backend y **70 %** de líneas / **55 %** de ramas en frontend.
 
-Además: smoke end-to-end contra InsForge (12/12) y contra producción en Render (15/15), smoke de performance de lectura y escritura, prueba de carga SSE (500/500) y drill de backup/restore verificado.
+Además: smoke end-to-end contra producción en Render (15/15), smoke de performance de lectura y escritura, prueba de carga SSE (500/500) y drill de backup/restore verificado.
 
 ---
 
