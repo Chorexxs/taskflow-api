@@ -87,7 +87,7 @@ export default function TeamDetail() {
     queryFn: () => api.projects.list(token, teamId, { include_archived: showArchived }),
   })
 
-  const { data: members } = useQuery({
+  const { data: members, isLoading: membersLoading } = useQuery({
     queryKey: ['team-members', teamId],
     queryFn: () => api.teams.listMembers(token, teamId),
     refetchOnMount: true,
@@ -486,7 +486,14 @@ export default function TeamDetail() {
                 )}
               </div>
               <div className="space-y-3">
-                {members?.map(member => (
+                {membersLoading && (
+                  <div className="space-y-3" aria-hidden="true">
+                    {[1, 2].map(i => (
+                      <div key={i} className="h-12 rounded-lg bg-[var(--color-bg-secondary)] skeleton"></div>
+                    ))}
+                  </div>
+                )}
+                {!membersLoading && members?.map(member => (
                   <div key={member.user_id} className="flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-[var(--color-accent-muted)] flex items-center justify-center">
@@ -531,7 +538,7 @@ export default function TeamDetail() {
                     </div>
                   </div>
                 ))}
-                {(!members || members.length === 0) && (
+                {!membersLoading && (!members || members.length === 0) && (
                   <p className="text-sm text-[var(--color-text-muted)] text-center py-4">No members yet</p>
                 )}
               </div>

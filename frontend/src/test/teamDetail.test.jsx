@@ -110,6 +110,23 @@ describe('TeamDetail', () => {
     expect(within(dialog).getByRole('button', { name: 'Close dialog' })).toBeInTheDocument()
   })
 
+  it('does not show the members empty state while the query is pending (T-135)', async () => {
+    mockApi.teams.listMembers.mockImplementation(() => new Promise(() => {}))
+    renderTeamDetail()
+
+    await screen.findByText('Project One')
+
+    expect(screen.queryByText('No members yet')).not.toBeInTheDocument()
+    expect(document.querySelectorAll('.skeleton').length).toBeGreaterThan(0)
+  })
+
+  it('shows the members empty state after loading with no members (T-135)', async () => {
+    mockApi.teams.listMembers.mockResolvedValue([])
+    renderTeamDetail()
+
+    expect(await screen.findByText('No members yet')).toBeInTheDocument()
+  })
+
   it('invites a member', async () => {
     mockApi.teams.addMember.mockResolvedValue({ user_id: 3, role: 'member' })
     renderTeamDetail()
