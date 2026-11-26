@@ -263,6 +263,7 @@ export default function TeamDetail() {
           <div className="flex flex-wrap items-center min-h-16 gap-3 py-2">
             <button 
               onClick={() => navigate('/')} 
+              aria-label="Back to dashboard"
               className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -438,6 +439,7 @@ export default function TeamDetail() {
                             onClick={(e) => { e.preventDefault(); restoreProjectMutation.mutate(project.id); }}
                             className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-secondary)] rounded transition-all"
                             title="Restore project"
+                            aria-label={`Restore ${project.name}`}
                           >
                             <FolderOpen className="w-4 h-4" />
                           </button>
@@ -447,6 +449,7 @@ export default function TeamDetail() {
                             onClick={(e) => { e.preventDefault(); handleStartEditProject(project); }}
                             className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-secondary)] rounded transition-all"
                             title="Edit project"
+                            aria-label={`Edit ${project.name}`}
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
@@ -520,6 +523,7 @@ export default function TeamDetail() {
                           }}
                           className="p-1.5 text-[var(--color-text-muted)] hover:text-red-500 hover:bg-[var(--color-bg-secondary)] rounded transition-all"
                           title="Remove member"
+                          aria-label={`Remove ${member.user?.email || 'member'}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

@@ -97,6 +97,19 @@ describe('TeamDetail', () => {
     )
   })
 
+  it('exposes an accessible name on every icon-only control (T-133)', async () => {
+    renderTeamDetail()
+
+    await screen.findByText('member@test.com')
+    expect(screen.getByRole('button', { name: 'Back to dashboard' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Remove member@test.com' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit Project One' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /\+ invite/i }))
+    const dialog = screen.getByRole('dialog', { name: /add team member/i })
+    expect(within(dialog).getByRole('button', { name: 'Close dialog' })).toBeInTheDocument()
+  })
+
   it('invites a member', async () => {
     mockApi.teams.addMember.mockResolvedValue({ user_id: 3, role: 'member' })
     renderTeamDetail()

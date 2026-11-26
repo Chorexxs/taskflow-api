@@ -135,6 +135,22 @@ describe('TaskDetail - Comment Editing and Deletion', () => {
     expect(deleteButtons.length).toBeGreaterThan(0)
   })
 
+  it('should expose accessible names on icon-only comment controls (T-133)', async () => {
+    const TaskDetail = (await import('../pages/TaskDetail')).default
+    renderWithProviders(<TaskDetail />)
+
+    await waitFor(() => expect(screen.getByText('First comment')).toBeInTheDocument())
+
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Send comment' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Edit comment by user1@test.com' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Delete comment by user1@test.com' }),
+    ).toBeInTheDocument()
+  })
+
   it('should handle edit button click', async () => {
     const user = userEvent.setup()
     const TaskDetail = (await import('../pages/TaskDetail')).default

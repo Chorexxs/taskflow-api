@@ -13,7 +13,7 @@ export default function CreateProjectDialog({ form, onChange, onSubmit, isPendin
       <div className="bg-[var(--color-bg-secondary)] border border-subtle rounded-2xl p-6 w-full max-w-md shadow-elevated fade-in">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-medium text-[var(--color-text-primary)]">Create Project</h3>
-          <button onClick={onClose} className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
+          <button onClick={onClose} aria-label="Close dialog" className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>

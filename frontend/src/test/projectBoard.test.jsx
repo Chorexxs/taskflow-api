@@ -111,6 +111,19 @@ describe('ProjectBoard', () => {
     expect(within(banner).queryByText('10')).not.toBeInTheDocument()
   })
 
+  it('exposes an accessible name on every icon-only control (T-133)', async () => {
+    renderBoard()
+
+    await screen.findByText('Task One')
+    expect(screen.getByRole('button', { name: 'Back to team' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New Task' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /edit task: task one/i })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'New Task' }))
+    const dialog = screen.getByRole('dialog', { name: /create task/i })
+    expect(within(dialog).getByRole('button', { name: 'Close dialog' })).toBeInTheDocument()
+  })
+
   it('creates a task from the modal', async () => {
     mockApi.tasks.create.mockResolvedValue({ id: 2, title: 'Second task', status: 'todo' })
     renderBoard()

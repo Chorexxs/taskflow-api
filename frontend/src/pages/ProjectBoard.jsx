@@ -378,6 +378,7 @@ export default function ProjectBoard() {
           <div className="flex flex-wrap items-center min-h-16 gap-3 py-2">
             <button 
               onClick={() => navigate(`/teams/${teamId}`)} 
+              aria-label="Back to team"
               className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -432,6 +433,7 @@ export default function ProjectBoard() {
               <button
                 onClick={() => setShowCreateTask(true)}
                 className="btn-primary flex items-center gap-2 text-sm"
+                aria-label="New Task"
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">New Task</span>

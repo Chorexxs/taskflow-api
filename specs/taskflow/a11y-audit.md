@@ -26,8 +26,10 @@ notificaciones.
 - Los modales comparten `useDialogA11y`: el foco entra en el primer control,
   `Tab`/`Shift+Tab` quedan atrapados, `Escape` cierra y el foco vuelve al
   disparador (T-120).
-- Botones solo-icono con `aria-label` (filtros, actividad, ajustes, campana,
-  perfil, logout, cerrar).
+- Botones solo-icono con `aria-label`: filtros, actividad, ajustes, campana,
+  perfil, logout, volver, "New Task" (también por debajo de `sm`, donde el texto
+  se oculta), enviar comentario, editar/eliminar comentario, editar/restaurar
+  proyecto, quitar miembro y cierre de cada modal (T-133).
 - Buscadores con `aria-label` además del placeholder.
 - Formularios con `<label>` visible; los errores se anuncian con `role="alert"`
   en `QueryError` y mediante toasts.
@@ -54,6 +56,20 @@ dashboard, equipo, tablero, tarea y perfil):
 - `aria-label` en buscadores, filtros y controles sin label visible.
 - El test del tablero valida la asociación con `getByLabelText`.
 
+## Revisión con navegador real (2026-11-26)
+
+Prueba end-to-end contra producción con Chrome (registro, equipo, proyecto,
+tablero, tarea, comentario, adjunto, búsqueda y notificaciones). La auditoría de
+2026-11-11 daba los iconos por cubiertos, pero el árbol de accesibilidad del
+navegador mostró botones sin nombre y una tarjeta sin acción:
+
+| ID | Hallazgo | Corrección |
+|---|---|---|
+| A11Y-04 | "New Task" pierde el texto por debajo de `sm` y quedaba sin nombre accesible; el botón de volver del tablero y del detalle de tarea tampoco tenían nombre | T-133: `aria-label` explícito, independiente del ancho |
+| A11Y-05 | Cierres de modal (X), enviar comentario, editar/eliminar comentario, quitar miembro y editar/restaurar proyecto dependían de `title` o no tenían nombre | T-133 |
+| A11Y-06 | La tarjeta del tablero era un `div[role=button]` sin `onClick` y con un `button` anidado: no abría la tarea y duplicaba controles | T-134: un único control que abre el detalle con clic y `Enter` |
+| A11Y-07 | El detalle de equipo mostraba "No members yet" mientras la query estaba pendiente | T-135: skeleton hasta que la carga termina |
+
 ## Deuda y seguimiento
 
 | ID | Elemento | Prioridad | Destino |
@@ -61,5 +77,9 @@ dashboard, equipo, tablero, tarea y perfil):
 | A11Y-01 | Focus trap + cierre con Escape en modales | Media | ✅ Resuelto en T-120 (`useDialogA11y` + tests) |
 | A11Y-02 | Auditoría automatizada con axe en CI | Media | Backlog |
 | A11Y-03 | Revisión con lector de pantalla (NVDA/VoiceOver) | Baja | Backlog |
+| A11Y-04 | Botones sin nombre accesible según ancho de viewport | Alta | ✅ Resuelto en T-133 |
+| A11Y-05 | Controles solo-icono sin `aria-label` | Alta | ✅ Resuelto en T-133 |
+| A11Y-06 | Tarjeta de tarea sin acción y con controles anidados | Alta | ✅ Resuelto en T-134 |
+| A11Y-07 | Estado vacío falso durante la carga de miembros | Baja | ✅ Resuelto en T-135 |
 
 No quedan bloqueantes de accesibilidad en los flujos críticos.

@@ -92,6 +92,7 @@ export default function TaskCard({ task, onClick, onEdit, isOverlay, currentUser
           {currentUserId === task.created_by && onEdit && (
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(task); }}
+              aria-label={`Edit task: ${task.title}`}
               className="p-1 rounded hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all"
             >
               <Edit2 className="w-3.5 h-3.5" />

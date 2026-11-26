@@ -13,7 +13,7 @@ export default function EditProjectDialog({ form, onChange, onSubmit, isPending,
       <div className="bg-[var(--color-bg-secondary)] rounded-xl shadow-xl max-w-md w-full">
         <div className="flex items-center justify-between p-4 border-b border-subtle">
           <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Edit Project</h2>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]">
+          <button onClick={onClose} aria-label="Close dialog" className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]">
             <X className="w-5 h-5" />
           </button>
         </div>

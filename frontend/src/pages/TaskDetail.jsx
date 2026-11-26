@@ -260,6 +260,7 @@ export default function TaskDetail() {
           <div className="flex items-center h-16 gap-4">
             <button 
               onClick={() => navigate(-1)} 
+              aria-label="Back"
               className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -497,6 +498,7 @@ export default function TaskDetail() {
                               }}
                               className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-secondary)] rounded transition-all"
                               title="Edit comment"
+                              aria-label={`Edit comment by ${comment.author?.email || 'user'}`}
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
@@ -510,6 +512,7 @@ export default function TaskDetail() {
                               }}
                               className="p-1.5 text-[var(--color-text-muted)] hover:text-red-500 hover:bg-[var(--color-bg-secondary)] rounded transition-all"
                               title="Delete comment"
+                              aria-label={`Delete comment by ${comment.author?.email || 'user'}`}
                             >
                               <Trash className="w-3.5 h-3.5" />
                             </button>
@@ -575,6 +578,7 @@ export default function TaskDetail() {
               <button
                 type="submit"
                 disabled={addCommentMutation.isPending || !newComment.trim()}
+                aria-label="Send comment"
                 className="btn-primary px-4"
               >
                 <Send className="w-4 h-4" />

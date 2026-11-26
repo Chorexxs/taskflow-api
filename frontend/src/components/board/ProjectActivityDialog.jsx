@@ -14,7 +14,7 @@ export default function ProjectActivityDialog({ activity, page, onPrevious, onNe
       <div className="bg-[var(--color-bg-secondary)] rounded-xl shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-subtle">
           <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Project Activity</h2>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]">
+          <button onClick={onClose} aria-label="Close dialog" className="p-2 rounded-lg hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]">
             <X className="w-5 h-5" />
           </button>
         </div>
