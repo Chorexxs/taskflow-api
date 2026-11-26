@@ -50,6 +50,17 @@ describe('Profile', () => {
     expect(screen.getByText(/email cannot be changed/i)).toBeInTheDocument()
   })
 
+  it('declares autocomplete hints for the profile fields (T-136)', async () => {
+    renderProfile()
+    await screen.findByDisplayValue('me@example.com')
+
+    expect(screen.getByDisplayValue('me@example.com')).toHaveAttribute('autocomplete', 'email')
+    const passwords = [...document.querySelectorAll('input[type="password"]')].map(f =>
+      f.getAttribute('autocomplete'),
+    )
+    expect(passwords).toEqual(['current-password', 'new-password', 'new-password'])
+  })
+
   it('validates that all password fields are present', async () => {
     renderProfile()
     await screen.findByDisplayValue('me@example.com')

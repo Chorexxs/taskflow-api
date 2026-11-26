@@ -169,3 +169,19 @@ Reglas:
    dependencias de clave foránea, así que no hace falta superusuario.
 4. Un cron diario ya no mantiene nada despierto en la base de datos: la única
    razón para conservar `keepalive.yml` es evitar el spin-down de Render.
+
+---
+
+## 8. Cuentas de prueba en producción
+
+| Cuenta | Para qué |
+|---|---|
+| `webtest+1795682335815@example.com` | Admin del equipo `equipo-web-test` (proyecto 31, tarea 70): flujos de administración |
+| `webtest2-20261126@example.com` | Segunda identidad: invitar, expulsar, cambiar rol y cualquier prueba que necesite dos usuarios |
+
+- **Reutilizar** estas cuentas en las pruebas; no borrarlas ni crear una nueva
+  por cada verificación.
+- Las contraseñas **no** se guardan en el repo: están en el gestor de contraseñas
+  del responsable.
+- Los datos de prueba viven en el equipo `equipo-web-test`; se pueden limpiar
+  por dentro sin tocar las cuentas.

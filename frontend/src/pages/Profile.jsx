@@ -125,6 +125,7 @@ export default function Profile() {
                 type="email"
                 id="profile-email"
                 name="email"
+                autoComplete="email"
                 value={user?.email || ''}
                 disabled
                 className="input-field bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]"

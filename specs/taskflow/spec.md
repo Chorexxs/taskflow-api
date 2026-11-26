@@ -244,6 +244,7 @@ Prioridad MoSCoW: **M** must, **S** should, **C** could.
 | FR-UI-14 | Controles solo-icono | M | Todo botón sin texto visible (cierres de modal, volver, enviar comentario, editar/eliminar, nueva tarea a cualquier ancho) expone `aria-label`; ninguno queda sin nombre accesible (T-133) |
 | FR-UI-15 | Tarjeta de tarea operable | M | Un único control interactivo por tarjeta: clic o `Enter` abre el detalle; sin controles anidados; la acción de editar conserva nombre accesible (T-134) |
 | FR-UI-16 | Estados de carga en el detalle de equipo | S | Miembros y proyectos muestran skeleton mientras la query está pendiente; el estado vacío solo aparece cuando la carga terminó con 0 elementos (T-135) |
+| FR-UI-17 | Autocompletado de credenciales | S | Los formularios de email y contraseña declaran `autoComplete` (`email`, `current-password`, `new-password`) para que funcionen los gestores de contraseñas y el navegador no emita avisos de accesibilidad (T-136) |
 
 ### 7.10 API y contratos
 

@@ -46,6 +46,15 @@ describe('Register', () => {
     localStorage.clear()
   })
 
+  it('declares autocomplete hints for the credentials (T-136)', () => {
+    renderRegister()
+
+    expect(screen.getByLabelText('Email')).toHaveAttribute('autocomplete', 'email')
+    const passwordFields = document.querySelectorAll('input[type="password"]')
+    expect(passwordFields).toHaveLength(2)
+    passwordFields.forEach(field => expect(field).toHaveAttribute('autocomplete', 'new-password'))
+  })
+
   it('creates the account and redirects to the dashboard', async () => {
     mockApi.auth.register.mockResolvedValue({ id: 7, email: 'new@example.com' })
     mockApi.auth.login.mockResolvedValue({ access_token: 'access', refresh_token: 'refresh' })

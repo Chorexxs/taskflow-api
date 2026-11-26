@@ -24,6 +24,7 @@ export default function InviteMemberDialog({ email, role, onEmailChange, onRoleC
               type="email"
               id="invite-email"
               name="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => onEmailChange(e.target.value)}
               required

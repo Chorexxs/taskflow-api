@@ -115,6 +115,7 @@ export default function Register() {
                 type="email"
                 id="register-email"
                 name="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -132,6 +133,7 @@ export default function Register() {
                 type="password"
                 id="register-password"
                 name="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -150,6 +152,7 @@ export default function Register() {
                 type="password"
                 id="register-confirm-password"
                 name="confirm_password"
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required

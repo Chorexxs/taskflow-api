@@ -50,6 +50,13 @@ describe('App routing', () => {
     expect(await screen.findByText('Create your account')).toBeInTheDocument()
   })
 
+  it('declares autocomplete hints on the login form (T-136)', async () => {
+    renderApp('/login')
+
+    expect(await screen.findByLabelText('Email')).toHaveAttribute('autocomplete', 'email')
+    expect(screen.getByLabelText('Password')).toHaveAttribute('autocomplete', 'current-password')
+  })
+
   it('renders the 404 page for unknown routes', async () => {
     renderApp('/missing-page')
 

@@ -69,6 +69,7 @@ navegador mostró botones sin nombre y una tarjeta sin acción:
 | A11Y-05 | Cierres de modal (X), enviar comentario, editar/eliminar comentario, quitar miembro y editar/restaurar proyecto dependían de `title` o no tenían nombre | T-133 |
 | A11Y-06 | La tarjeta del tablero era un `div[role=button]` sin `onClick` y con un `button` anidado: no abría la tarea y duplicaba controles | T-134: un único control que abre el detalle con clic y `Enter` |
 | A11Y-07 | El detalle de equipo mostraba "No members yet" mientras la query estaba pendiente | T-135: skeleton hasta que la carga termina |
+| A11Y-08 | Los inputs de email y contraseña no declaraban `autoComplete`; Chrome lo reporta como issue y los gestores de contraseñas no se activan | T-136: `email`, `current-password` y `new-password` en login, registro, perfil e invitación |
 
 ## Deuda y seguimiento
 
@@ -81,5 +82,6 @@ navegador mostró botones sin nombre y una tarjeta sin acción:
 | A11Y-05 | Controles solo-icono sin `aria-label` | Alta | ✅ Resuelto en T-133 |
 | A11Y-06 | Tarjeta de tarea sin acción y con controles anidados | Alta | ✅ Resuelto en T-134 |
 | A11Y-07 | Estado vacío falso durante la carga de miembros | Baja | ✅ Resuelto en T-135 |
+| A11Y-08 | Inputs sin `autoComplete` | Baja | ✅ Resuelto en T-136 |
 
 No quedan bloqueantes de accesibilidad en los flujos críticos.

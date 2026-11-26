@@ -108,6 +108,7 @@ describe('TeamDetail', () => {
     await userEvent.click(screen.getByRole('button', { name: /\+ invite/i }))
     const dialog = screen.getByRole('dialog', { name: /add team member/i })
     expect(within(dialog).getByRole('button', { name: 'Close dialog' })).toBeInTheDocument()
+    expect(within(dialog).getByLabelText('Email')).toHaveAttribute('autocomplete', 'email')
   })
 
   it('does not show the members empty state while the query is pending (T-135)', async () => {

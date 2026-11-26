@@ -353,8 +353,9 @@ proyecto, tablero, tarea, comentario, adjunto, búsqueda y notificaciones).
 | T-133 | Nombre accesible en todos los botones solo-icono | S1 | — | S | FR-UI-09, FR-UI-14 | Cierres de modal, volver, enviar comentario, editar/eliminar miembro, archivar y "New Task" a cualquier ancho tienen `aria-label`; test que los consulta por rol y nombre |
 | T-134 | Tarjeta de tarea con un único control interactivo que abre el detalle | S1 | — | S | FR-UI-15 | Clic y `Enter` abren la tarea; sin botón anidado; editar mantiene nombre accesible; test de `kanban`/`projectBoard` |
 | T-135 | Skeleton de carga en miembros y proyectos del equipo | S2 | — | XS | FR-UI-16 | Mientras la query está pendiente no se muestra "No members yet"; test de `teamDetail` |
+| T-136 | Autocompletado en formularios de credenciales | S2 | — | XS | FR-UI-17, A11Y-08 | `autoComplete` correcto en login, registro, perfil e invitación; tests de `app`, `register`, `profile` y `teamDetail`; consola del navegador sin el aviso de autocomplete |
 
-**Completadas (P13, 2026-11-26):** `T-132` (encabezado con `project.name`), `T-133` (`aria-label` en todos los controles solo-icono), `T-134` (tarjeta con un único control que abre la tarea, sin botones anidados y con drag & drop intacto) y `T-135` (skeleton de miembros). Verificado en navegador real: local (drag → `PATCH /status` 200) y producción (encabezado con `Proyecto Web Test`, 2 botones por tarjeta y 0 anidados, `sawEmpty=false`, `maxSkeleton=4`).
+**Completadas (P13, 2026-11-26):** `T-132` (encabezado con `project.name`), `T-133` (`aria-label` en todos los controles solo-icono), `T-134` (tarjeta con un único control que abre la tarea, sin botones anidados y con drag & drop intacto), `T-135` (skeleton de miembros) y `T-136` (`autoComplete` en credenciales). Verificado en navegador real: local (drag → `PATCH /status` 200) y producción (encabezado con `Proyecto Web Test`, 2 botones por tarjeta y 0 anidados, `sawEmpty=false`, `maxSkeleton=4`, invitar/quitar miembro con `POST 201` y `DELETE 204`).
 
 ---
 
