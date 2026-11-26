@@ -385,7 +385,12 @@ export default function ProjectBoard() {
             <div className="flex items-center gap-2 min-w-0">
               <h1 className="text-lg font-medium text-[var(--color-text-primary)]">Project Board</h1>
               <span className="text-[var(--color-text-muted)]">/</span>
-              <span className="text-[var(--color-text-secondary)] truncate max-w-[12rem]">{projectId}</span>
+              <span
+                className="text-[var(--color-text-secondary)] truncate max-w-[12rem]"
+                title={project?.name || projectId}
+              >
+                {project?.name || projectId}
+              </span>
             </div>
             
             {tasksError && (

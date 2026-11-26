@@ -342,6 +342,20 @@ inactividad.
 
 ---
 
+## P13 — Mejoras de UX y accesibilidad detectadas en producción (2026-11-26)
+
+Salen de una prueba real con navegador sobre producción (login, equipo,
+proyecto, tablero, tarea, comentario, adjunto, búsqueda y notificaciones).
+
+| ID | Tarea | Prio | Dep. | Tamaño | Refs | Aceptación |
+|---|---|---|---|---|---|---|
+| T-132 | Mostrar el nombre del proyecto en el encabezado del tablero | S1 | — | XS | FR-UI-13 | El encabezado muestra `project.name`; el id solo aparece como fallback mientras carga; test de `projectBoard` |
+| T-133 | Nombre accesible en todos los botones solo-icono | S1 | — | S | FR-UI-09, FR-UI-14 | Cierres de modal, volver, enviar comentario, editar/eliminar miembro, archivar y "New Task" a cualquier ancho tienen `aria-label`; test que los consulta por rol y nombre |
+| T-134 | Tarjeta de tarea con un único control interactivo que abre el detalle | S1 | — | S | FR-UI-15 | Clic y `Enter` abren la tarea; sin botón anidado; editar mantiene nombre accesible; test de `kanban`/`projectBoard` |
+| T-135 | Skeleton de carga en miembros y proyectos del equipo | S2 | — | XS | FR-UI-16 | Mientras la query está pendiente no se muestra "No members yet"; test de `teamDetail` |
+
+---
+
 ## Orden recomendado de ejecución
 
 ```text

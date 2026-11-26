@@ -240,6 +240,10 @@ Prioridad MoSCoW: **M** must, **S** should, **C** could.
 | FR-UI-10 | Responsive | M | 360 px–1440 px sin overflow horizontal; tablero usable en móvil (scroll horizontal o columnas apiladas) |
 | FR-UI-11 | Errores y vacíos | M | Toda query/mutación muestra error comprensible; no hay pantallas en blanco ni botones que fallan en silencio |
 | FR-UI-12 | Idioma | S | UI en inglés (actual) o español; decisión única y consistente; fechas/números localizados |
+| FR-UI-13 | Identificación del proyecto en el tablero | M | El encabezado muestra `project.name` y solo cae al id mientras la query está pendiente; el nombre truncado conserva `title` con el texto completo (T-132) |
+| FR-UI-14 | Controles solo-icono | M | Todo botón sin texto visible (cierres de modal, volver, enviar comentario, editar/eliminar, nueva tarea a cualquier ancho) expone `aria-label`; ninguno queda sin nombre accesible (T-133) |
+| FR-UI-15 | Tarjeta de tarea operable | M | Un único control interactivo por tarjeta: clic o `Enter` abre el detalle; sin controles anidados; la acción de editar conserva nombre accesible (T-134) |
+| FR-UI-16 | Estados de carga en el detalle de equipo | S | Miembros y proyectos muestran skeleton mientras la query está pendiente; el estado vacío solo aparece cuando la carga terminó con 0 elementos (T-135) |
 
 ### 7.10 API y contratos
 

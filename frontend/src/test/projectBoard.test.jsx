@@ -101,6 +101,16 @@ describe('ProjectBoard', () => {
     )
   })
 
+  it('shows the project name in the header instead of its id (T-132)', async () => {
+    renderBoard()
+
+    await screen.findByText('Task One')
+    const banner = screen.getByRole('banner')
+
+    expect(await within(banner).findByText('Project One')).toBeInTheDocument()
+    expect(within(banner).queryByText('10')).not.toBeInTheDocument()
+  })
+
   it('creates a task from the modal', async () => {
     mockApi.tasks.create.mockResolvedValue({ id: 2, title: 'Second task', status: 'todo' })
     renderBoard()

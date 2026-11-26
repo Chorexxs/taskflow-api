@@ -59,6 +59,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Cambiado
 
+- El encabezado del tablero muestra el nombre del proyecto en lugar de su id, con el id solo como fallback mientras carga la query (T-132, FR-UI-13).
 - Producción apunta a Neon: Render actualizado con `DATABASE_URL` (pooled), `DATABASE_URL_UNPOOLED`, `DB_SSLMODE=require` y `STORAGE_BACKEND=database`, retirando `INSFORGE_URL`, `INSFORGE_API_KEY` e `INSFORGE_STORAGE_BUCKET`; deploy `live` y smoke funcional 15/15 contra `https://taskflow-api-gkgl.onrender.com` (T-131).
 - `scripts/update_render_env.py`: aplica ese cambio de variables por la API de Render, sin imprimir valores, y opcionalmente despliega y espera a `live`.
 - Retirada de InsForge: el proveedor cerró la plataforma y deshabilitó los restores (`RESTORE_DISABLED`), así que la base de datos migra a Neon. El keep-alive deja de consultar `/api/health` —respondió 200 a diario y el proyecto se pausó igual— y queda solo como calentamiento de Render; `environments.md` §7 documenta el cierre, los artefactos recuperados y el procedimiento de importación (T-131).
