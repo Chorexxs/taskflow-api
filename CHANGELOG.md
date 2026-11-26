@@ -59,6 +59,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Cambiado
 
+- La tarjeta del tablero es un único control interactivo: clic o `Enter` abre la tarea, sin botones anidados; editar queda como acción hermana con nombre accesible y el drag & drop se mantiene (T-134, FR-UI-15, A11Y-06).
 - Todos los botones solo-icono tienen `aria-label`: volver, "New Task" a cualquier ancho, enviar comentario, editar/eliminar comentario, editar/restaurar proyecto, quitar miembro, editar tarea y el cierre de cada modal (T-133, FR-UI-14, A11Y-04/A11Y-05).
 - El encabezado del tablero muestra el nombre del proyecto en lugar de su id, con el id solo como fallback mientras carga la query (T-132, FR-UI-13).
 - Producción apunta a Neon: Render actualizado con `DATABASE_URL` (pooled), `DATABASE_URL_UNPOOLED`, `DB_SSLMODE=require` y `STORAGE_BACKEND=database`, retirando `INSFORGE_URL`, `INSFORGE_API_KEY` e `INSFORGE_STORAGE_BUCKET`; deploy `live` y smoke funcional 15/15 contra `https://taskflow-api-gkgl.onrender.com` (T-131).

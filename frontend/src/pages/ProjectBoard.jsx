@@ -501,7 +501,12 @@ export default function ProjectBoard() {
                     <div className="space-y-3">
                       {getTasksByStatus(column.id).map(task => (
                         <div key={task.id} className="task-card-transition">
-                          <TaskCard task={task} onEdit={handleEditTask} currentUserId={currentUserId} />
+                          <TaskCard
+                            task={task}
+                            onOpen={handleEditTask}
+                            onEdit={handleEditTask}
+                            currentUserId={currentUserId}
+                          />
                         </div>
                       ))}
                       {getTasksByStatus(column.id).length === 0 && (

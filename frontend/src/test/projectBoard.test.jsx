@@ -31,6 +31,10 @@ function renderBoard() {
         <AuthProvider>
           <Routes>
             <Route path="/teams/:teamId/projects/:projectId" element={<ProjectBoard />} />
+            <Route
+              path="/teams/:teamId/projects/:projectId/tasks/:taskId"
+              element={<div>task detail</div>}
+            />
           </Routes>
         </AuthProvider>
       </MemoryRouter>
@@ -109,6 +113,33 @@ describe('ProjectBoard', () => {
 
     expect(await within(banner).findByText('Project One')).toBeInTheDocument()
     expect(within(banner).queryByText('10')).not.toBeInTheDocument()
+  })
+
+  it('opens the task from a single interactive card control (T-134)', async () => {
+    renderBoard()
+
+    await screen.findByText('Task One')
+    const openButton = screen.getByRole('button', { name: /^task one/i })
+
+    // No nested interactive controls inside the card control.
+    expect(within(openButton).queryByRole('button')).toBeNull()
+    // The edit affordance is a sibling with its own accessible name.
+    expect(screen.getByRole('button', { name: /edit task: task one/i })).toBeInTheDocument()
+
+    openButton.focus()
+    expect(openButton).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
+
+    expect(await screen.findByText('task detail')).toBeInTheDocument()
+  })
+
+  it('opens the task when the card is clicked with the mouse (T-134)', async () => {
+    renderBoard()
+
+    await screen.findByText('Task One')
+    await userEvent.click(screen.getByRole('button', { name: /^task one/i }))
+
+    expect(await screen.findByText('task detail')).toBeInTheDocument()
   })
 
   it('exposes an accessible name on every icon-only control (T-133)', async () => {
