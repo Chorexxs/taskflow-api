@@ -127,7 +127,8 @@ Este paquete vive en `specs/taskflow/` y es la fuente de verdad del ciclo. `READ
 | P8 — Auditoría de seguridad | ✅ Ejecutado | T-083…T-092 |
 | P9 — Smoke de release | ✅ Ejecutado | T-093 (rate limit 500) y T-094 (health bloqueado por Redis) |
 | P10 — Seguimiento post-release | ✅ Ejecutado | T-096 (posición estable del Kanban), T-097 (decisión final de ADR-001), T-098 (retención de datos) y T-099 (drift documental) |
-| P11 — Operación de tiers gratuitos | ✅ Ejecutado | T-130: workflow `keepalive.yml` diario con `GET /api/health` (InsForge) y `GET /health/ready` (Render); evita la pausa por inactividad y el spin-down sin desplegar (ver `environments.md` §7) |
+| P11 — Operación de tiers gratuitos | ⚠️ Revertido | T-130: keepalive `keepalive.yml` con `GET /api/health` (InsForge) y `GET /health/ready` (Render). El cron se ejecutó a diario con 200 y el proyecto se pausó igual: el endpoint de salud no reinicia el contador de 7 días |
+| P12 — Retirada de InsForge | 🔄 En curso | T-131: InsForge cerró la plataforma y deshabilitó los restores (B-06); backup recuperado y verificado, importador `scripts/import_insforge_dump.py` validado y migración a Neon pendiente de credenciales (ver `environments.md` §7) |
 
 ---
 

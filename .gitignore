@@ -33,6 +33,7 @@ frontend/coverage/
 skills-lock.json
 /.vscode
 .mcp.json
+opencode.jsonc
 # InsForge & AI agent skills
 .insforge
 .agent
@@ -47,3 +48,5 @@ skills-lock.json
 .roo
 .trae
 .windsurf
+.neon
+node_modules/

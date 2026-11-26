@@ -24,7 +24,7 @@ API REST para gestión de tareas en equipo con autenticación JWT, equipos, proy
 | Build frontend | `npm run build` correcto |
 | Migraciones | `upgrade` / `downgrade -1` / `upgrade` reversibles |
 | OpenAPI | snapshot versionado y verificado en CI |
-| Producción | API Render **live**, frontend Vercel **live**, InsForge en `c1d2e3f4a5b6 (head)` |
+| Producción | API Render **live**, frontend Vercel **live**, base de datos en Neon (`c1d2e3f4a5b6 (head)`, 322 filas migradas, smoke 15/15) |
 | Smoke de release | **15/15** contra producción (incluye subida/descarga de adjunto) |
 
 **Trabajo reciente de rendimiento (T-128 / T-129):** se redujeron los round trips SQL por acción (auth + membresía en una sola consulta, sin lookups duplicados, `expire_on_commit=False`, una única transacción al crear tareas) y se eliminó el `/users/me` duplicado del frontend. Medición WAN desde España:
@@ -365,12 +365,13 @@ Además: smoke end-to-end contra InsForge (12/12) y contra producción en Render
 
 - Build: `pip install -r requirements.txt`
 - Start: `python -m app.main`
-- Variables mínimas: `ENVIRONMENT=production`, `SECRET_KEY`, `DATABASE_URL`, `DB_SSLMODE=require`, `CORS_ORIGINS`, `STORAGE_BACKEND=insforge`, `INSFORGE_URL`, `INSFORGE_API_KEY`, `INSFORGE_STORAGE_BUCKET=taskflow-attachments`.
+- Variables mínimas: `ENVIRONMENT=production`, `SECRET_KEY`, `DATABASE_URL`, `DB_SSLMODE=require`, `CORS_ORIGINS`, `STORAGE_BACKEND=database`.
+- Retiradas con la migración a Neon (T-131): `INSFORGE_URL`, `INSFORGE_API_KEY`, `INSFORGE_STORAGE_BUCKET`.
 - Opcionales: `SECRET_KEY_PREVIOUS` (solo durante rotación), `REDIS_URL`, `SENTRY_DSN`, SMTP.
 - Ejecutar `alembic upgrade head` **antes** de desplegar y comprobar `alembic current == head`.
 - `/docs`, `/redoc` y `/openapi.json` se sirven solo fuera de producción.
 - Healthchecks: `/health/live` (proceso) y `/health/ready` (DB).
-- **Operación en plan free:** `.github/workflows/keepalive.yml` llama cada día a `GET /api/health` de InsForge y a `/health/ready` de Render para evitar la pausa por inactividad (7 días) y el spin-down; no despliega nada (T-130).
+- **Operación en plan free:** `.github/workflows/keepalive.yml` solo calienta Render (evita el spin-down de 15 min). No protege de la pausa de una base de datos gestionada: se comprobó con InsForge y el proyecto se pausó igual (T-130 → T-131).
 
 ### Frontend — Vercel
 
@@ -384,19 +385,18 @@ Además: smoke end-to-end contra InsForge (12/12) y contra producción en Render
 vercel deploy --prod --yes --project taskflow-api --scope chorexxs-projects
 ```
 
-### Base de datos — InsForge
+### Base de datos — Neon
 
-PostgreSQL gestionado en `eu-central`.
+PostgreSQL gestionado; sustituto de InsForge, que cerró la plataforma el
+2026-11-26 y deshabilitó los restores (B-06, T-131).
 
-- **URL del proyecto:** `https://<insforge-project-id>.eu-central.insforge.app`
-- **DB host:** `<insforge-project-id>.eu-central.database.insforge.app`
-- **Estado:** `c1d2e3f4a5b6 (head)`; 12 tablas de dominio.
-
-```bash
-npx @insforge/cli link \
-  --api-base-url https://<insforge-project-id>.eu-central.insforge.app \
-  --api-key ik_...
-```
+- **Proyecto:** `taskflow-api` (`broad-dew-32991898`), org `org-fancy-queen-00813256`, rama `production`.
+- **Región:** `aws-eu-central-1` (Frankfurt), más cerca de Render.
+- **Estado:** `c1d2e3f4a5b6 (head)`; 13 tablas (12 de dominio + `alembic_version`), 322 filas importadas.
+- **No pausa por inactividad:** el compute se apaga a los 5 min y despierta en la siguiente consulta.
+- **Variables:** `DATABASE_URL` (pooled, la usa la API) y `DATABASE_URL_UNPOOLED` (migraciones y scripts).
+- **CLI:** `neon.ts` describe los servicios (solo Postgres) y `.neon` guarda el link (gitignored). `neon deploy` aplica la política y refresca `.env`.
+- **Importación desde InsForge:** `python scripts/import_insforge_dump.py --dump <backup.sql.gz> --target-url "$DATABASE_URL_UNPOOLED" --truncate` (ver `environments.md` §7).
 
 > **Nota de rendimiento:** API y base de datos están en regiones distintas. Cada round trip SQL cuesta ~140 ms y bcrypt ~2,3 s en el plan free. El código ya minimiza statements y transacciones; mover Render a `eu-central` y subir la CPU es la mejora pendiente de mayor impacto.
 

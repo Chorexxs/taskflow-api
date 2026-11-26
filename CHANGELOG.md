@@ -7,7 +7,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Añadido
 
-- Workflow `keepalive.yml`: `GET /api/health` de InsForge y `GET /health/ready` de Render **a diario** evitan la pausa de InsForge (7 días sin peticiones) y el spin-down de Render, sin desplegar nada y con reintentos ante arranques en frío (T-130).
+- Proyecto Neon `taskflow-api` (`broad-dew-32991898`, `aws-eu-central-1`, rama `production`) enlazado con el CLI: `neon.ts` (política IaC con solo Postgres), `.neon` gitignored, skills `neon`/`neon-postgres` para agentes y MCP remoto `https://mcp.neon.tech/mcp` en `opencode.jsonc` con OAuth; `.mcp.json` de chrome-devtools se conserva intacto (T-131).
+- Base de datos migrada de InsForge a Neon: esquema en `c1d2e3f4a5b6` y 322 filas importadas desde el backup, con smoke funcional 15/15 contra la API local usando la URL pooled (T-131).
+- `scripts/import_insforge_dump.py`: importa un dump plano de InsForge en una base limpia cargando solo el schema `public`, ordenando las tablas por dependencias de clave foránea y verificando el recuento de filas; validado contra el backup real (13 tablas, 322 filas, `alembic_version = c1d2e3f4a5b6`) con `tests/test_import_insforge_dump.py` (T-131).
+- Workflow `keepalive.yml`: calentamiento diario de Render con `GET /health/ready` y reintentos ante arranques en frío (T-130). **No evita la pausa de una base de datos gestionada**: ver T-131.
 - `GET /teams/` devuelve `role` (admin/member) y `project_count` por equipo, calculado en la misma consulta; el Dashboard muestra ambos (T-123, FR-TEAM-02).
 - `CONTRIBUTING.md` con política de ramas, PR, release y rollback (T-010).
 - `specs/taskflow/environments.md` con local, CI, preview, staging y producción (T-009).
@@ -56,6 +59,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ### Cambiado
 
+- Producción apunta a Neon: Render actualizado con `DATABASE_URL` (pooled), `DATABASE_URL_UNPOOLED`, `DB_SSLMODE=require` y `STORAGE_BACKEND=database`, retirando `INSFORGE_URL`, `INSFORGE_API_KEY` e `INSFORGE_STORAGE_BUCKET`; deploy `live` y smoke funcional 15/15 contra `https://taskflow-api-gkgl.onrender.com` (T-131).
+- `scripts/update_render_env.py`: aplica ese cambio de variables por la API de Render, sin imprimir valores, y opcionalmente despliega y espera a `live`.
+- Retirada de InsForge: el proveedor cerró la plataforma y deshabilitó los restores (`RESTORE_DISABLED`), así que la base de datos migra a Neon. El keep-alive deja de consultar `/api/health` —respondió 200 a diario y el proyecto se pausó igual— y queda solo como calentamiento de Render; `environments.md` §7 documenta el cierre, los artefactos recuperados y el procedimiento de importación (T-131).
+- `keepalive.yml` conserva la cadencia diaria y el `workflow_dispatch`, pero con un único paso contra Render.
 - Las páginas grandes del frontend se dividieron en componentes: `board/` (columnas, filtros y modales del Kanban), `teams/` (modales de miembro y proyecto) y `tasks/` (actividad y adjuntos). Las tres páginas quedan por debajo de 600 líneas (T-127, CA-2-02).
 - `app/crud.py` y `app/schemas.py` se dividieron por dominio en `app/crud/` y `app/schemas/` con re-export; `from app import crud, schemas` sigue funcionando y el mayor módulo backend baja de 1687 a 368 líneas (T-126, CA-2-02).
 - La subida de adjuntos se movió a `app/services/attachments.py` (validación, streaming, escaneo, storage y registro); el router conserva solo la resolución de la tarea, la idempotencia y la respuesta (T-125, CA-2-03).

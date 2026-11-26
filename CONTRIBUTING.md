@@ -105,8 +105,8 @@ Revisión y merge:
 ### Procedimiento de release
 
 1. Verifica que `main` está verde y que el CHANGELOG refleja los cambios.
-2. Ejecuta `alembic upgrade head` contra la base de producción (InsForge) antes
-   del deploy de la API.
+2. Ejecuta `alembic upgrade head` contra la base PostgreSQL de producción (Neon)
+   antes del deploy de la API.
 3. Despliega la API (Render) y espera a `/health/ready` → `200`.
 4. Despliega el frontend (Vercel) o deja que el merge lo haga.
 5. Ejecuta el smoke test de producción y el de performance

@@ -547,7 +547,10 @@ ALTER TABLE projects ALTER COLUMN slug SET NOT NULL;
 
 ## 8. Backup y restore
 
-- Backup automático diario de PostgreSQL (InsForge) + retención 30 días.
+- Backup de PostgreSQL: diario gestionado en InsForge (proveedor retirado el
+  2026-11-26) y, en Neon, historial de 6 h más un snapshot manual en el plan
+  free: el backup diario deja de ser automático y pasa a ser responsabilidad
+  del equipo (T-131).
 - Prueba de restore trimestral en entorno aislado (y tras migraciones de esquema).
 - RPO ≤ 24 h; RTO ≤ 4 h.
 - Los objetos de storage se versionan o se copian a un bucket secundario (según proveedor).
@@ -570,6 +573,33 @@ python scripts/backup_restore_drill.py \
 3. `app.backup.compare_databases` verifica que coinciden tablas, número de filas
    y revisión de Alembic; devuelve exit code 1 ante cualquier diferencia.
 4. `--skip-restore` permite generar solo el artefacto de backup.
+
+### Importación de un dump plano de InsForge (T-131)
+
+El backup que entrega InsForge en la retirada es un `pg_dump` **plano**
+(`.sql` / `.sql.gz`), no formato custom, y arrastra los schemas internos de la
+plataforma. `scripts/import_insforge_dump.py` carga solo `public` en una base
+que ya tiene el esquema de Alembic:
+
+```bash
+python scripts/import_insforge_dump.py \
+  --dump ~/Documents/insforge-backups/insforge-api-workflow-20261126_020844.sql.gz \
+  --target-url "$DATABASE_URL" \
+  --truncate
+```
+
+1. Extrae los bloques `COPY` y los `setval` del schema pedido e ignora `auth`,
+   `storage`, `cron`, `schedules`, etc.
+2. Ordena las tablas por dependencias de clave foránea leídas del catálogo del
+   destino, así que no necesita desactivar constraints ni ser superusuario.
+3. Verifica el número de filas de cada tabla contra el dump y devuelve exit 1 si
+   algo no cuadra.
+4. `--dry-run` informa de tablas y filas sin conectar; `--lenient` omite tablas
+   que no existan en el destino.
+
+Validación real (2026-11-26): 13 tablas, 322 filas y `alembic_version =
+c1d2e3f4a5b6` importadas en un PostgreSQL 16 desechable, con la app leyendo
+usuarios, equipos y tareas desde la copia restaurada.
 
 ### Prueba real (2026-11-11)
 

@@ -6,6 +6,34 @@ Estos bloqueos requieren credenciales o acciones manuales que no están disponib
 
 ---
 
+## B-06 — InsForge retira la plataforma (RESUELTO, 2026-11-26)
+
+El proyecto `api-workflow` (`c7578dc0-d532-4463-88f1-09c6e54356f7`) se pausó por
+inactividad y **no se pudo restaurar**: la API respondía
+
+```text
+RESTORE_DISABLED: InsForge is winding down: restores are closed.
+You can download your database backup from the project page in the dashboard.
+```
+
+Hallazgos:
+
+- El keep-alive de T-130 se ejecutó a diario con `200` hasta el 2026-11-25 y el
+  proyecto se pausó igual: `GET /api/health` no reinicia el contador de 7 días.
+- No fue límite de uso: 25 MB de 500 MB de base de datos y 350 MB de 5 GB de egress.
+- El backup diario `20261126_020844.sql.gz` se descargó y verificó (13 tablas
+  `public`, 322 filas, `alembic_version = c1d2e3f4a5b6`).
+- De los 15 adjuntos, 4 conservaban sus bytes en `attachments.content`; los otros
+  11 solo existían en el bucket `taskflow-attachments` y quedan irrecuperables
+  salvo que se descarguen del dashboard antes del cierre.
+
+Resolución: migración a Neon (T-131) con `scripts/import_insforge_dump.py`,
+Render repuntado con `scripts/update_render_env.py` y smoke 15/15 en producción.
+El proyecto `SyntaxSprint` de la misma organización sigue activo y corre el mismo
+riesgo de cierre.
+
+---
+
 ## B-01 — InsForge: RESUELTO
 
 **Proyecto:** `c7578dc0-d532-4463-88f1-09c6e54356f7`

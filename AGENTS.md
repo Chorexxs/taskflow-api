@@ -20,7 +20,7 @@ TaskFlow es una API REST para gestión de tareas en equipo, con frontend React. 
 - **Backend:** Python 3.12, FastAPI, Uvicorn, SQLAlchemy 2, PostgreSQL, Alembic, Pydantic v2.
 - **Frontend:** React 18, Vite 8, Vitest 5, React Router 7, TanStack Query 5, Tailwind CSS 4.
 - **Tests:** pytest (backend), Vitest + Testing Library (frontend).
-- **Deploy:** Render (API), Vercel (frontend), InsForge (PostgreSQL).
+- **Deploy:** Render (API), Vercel (frontend), Neon (PostgreSQL).
 
 ---
 
@@ -310,9 +310,20 @@ Reglas:
 - Directorio `frontend/`, build `npm run build`.
 - `VITE_API_URL` apunta al backend.
 
-### Base de datos — InsForge
+### Base de datos — Neon
 
-- PostgreSQL gestionado; backups y restore documentados en `specs/taskflow/data-model.md`.
+- Proyecto `taskflow-api` (`broad-dew-32991898`, org `org-fancy-queen-00813256`),
+  región `aws-eu-central-1`, rama `production`. Configurado con Neon CLI: `neon.ts`
+  (política IaC, solo Postgres) y `.neon` (link local, **gitignored**).
+- `neon link` / `neon deploy` hacen `env pull` a `.env`; `neon env pull` refresca
+  a mano. No editar `.env` a mano para las variables `DATABASE_URL*`.
+- **`DATABASE_URL` es pooled** (pgbouncer) y es la que usa la API. **Migraciones y
+  scripts usan `DATABASE_URL_UNPOOLED`**: el pool en modo transacción no soporta
+  DDL/prepared statements de forma fiable.
+- Neon free no pausa proyectos por inactividad: solo apaga el compute a los 5 min
+  y lo despierta en la siguiente consulta.
+- Importación desde el dump de InsForge: `scripts/import_insforge_dump.py`
+  (`environments.md` §7, T-131).
 
 ---
 

@@ -52,7 +52,9 @@ tablero 9 → 6, detalle de tarea 8 → 5, `POST /tasks` con `Idempotency-Key`
 elimina el segundo `/users/me` tras el login. El cambio de región de Render a
 `eu-central` sigue pendiente y es el mayor ahorro restante.
 
-**Completada (P11, 2026-11-17):** `T-130` (workflow `keepalive.yml` con `schedule` diario, `GET /api/health` de InsForge y `GET /health/ready` de Render con reintentos; mantiene el proyecto fuera de la pausa de 7 días sin secretos ni deploys; reglas en `environments.md` §7).
+**Completada (P11, 2026-11-17):** `T-130` (workflow `keepalive.yml` con `schedule` diario, `GET /api/health` de InsForge y `GET /health/ready` de Render con reintentos; **descartado el 2026-11-26**: el proyecto se pausó igual y el proveedor cerró la plataforma, ver T-131).
+
+**Completada (P12, 2026-11-26):** `T-131` (retirada de InsForge y migración a Neon). Backup descargado y verificado; importador `scripts/import_insforge_dump.py` con 7 tests; proyecto Neon enlazado (`neon.ts`, `neon deploy`); esquema en `c1d2e3f4a5b6` con 322 filas importadas; Render actualizado con `scripts/update_render_env.py` (`DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `DB_SSLMODE=require`, `STORAGE_BACKEND=database`, sin `INSFORGE_*`); deploy `live` y smoke funcional **15/15 en producción**.
 
 **Completadas parcialmente (P0):** `T-001` (specs en `specs/taskflow/`), `T-002` (README/AGENTS/STACK/DECISIONS), `T-005` (LICENSE), `T-006` (71 tests backend + 6 frontend), `T-008` (inventario en la spec).
 
@@ -325,6 +327,18 @@ documental.
 | ID | Tarea | Prio | Dep. | Tamaño | Refs | Aceptación |
 |---|---|---|---|---|---|---|
 | T-130 | Keep-alive programado de InsForge y Render | S2 | — | XS | NFR-REL-01 | `keepalive.yml` en verde con `workflow_dispatch` y cadencia diaria; `GET /api/health` + `GET /health/ready` sin secretos; documentado en `environments.md` §7 |
+
+---
+
+## P12 — Retirada de InsForge y migración a Neon (2026-11-26)
+
+InsForge cerró la plataforma y deshabilitó los restores; los datos se recuperan
+del backup diario y la base de datos se mueve a Neon, que no pausa proyectos por
+inactividad.
+
+| ID | Tarea | Prio | Dep. | Tamaño | Refs | Aceptación |
+|---|---|---|---|---|---|---|
+| T-131 | Migrar la base de datos de InsForge a Neon | S0 | T-130 | M | NFR-REL-01, NFR-REL-04 | Backup verificado; import por `public` con recuentos iguales; `alembic current` = head en Neon; `DB_SSLMODE=require` sin variables `INSFORGE_*`; `/health/ready`, login y adjunto verificados; `environments.md` §7 actualizado |
 
 ---
 

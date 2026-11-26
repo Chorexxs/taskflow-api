@@ -1,15 +1,13 @@
 name: Keep-alive
 
-# Mantiene activos los tiers gratuitos sin desplegar nada:
-# - InsForge pausa los proyectos free tras 7 días sin peticiones.
-# - Render duerme el servicio tras 15 min sin tráfico (no lo suspende).
-# Cada ejecución hace dos llamadas independientes (T-130):
-#   1. `GET /api/health` en InsForge: actividad directa en la plataforma,
-#      aunque Render esté dormido o caído.
-#   2. `GET /health/ready` en Render: lo despierta y ejecuta un `SELECT 1`
-#      contra PostgreSQL.
-# Se ejecuta a diario (no dos veces por semana) para que un cron perdido,
-# retrasado o deshabilitado por GitHub no acerque la cuenta a los 7 días.
+# Solo mantiene caliente el servicio free de Render, que duerme tras 15 min sin
+# tráfico. NO evita la pausa de una base de datos gestionada: se comprobó con
+# InsForge (T-130), donde el cron respondió 200 a diario y el proyecto se pausó
+# igual hasta el cierre definitivo de la plataforma (T-131).
+#
+# Tras la migración a Neon (sin pausa por inactividad) este workflow no protege
+# nada crítico: es únicamente un calentamiento para evitar el arranque en frío
+# del primer usuario del día. Se puede borrar sin afectar a los datos.
 
 on:
   schedule:
@@ -25,29 +23,11 @@ concurrency:
 
 jobs:
   keepalive:
-    name: Despertar API y DB
+    name: Despertar API
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - name: InsForge responde (actividad directa)
-        env:
-          INSFORGE_HEALTH_URL: https://wrm6rjkp.eu-central.insforge.app/api/health
-        run: |
-          set -u
-          for attempt in 1 2 3; do
-            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 "$INSFORGE_HEALTH_URL" || echo "000")
-            if [ "$code" = "200" ]; then
-              echo "InsForge /api/health -> 200 (intento $attempt)"
-              exit 0
-            fi
-            echo "InsForge /api/health -> '$code' (intento $attempt); reintento en 10 s"
-            sleep 10
-          done
-          echo "::error::InsForge no devolvió 200: el proyecto puede estar pausado (api-workflow)"
-          exit 1
-
       - name: Render despierto y PostgreSQL accesible
-        if: always()
         env:
           READY_URL: https://taskflow-api-gkgl.onrender.com/health/ready
         run: |

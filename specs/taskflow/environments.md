@@ -124,40 +124,48 @@ mismo PR.
 
 ---
 
-## 7. Keep-alive de tiers gratuitos
+## 7. Retirada de InsForge y migración a Neon
 
-Render e InsForge en plan free no se suspenden por falta de deploys: Render
-duerme el servicio tras 15 min sin tráfico e InsForge pausa el proyecto tras
-7 días sin peticiones. El workflow `.github/workflows/keepalive.yml` mantiene
-ambos activos **sin desplegar** (T-130).
+**Estado (2026-11-26):** InsForge cerró la plataforma y deshabilitó los restores
+(`RESTORE_DISABLED: InsForge is winding down: restores are closed`). Los datos se
+recuperaron del backup diario y **Neon es la base de producción** (rama
+`production` del proyecto `broad-dew-32991898`): 13 tablas, 322 filas,
+`alembic_version = c1d2e3f4a5b6`. Render ya usa la URL pooled y el smoke
+funcional da **15/15 en producción** (T-131 cerrada).
 
-| Aspecto | Valor |
+### Qué falló en el plan anterior (T-130)
+
+El keep-alive se ejecutó a diario con `200` hasta el 2026-11-25 y el proyecto se
+pausó igual: ni `GET /api/health` ni el `SELECT 1` de `/health/ready` (conexión
+directa a Postgres) reinician el contador de 7 días. Un keep-alive basado en un
+endpoint de salud **no** protege de la pausa; el workflow queda solo como
+calentamiento de Render.
+
+### Artefactos de la retirada
+
+| Artefacto | Detalle |
 |---|---|
-| Disparador | `schedule` **diario** 06:17 UTC + `workflow_dispatch` |
-| Acción 1 | `GET https://wrm6rjkp.eu-central.insforge.app/api/health` → actividad directa en InsForge |
-| Acción 2 | `GET https://taskflow-api-gkgl.onrender.com/health/ready` → despierta Render y ejecuta `SELECT 1` |
-| Reintentos | InsForge 3×10 s; Render 5×15 s (el arranque en frío tarda ~30 s) |
-| Secretos | Ninguno: ambos endpoints son públicos y no exponen datos |
-| Coste | 0: repo público, minutos de Actions gratuitos |
+| Backup SQL | `pg_dump` plano de `api-workflow` (2026-11-26 02:08 UTC), descargado fuera del repo en `~/Documents/insforge-backups/` |
+| Contenido verificado | 13 tablas `public`, 322 filas, `alembic_version = c1d2e3f4a5b6` |
+| Importador | `scripts/import_insforge_dump.py` (+ `tests/test_import_insforge_dump.py`) |
+| Adjuntos | 15 objetos de 13 B en el bucket `taskflow-attachments`; se descargan desde el dashboard o se anulan sus `storage_key` |
 
-El proyecto de InsForge se llama en el dashboard **`api-workflow`** (id
-`c7578dc0-d532-4463-88f1-09c6e54356f7`, appkey `wrm6rjkp`); `.insforge/project.json`
-conserva el nombre antiguo `taskflow-api`. Es el **mismo** proyecto: si llega un
-correo de "pausa por inactividad" con el nombre `api-workflow`, se refiere a la
-base de datos de TaskFlow.
+### Migración a Neon (T-131)
+
+1. Crear el proyecto en Neon (región Frankfurt/`eu-central` para acercarlo a Render).
+2. `alembic upgrade head` contra la URL nueva: el esquema lo crea Alembic, nunca `create_all`.
+3. `python scripts/import_insforge_dump.py --dump <backup.sql.gz> --target-url "$DATABASE_URL" --truncate`.
+4. Configurar `DB_SSLMODE=require` y `STORAGE_BACKEND=database`; retirar las variables `INSFORGE_*`.
+5. Smoke: `/health/ready`, registro/login y subida/descarga de adjunto.
 
 Reglas:
 
-1. Un `schedule` solo se ejecuta desde la rama por defecto (`main`).
-2. GitHub puede retrasar el cron 10–30 min e incluso saltarse alguna ejecución;
-   por eso la cadencia es diaria y el margen frente a los 7 días es de 6 días.
-3. En repos públicos GitHub desactiva los workflows programados tras 60 días sin
-   actividad en el repo; se reactivan con `gh workflow enable keepalive.yml`.
-   Un aviso de pausa de InsForge es la señal típica de que esto ha pasado.
-4. Si falla la acción 1, el proyecto ya está pausado: hay que reactivarlo desde el
-   dashboard (o con `insforge`) dentro de los 30 días; el workflow no puede
-   despausar por sí solo.
-5. Si falla la acción 2 pero la 1 pasa, el problema es Render o la conexión a
-   PostgreSQL, no el cron.
-6. Un redeploy programado **no** sustituye a este workflow: no evita la pausa de
-   InsForge y consume minutos de build en Render.
+1. Neon free **no** pausa proyectos por inactividad: apaga el compute a los 5 min
+   y lo despierta en la siguiente consulta, sin cambiar la URL ni los datos.
+2. El límite real de Neon free es 100 CU-horas/mes y 5 GB de egress por proyecto;
+   al agotarlos se suspende el compute hasta el siguiente ciclo, sin borrar datos.
+3. El dump de InsForge trae schemas internos (`auth`, `storage`, `cron`,
+   `schedules`…); el importador carga solo `public` y ordena las tablas por
+   dependencias de clave foránea, así que no hace falta superusuario.
+4. Un cron diario ya no mantiene nada despierto en la base de datos: la única
+   razón para conservar `keepalive.yml` es evitar el spin-down de Render.
