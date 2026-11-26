@@ -354,6 +354,8 @@ proyecto, tablero, tarea, comentario, adjunto, búsqueda y notificaciones).
 | T-134 | Tarjeta de tarea con un único control interactivo que abre el detalle | S1 | — | S | FR-UI-15 | Clic y `Enter` abren la tarea; sin botón anidado; editar mantiene nombre accesible; test de `kanban`/`projectBoard` |
 | T-135 | Skeleton de carga en miembros y proyectos del equipo | S2 | — | XS | FR-UI-16 | Mientras la query está pendiente no se muestra "No members yet"; test de `teamDetail` |
 
+**Completadas (P13, 2026-11-26):** `T-132` (encabezado con `project.name`), `T-133` (`aria-label` en todos los controles solo-icono), `T-134` (tarjeta con un único control que abre la tarea, sin botones anidados y con drag & drop intacto) y `T-135` (skeleton de miembros). Verificado en navegador real: local (drag → `PATCH /status` 200) y producción (encabezado con `Proyecto Web Test`, 2 botones por tarjeta y 0 anidados, `sawEmpty=false`, `maxSkeleton=4`).
+
 ---
 
 ## Orden recomendado de ejecución
